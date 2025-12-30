@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-foo",
+  "owner": {
+    "name": "fokkoru"
+  },
+  "description": "Reusable Claude Code plugins for development workflows",
+  "plugins": [
+    {
+      "name": "df",
+      "source": "./plugins/df",
+      "description": "Feature development and code review workflow automation for individual developers",
+      "version": "1.0.0",
+      "author": {
+        "name": "fokkoru"
+      },
+      "category": "development",
+      "keywords": ["workflow", "development", "planning", "research", "commits"]
+    }
+  ]
+}

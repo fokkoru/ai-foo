@@ -1,0 +1,10 @@
+{
+  "name": "df",
+  "version": "1.0.0",
+  "description": "Feature development and code review workflow automation for individual developers",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "keywords": ["workflow", "development", "planning", "research", "commits"]
+}
