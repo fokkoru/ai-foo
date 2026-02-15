@@ -470,6 +470,21 @@ Stay focused on planning what was actually requested.
 - Link to GitHub when possible for permanent references
 </key_principles>
 
+<context_budget>
+
+Plans should be scoped so each phase can be implemented within ~50% of the context window:
+
+| Context Usage | Quality Level | Implication for Planning              |
+| ------------- | ------------- | ------------------------------------- |
+| 0-30%         | PEAK          | Thorough, comprehensive work possible |
+| 30-50%        | GOOD          | Confident, solid work                 |
+| 50-70%        | DEGRADING     | Cut non-essential exploration         |
+| 70%+          | POOR          | Rushed, minimal quality               |
+
+If a plan has many phases or complex phases, consider splitting into smaller plans. The implementer will lose quality past 50% context usage.
+
+</context_budget>
+
 <circuit_breakers>
 Stop and reframe the planning process if:
 
