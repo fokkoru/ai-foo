@@ -1,67 +1,65 @@
 ---
-allowed-tools: Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 description: Create detailed implementation plans with thorough research and iteration
 ---
 
-# Implementation Plan
+<objective>
+Create a detailed implementation plan through interactive research and collaborative design.
 
-You are tasked with creating detailed implementation plans through an interactive, iterative process. You should be skeptical, thorough, and work collaboratively with the user to produce high-quality technical specifications.
+Work through an iterative process — be skeptical, thorough, and collaborate with the user to produce high-quality technical specifications.
+</objective>
 
-## Configuration
+<quick_start>
+If a file path or task description is provided, skip the prompt — immediately read any provided files FULLY and begin the research process.
 
-Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
-- `research_dir`: Directory for research documents (default: `thoughts/research`)
-- `plans_dir`: Directory for plans (default: `thoughts/plans`)
+If no task description is provided, ask the user for:
 
-If no settings file exists, use default paths.
-
-## Initial Response
-
-When this command is invoked:
-
-1. **Check if parameters were provided**:
-   - If a file path or ticket reference was provided as a parameter, skip the default message
-   - Immediately read any provided files FULLY
-   - Begin the research process
-
-2. **If no parameters provided**, respond with:
-```
-I'll help you create a detailed implementation plan. Let me start by understanding what we're building.
-
-Please provide:
 1. The task/ticket description (or reference to a ticket file)
 2. Any relevant context, constraints, or specific requirements
 3. Links to related research or previous implementations
 
-I'll analyze this information and work with you to create a comprehensive plan.
-```
+Then wait for input before proceeding.
+</quick_start>
 
-Then wait for the user's input.
+<configuration>
+Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
 
-## Plan Shaping Philosophy
+- `research_dir`: Directory for research documents (default: `thoughts/research`)
+- `plans_dir`: Directory for plans (default: `thoughts/plans`)
 
-Before diving into detailed steps, understand how to shape your planning approach:
+If no settings file exists, use default paths.
+</configuration>
+
+<plan_shaping>
+
+Before diving into detailed steps, understand how to shape the planning approach:
 
 ### Define the Solution Envelope
+
 - **Core requirement**: What must work for success
 - **Boundaries**: Where to stop exploring/building
 - **Explicitly excluded**: What NOT to build (prevents scope creep)
 - **Quality bar**: Standards that must be met
 
 ### Leave Room for Implementation
+
 - Specify **outcomes**, not exact steps
 - Define **interfaces**, not internals
 - Set **quality standards**, not specific patterns
 - Provide **guardrails**, not detailed instructions
 
 ### Known Rabbit Holes
+
 Document complexity traps upfront:
+
 - Premature optimization areas
 - Over-engineering temptations
 - Scope creep risks
 - Technical tangents to avoid
 
-## Process Steps
+</plan_shaping>
+
+<workflow>
 
 ### Step 1: Context Gathering & Initial Analysis
 
@@ -70,12 +68,12 @@ Document complexity traps upfront:
    - Related implementation plans
    - Any JSON/data files mentioned
    - **IMPORTANT**: Use the Read tool WITHOUT limit/offset parameters to read entire files
-   - **CRITICAL**: DO NOT spawn sub-tasks before reading these files yourself in the main context
+   - **CRITICAL**: DO NOT spawn sub-tasks before reading these files in the main context
    - **NEVER** read files partially - if a file is mentioned, read it completely
 
 2. **Spawn initial research tasks to gather context**:
    Before asking the user any questions, use specialized agents to research in parallel:
-   - Use the **codebase-locator** agent to find all files related to the ticket/task
+   - Use the **codebase-locator** agent to find all files related to the task
    - Use the **codebase-analyzer** agent to understand how the current implementation works
    - If relevant, use the **thoughts-locator** agent to find any existing thoughts documents about this feature
 
@@ -87,17 +85,18 @@ Document complexity traps upfront:
 3. **Read all files identified by research tasks**:
    - After research tasks complete, read ALL files they identified as relevant
    - Read them FULLY into the main context
-   - This ensures you have complete understanding before proceeding
+   - This ensures complete understanding before proceeding
 
 4. **Analyze and verify understanding**:
-   - Cross-reference the ticket requirements with actual code
+   - Cross-reference the task requirements with actual code
    - Identify any discrepancies or misunderstandings
    - Note assumptions that need verification
    - Determine true scope based on codebase reality
 
 5. **Present informed understanding and focused questions**:
+
    ```
-   Based on the ticket and my research of the codebase, I understand we need to [accurate summary].
+   Based on the task and my research of the codebase, I understand we need to [accurate summary].
 
    I've found that:
    - [Current implementation detail with file:line reference]
@@ -110,7 +109,7 @@ Document complexity traps upfront:
    - [Design preference that affects implementation]
    ```
 
-   Only ask questions that you genuinely cannot answer through code investigation.
+   Only ask questions that genuinely cannot be answered through code investigation.
 
 ### Step 2: Research & Discovery
 
@@ -120,32 +119,13 @@ After getting initial clarifications:
    - DO NOT just accept the correction
    - Spawn new research tasks to verify the correct information
    - Read the specific files/directories they mention
-   - Only proceed once you've verified the facts yourself
+   - Only proceed once the facts are verified
 
 2. **Create a research todo list** using TodoWrite to track exploration tasks
 
 3. **Spawn parallel sub-tasks for comprehensive research**:
    - Create multiple Task agents to research different aspects concurrently
-   - Use the right agent for each type of research:
-
-   **For deeper investigation:**
-   - **codebase-locator** - To find more specific files (e.g., "find all files that handle [specific component]")
-   - **codebase-analyzer** - To understand implementation details (e.g., "analyze how [system] works")
-   - **codebase-pattern-finder** - To find similar features we can model after
-
-   **For historical context:**
-   - **thoughts-locator** - To find any research, plans, or decisions about this area
-   - **thoughts-analyzer** - To extract key insights from the most relevant documents
-
-   **For external research:**
-   - **web-search-researcher** - To research external APIs, libraries, best practices, or modern patterns
-
-   Each agent knows how to:
-   - Find the right files and code patterns
-   - Identify conventions and patterns to follow
-   - Look for integration points and dependencies
-   - Return specific file:line references
-   - Find tests and examples
+   - Use the right agent for each type of research (see Agent Selection section)
 
 4. **Wait for ALL sub-tasks to complete** before proceeding
 
@@ -174,6 +154,7 @@ After getting initial clarifications:
 Once aligned on approach:
 
 1. **Create initial plan outline**:
+
    ```
    Here's my proposed plan structure:
 
@@ -194,7 +175,7 @@ Once aligned on approach:
 
 After structure approval:
 
-1. **Write the plan**
+1. **Gather metadata before writing the document**:
    - Get current date/time with timezone: !`date +"%Y-%m-%d %H:%M:%S %Z"`
    - Get author name: !`git config user.name`
    - Get git commit hash: !`git rev-parse HEAD`
@@ -244,6 +225,8 @@ After structure approval:
 
 [High-level strategy and reasoning]
 
+---
+
 ## Phase 1: [Descriptive Name]
 
 ### Overview
@@ -261,13 +244,13 @@ After structure approval:
 
 ### Success Criteria:
 
-#### Manual Verification:
-- [ ] Feature works as expected when tested via UI
-- [ ] Performance is acceptable under load
-- [ ] Edge case handling verified manually
-- [ ] No regressions in related features
+#### Automated Verification:
+- [ ] [Command to run or file to check]
+- [ ] [Another automated check]
 
-**Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase.
+#### Manual Verification:
+- [ ] [UI or UX check requiring human judgment]
+- [ ] [Performance or edge case verification]
 
 ---
 
@@ -305,9 +288,12 @@ After structure approval:
 - Similar implementation: `[file:line]`
 ````
 
+   If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
+
 ### Step 5: Sync and Review
 
 1. **Present the draft plan location**:
+
    ```
    I've created the initial implementation plan at:
    `[plans_dir]/YYYY-MM-DD_HHMM_topic.md`
@@ -327,7 +313,63 @@ After structure approval:
 
 3. **Continue refining** until the user is satisfied
 
-## Important Guidelines
+</workflow>
+
+<success_criteria>
+
+- Plan file created at `[plans_dir]/YYYY-MM-DD_HHMM_topic.md` with all sections populated
+- All research questions resolved (no "TBD" or open questions in final plan)
+- Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
+- User confirms plan structure, phasing, and technical approach
+</success_criteria>
+
+<success_criteria_guidelines>
+
+Always separate success criteria into two categories:
+
+1. **Automated Verification** (can be run by execution agents):
+   - Commands that can be run: `make test`, `npm run lint`, etc.
+   - Specific files that should exist
+   - Code compilation/type checking
+   - Automated test suites
+
+2. **Manual Verification** (requires human testing):
+   - UI/UX functionality
+   - Performance under real conditions
+   - Edge cases that are hard to automate
+   - User acceptance criteria
+
+The presence or absence of manual verification items controls whether the implementer pauses after a phase. Only add manual checks where human judgment is genuinely needed.
+
+</success_criteria_guidelines>
+
+<common_patterns>
+
+### For Database Changes
+
+- Start with schema/migration
+- Add store methods
+- Update business logic
+- Expose via API
+- Update clients
+
+### For New Features
+
+- Research existing patterns first
+- Start with data model
+- Build backend logic
+- Add API endpoints
+- Implement UI last
+
+### For Refactoring
+
+- Document current behavior
+- Plan incremental changes
+- Include migration strategy
+
+</common_patterns>
+
+<guidelines>
 
 1. **Be Skeptical**:
    - Question vague requirements
@@ -355,70 +397,94 @@ After structure approval:
 
 5. **Track Progress**:
    - Use TodoWrite to track planning tasks
-   - Update todos as you complete research
+   - Update todos as research completes
    - Mark planning tasks complete when done
 
 6. **No Open Questions in Final Plan**:
-   - If you encounter open questions during planning, STOP
+   - If open questions are encountered during planning, STOP
    - Research or ask for clarification immediately
    - Do NOT write the plan with unresolved questions
    - The implementation plan must be complete and actionable
    - Every decision must be made before finalizing the plan
 
-## Success Criteria Guidelines
+</guidelines>
 
-**Always separate success criteria into two categories:**
+<agent_selection>
 
-1. **Automated Verification** (can be run by execution agents):
-   - Commands that can be run: `make test`, `npm run lint`, etc.
-   - Specific files that should exist
-   - Code compilation/type checking
-   - Automated test suites
+Select the right agent for each type of investigation:
 
-2. **Manual Verification** (requires human testing):
-   - UI/UX functionality
-   - Performance under real conditions
-   - Edge cases that are hard to automate
-   - User acceptance criteria
+**Codebase investigation:**
 
-## Common Patterns
+| Agent                     | Purpose                            | When to Use                               |
+| ------------------------- | ---------------------------------- | ----------------------------------------- |
+| `codebase-locator`        | Find files by topic/feature        | Starting point to discover what exists    |
+| `codebase-analyzer`       | Understand implementation details  | Deep dive into specific components        |
+| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples or conventions |
 
-### For Database Changes:
-- Start with schema/migration
-- Add store methods
-- Update business logic
-- Expose via API
-- Update clients
+**Historical context:**
 
-### For New Features:
-- Research existing patterns first
-- Start with data model
-- Build backend logic
-- Add API endpoints
-- Implement UI last
+| Agent               | Purpose                                 | When to Use                       |
+| ------------------- | --------------------------------------- | --------------------------------- |
+| `thoughts-locator`  | Discover documents in thoughts/         | Find prior research or decisions  |
+| `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context |
 
-### For Refactoring:
-- Document current behavior
-- Plan incremental changes
-- Maintain backwards compatibility
-- Include migration strategy
+**External research:**
 
-## Sub-task Spawning Best Practices
+| Agent                   | Purpose                                  | When to Use                          |
+| ----------------------- | ---------------------------------------- | ------------------------------------ |
+| `web-search-researcher` | Research APIs, libraries, best practices | Need information beyond the codebase |
 
-When spawning research sub-tasks:
+**Guidelines:**
 
-1. **Spawn multiple tasks in parallel** for efficiency
-2. **Each task should be focused** on a specific area
-3. **Provide detailed instructions** including:
-   - Exactly what to search for
-   - Which directories to focus on
-   - What information to extract
-   - Expected output format
-4. **Be EXTREMELY specific about directories**
-5. **Specify read-only tools** to use
-6. **Request specific file:line references** in responses
-7. **Wait for all tasks to complete** before synthesizing
-8. **Verify sub-task results**:
-   - If a sub-task returns unexpected results, spawn follow-up tasks
-   - Cross-check findings against the actual codebase
-   - Don't accept results that seem incorrect
+- Start with locator agents to find what exists, then use analyzer agents on the most promising findings
+- Run multiple agents in parallel when searching for different things
+- Each agent knows its job — provide what to find, not how to search
+- Do not write detailed prompts about HOW to search; the agents already know
+- Keep prompts focused on read-only operations
+- Request specific file:line references in responses
+- Verify sub-task results — if unexpected, spawn follow-up tasks and cross-check against the actual codebase
+
+</agent_selection>
+
+<anti_patterns>
+
+- Tracing every single import/dependency chain
+- Analyzing generated or vendored code (node_modules, build/, dist/, .git/)
+- Researching test implementations unless specifically asked
+- Exploring unrelated "interesting" findings during research
+- Understanding entire subsystems when only a component is needed
+- Over-specifying implementation details that should be left to the implementer
+
+Stay focused on planning what was actually requested.
+</anti_patterns>
+
+<key_principles>
+
+- Always use parallel Task agents to maximize efficiency and minimize context usage
+- Always run fresh codebase research; never rely solely on existing research documents
+- Focus on concrete file paths and line numbers for developer reference
+- Plans should be self-contained with all necessary context
+- Keep the main agent focused on synthesis, not deep file reading
+- Encourage sub-agents to find examples and usage patterns, not just definitions
+- Include temporal context (when the plan was created)
+- Link to GitHub when possible for permanent references
+</key_principles>
+
+<circuit_breakers>
+Stop and reframe the planning process if:
+
+- No meaningful findings after 3 parallel agent attempts
+- Core directories/files mentioned don't exist
+- Sub-agents return contradictory information
+- More than 10 sub-agents needed (scope too broad)
+- Planning expanding beyond the original task
+
+When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be resolved and why.
+</circuit_breakers>
+
+<constraints>
+- Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
+- Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
+- Gather metadata before writing the document — git state should be captured at planning time, not after
+- NEVER write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+</constraints>

@@ -1,196 +1,221 @@
 ---
-allowed-tools: Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh:*)
+allowed-tools: Read, Write, Edit, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 description: Research codebase comprehensively using parallel sub-agents
 ---
 
-# Research Codebase
+<objective>
+Conduct comprehensive codebase research to answer a user's question by decomposing it into parallel sub-agent tasks and synthesizing findings into a structured research document.
+</objective>
 
-You are tasked with conducting comprehensive research across the codebase to answer user questions by spawning parallel sub-agents and synthesizing their findings.
+<quick_start>
+If no research question is provided, ask the user what they want to research before proceeding.
 
-## Configuration
+1. Read any mentioned files fully in main context first
+2. Decompose the research question into parallel sub-agent tasks
+3. Select appropriate agents and spawn them in parallel
+4. Wait for ALL sub-agents to complete
+5. Synthesize findings and write research document
+6. Present concise summary with key file references
+</quick_start>
 
+<configuration>
 Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
+
 - `research_dir`: Directory for research documents (default: `thoughts/research`)
 - `plans_dir`: Directory for plans (default: `thoughts/plans`)
 
 If no settings file exists, use default paths.
+</configuration>
 
-## Initial Setup:
+<workflow>
 
-When this command is invoked, respond with:
+### Read Before Decomposing
+
+If the user mentions specific files (tickets, docs, JSON), read them fully in the main context before spawning any sub-tasks. Use the Read tool without limit/offset parameters to get entire file contents. Never delegate this initial reading to sub-agents.
+
+### Decomposition Strategy
+
+Take time to ultrathink about the underlying patterns, connections, and architectural implications the user might be seeking. Break the query into composable research areas:
+
+- Identify specific components, patterns, or concepts to investigate
+- Consider cross-component connections and architectural patterns
+- Consider which directories, files, or architectural patterns are relevant
+- Create a research plan using TodoWrite to track subtasks
+
+### Synthesis
+
+Wait for ALL sub-agent tasks to complete before synthesizing. Never proceed with partial results.
+
+- Compile all sub-agent results (codebase and thoughts findings)
+- Prioritize live codebase findings as primary source of truth
+- Use thoughts/ findings as supplementary historical context
+- Connect findings across different components
+- Include specific file paths and line numbers for reference
+- Highlight patterns, connections, and architectural decisions
+- Answer the user's specific questions with concrete evidence
+
+### Research Document
+
+Gather metadata before writing the document:
+
+- Get current date/time with timezone: !`date +"%Y-%m-%d %H:%M:%S %Z"`
+- Get author name: !`git config user.name`
+- Get current commit hash: !`git rev-parse HEAD`
+- Get current branch name: !`git rev-parse --abbrev-ref HEAD`
+- Filename: `[research_dir]/YYYY-MM-DD_HHMM_topic.md`
+
+Structure the document with YAML frontmatter followed by content:
+
+```markdown
+---
+date: "[date]"
+researcher: "[git user name]"
+git_commit: "[commit hash]"
+branch: "[branch name]"
+topic: "[topic]"
+tags: [research, codebase]
+status: complete
+last_updated: "[date]"
+last_updated_by: "[git user name]"
+---
+
+# Research: [User's Question/Topic]
+
+**Date**: [date]
+**Author**: [git user name]
+**Git Commit**: [commit hash]
+**Branch**: [branch name]
+
+## Research Question
+[Original user query]
+
+## Summary
+[High-level findings answering the user's question]
+
+## Detailed Findings
+
+### [Component/Area 1]
+- Finding with reference ([file.ext:line](permalink))
+- Connection to other components
+- Implementation details
+
+### [Component/Area 2]
+...
+
+## Code References
+- `path/to/file.py:123` - Description of what's there
+- `another/file.ts:45-67` - Description of the code block
+
+## Architecture Insights
+[Patterns, conventions, and design decisions discovered]
+
+## Historical Context (from thoughts/)
+[Relevant insights from thoughts/ directory with document references]
+
+## Related Research
+[Links to other research documents in the research directory]
+
+## Open Questions
+[Areas that need further investigation]
 ```
-I'm ready to research the codebase. Please provide your research question or area of interest, and I'll analyze it thoroughly by exploring relevant components and connections.
-```
 
-Then wait for the user's research query.
+If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
 
-## Steps to follow after receiving the research query:
+### Presenting Results
 
-1. **Read any directly mentioned files first:**
-   - If the user mentions specific files (tickets, docs, JSON), read them FULLY first
-   - **IMPORTANT**: Use the Read tool WITHOUT limit/offset parameters to read entire files
-   - **CRITICAL**: Read these files yourself in the main context before spawning any sub-tasks
-   - This ensures you have full context before decomposing the research
+- Present a concise summary of findings to the user
+- Include key file references for easy navigation
+- Ask if they have follow-up questions or need clarification
+- For follow-ups, append to the same research document and spawn new sub-agents as needed
+  - Update fields: `last_updated`, `last_updated_by`
+  - Add `last_updated_note: "Added follow-up research for [brief description]"`
+  - Add new section: `## Follow-up Research [timestamp]`
 
-2. **Analyze and decompose the research question:**
-   - Break down the user's query into composable research areas
-   - Take time to ultrathink about the underlying patterns, connections, and architectural implications the user might be seeking
-   - Identify specific components, patterns, or concepts to investigate
-   - Create a research plan using TodoWrite to track all subtasks
-   - Consider which directories, files, or architectural patterns are relevant
+</workflow>
 
-3. **Spawn parallel sub-agent tasks for comprehensive research:**
-   - Create multiple Task agents to research different aspects concurrently
-   - Use the right agent for each type of research:
+<success_criteria>
 
-   **For codebase investigation:**
-   - **codebase-locator** - To find files by topic/feature
-   - **codebase-analyzer** - To understand implementation details
-   - **codebase-pattern-finder** - To find similar patterns and examples
+- All sub-agent tasks completed (no partial results)
+- Research document created with metadata filled in (no placeholder values)
+- Findings include specific file paths and line numbers
+- User's question answered with concrete evidence from codebase
+- Summary presented with key file references for navigation
+</success_criteria>
 
-   **For historical context:**
-   - **thoughts-locator** - To discover documents in thoughts/ directory
-   - **thoughts-analyzer** - To extract insights from thought documents
+<agent_selection>
 
-   **For external research:**
-   - **web-search-researcher** - To research external APIs, libraries, or best practices
+Select the right agent for each type of investigation:
 
-   The key is to use these agents intelligently:
-   - Start with locator agents to find what exists
-   - Then use analyzer agents on the most promising findings
-   - Run multiple agents in parallel when they're searching for different things
-   - Each agent knows its job - just tell it what you're looking for
-   - Don't write detailed prompts about HOW to search - the agents already know
+**Codebase investigation:**
 
-4. **Wait for all sub-agents to complete and synthesize findings:**
-   - IMPORTANT: Wait for ALL sub-agent tasks to complete before proceeding
-   - Compile all sub-agent results (both codebase and thoughts findings)
-   - Prioritize live codebase findings as primary source of truth
-   - Use thoughts/ findings as supplementary historical context
-   - Connect findings across different components
-   - Include specific file paths and line numbers for reference
-   - Highlight patterns, connections, and architectural decisions
-   - Answer the user's specific questions with concrete evidence
+| Agent                     | Purpose                            | When to Use                               |
+| ------------------------- | ---------------------------------- | ----------------------------------------- |
+| `codebase-locator`        | Find files by topic/feature        | Starting point to discover what exists    |
+| `codebase-analyzer`       | Understand implementation details  | Deep dive into specific components        |
+| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples or conventions |
 
-5. **Gather metadata for the research document:**
-   - Get current date/time with timezone: !`date +"%Y-%m-%d %H:%M:%S %Z"`
-   - Get author name: !`git config user.name`
-   - Get current commit hash: !`git rev-parse HEAD`
-   - Get current branch name: !`git rev-parse --abbrev-ref HEAD`
-   - Filename: `[research_dir]/YYYY-MM-DD_HHMM_topic.md`
+**Historical context:**
 
-6. **Generate research document:**
-   - Use the metadata gathered in step 5
-   - Structure the document with YAML frontmatter followed by content:
+| Agent               | Purpose                                 | When to Use                       |
+| ------------------- | --------------------------------------- | --------------------------------- |
+| `thoughts-locator`  | Discover documents in thoughts/         | Find prior research or decisions  |
+| `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context |
 
-     ```markdown
-     # Research: [User's Question/Topic]
+**External research:**
 
-     **Date**: [date]
-     **Author**: [git user name]
-     **Git Commit**: [commit hash]
-     **Branch**: [branch name]
+| Agent                   | Purpose                                  | When to Use                          |
+| ----------------------- | ---------------------------------------- | ------------------------------------ |
+| `web-search-researcher` | Research APIs, libraries, best practices | Need information beyond the codebase |
 
-     ## Research Question
-     [Original user query]
+**Guidelines:**
 
-     ## Summary
-     [High-level findings answering the user's question]
+- Start with locator agents to find what exists, then use analyzer agents on the most promising findings
+- Run multiple agents in parallel when searching for different things
+- Each agent knows its job — provide what to find, not how to search
+- Do not write detailed prompts about HOW to search; the agents already know
+- Keep prompts focused on read-only operations
 
-     ## Detailed Findings
+</agent_selection>
 
-     ### [Component/Area 1]
-     - Finding with reference ([file.ext:line](link))
-     - Connection to other components
-     - Implementation details
+<anti_patterns>
 
-     ### [Component/Area 2]
-     ...
+- Tracing every single import/dependency
+- Analyzing generated or vendored code (node_modules, build/, dist/, .git/)
+- Researching test implementations unless specifically asked
+- Exploring unrelated "interesting" findings
+- Understanding entire subsystems when only a component is needed
+- Historical changes unless specifically about evolution/decisions
 
-     ## Code References
-     - `path/to/file.py:123` - Description of what's there
-     - `another/file.ts:45-67` - Description of the code block
+Stay focused on answering the user's actual question.
+</anti_patterns>
 
-     ## Architecture Insights
-     [Patterns, conventions, and design decisions discovered]
+<key_principles>
 
-     ## Historical Context (from thoughts/)
-     [Relevant insights from thoughts/ directory with references]
+- Always use parallel Task agents to maximize efficiency and minimize context usage
+- Always run fresh codebase research; never rely solely on existing research documents
+- Focus on concrete file paths and line numbers for developer reference
+- Research documents should be self-contained with all necessary context
+- Keep the main agent focused on synthesis, not deep file reading
+- Encourage sub-agents to find examples and usage patterns, not just definitions
+- Include temporal context (when the research was conducted)
+- Link to GitHub when possible for permanent references
+</key_principles>
 
-     ## Related Research
-     [Links to other research documents]
-
-     ## Open Questions
-     [Any areas that need further investigation]
-     ```
-
-7. **Add GitHub permalinks (if applicable):**
-   - Check if on main branch or if commit is pushed: `git rev-parse --abbrev-ref HEAD` and `git status`
-   - If on main/master or pushed, generate GitHub permalinks:
-     - Get repo info: `gh repo view --json owner,name`
-     - Create permalinks: `https://github.com/{owner}/{repo}/blob/{commit}/{file}#L{line}`
-   - Replace local file references with permalinks in the document
-
-8. **Sync and present findings:**
-   - Present a concise summary of findings to the user
-   - Include key file references for easy navigation
-   - Ask if they have follow-up questions or need clarification
-
-9. **Handle follow-up questions:**
-   - If the user has follow-up questions, append to the same research document
-   - Update the frontmatter fields `last_updated` and `last_updated_by` to reflect the update
-   - Add `last_updated_note: "Added follow-up research for [brief description]"` to frontmatter
-   - Add a new section: `## Follow-up Research [timestamp]`
-   - Spawn new sub-agents as needed for additional investigation
-   - Continue updating the document and syncing
-
-## Circuit Breakers
-
+<circuit_breakers>
 Stop and reframe the research if:
+
 - No meaningful findings after 3 parallel agent attempts
 - Core directories/files mentioned don't exist
 - Sub-agents return contradictory information
 - More than 10 sub-agents needed (scope too broad)
 - Research expanding beyond original question
 
-When a circuit breaker triggers, either:
-1. Reframe the question more narrowly
-2. Ask the user for clarification
-3. Document what couldn't be researched and why
+When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be researched and why.
+</circuit_breakers>
 
-## Known Rabbit Holes to Avoid
-
-Don't get sidetracked by:
-- Tracing every single import/dependency
-- Analyzing generated or vendored code (node_modules, build/, dist/, .git/)
-- Researching test implementations unless specifically asked
-- Exploring unrelated "interesting" findings
-- Attempting to understand entire subsystems when only a component is needed
-- Historical changes unless specifically about evolution/decisions
-
-Stay focused on answering the user's actual question.
-
-## Important notes:
-- Always use parallel Task agents to maximize efficiency and minimize context usage
-- Always run fresh codebase research - never rely solely on existing research documents
-- The thoughts/ directory provides historical context to supplement live findings
-- Focus on finding concrete file paths and line numbers for developer reference
-- Research documents should be self-contained with all necessary context
-- Each sub-agent prompt should be specific and focused on read-only operations
-- Consider cross-component connections and architectural patterns
-- Include temporal context (when the research was conducted)
-- Link to GitHub when possible for permanent references
-- Keep the main agent focused on synthesis, not deep file reading
-- Encourage sub-agents to find examples and usage patterns, not just definitions
-- **File reading**: Always read mentioned files FULLY (no limit/offset) before spawning sub-tasks
-- **Critical ordering**: Follow the numbered steps exactly
-  - ALWAYS read mentioned files first before spawning sub-tasks (step 1)
-  - ALWAYS wait for all sub-agents to complete before synthesizing (step 4)
-  - ALWAYS gather metadata before writing the document (step 5 before step 6)
-  - NEVER write the research document with placeholder values
-- **Frontmatter consistency**:
-  - Always include frontmatter at the beginning of research documents
-  - Keep frontmatter fields consistent across all research documents
-  - Update frontmatter when adding follow-up research
-  - Use snake_case for multi-word field names (e.g., `last_updated`, `git_commit`)
-  - Tags should be relevant to the research topic and components studied
+<constraints>
+- Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
+- Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
+- Gather metadata before writing the document — git state should be captured at research time, not after
+- NEVER write the research document with placeholder values — research documents are permanent artifacts that others will reference
+</constraints>

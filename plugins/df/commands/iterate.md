@@ -1,57 +1,32 @@
 ---
-allowed-tools: Bash(git log:*), Bash(git diff:*), Bash(git status:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 description: Iterate on existing implementation plans with thorough research and updates
 ---
 
-# Iterate Implementation Plan
+<objective>
+Update an existing implementation plan based on feedback.
 
-You are tasked with updating existing implementation plans based on user feedback. You should be skeptical, thorough, and ensure changes are grounded in actual codebase reality.
+Be skeptical, thorough, and ensure changes are grounded in actual codebase reality.
+</objective>
 
-## Configuration
+<quick_start>
+If both a plan file path and feedback are provided, skip the prompts — immediately read the plan FULLY and begin the update process.
 
+If a plan file path is provided but no feedback, read the plan FULLY and ask the user what changes they want to make, then wait for input before proceeding.
+
+If no plan file path is provided, ask the user which plan to update, then wait for input before proceeding.
+</quick_start>
+
+<configuration>
 Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
+
 - `research_dir`: Directory for research documents (default: `thoughts/research`)
 - `plans_dir`: Directory for plans (default: `thoughts/plans`)
 
 If no settings file exists, use default paths.
+</configuration>
 
-## Initial Response
-
-When this command is invoked:
-
-1. **Parse the input to identify**:
-   - Plan file path (e.g., `[plans_dir]/2025-10-16-feature.md`)
-   - Requested changes/feedback
-
-2. **Handle different input scenarios**:
-
-   **If NO plan file provided**:
-   ```
-   I'll help you iterate on an existing implementation plan.
-
-   Which plan would you like to update? Please provide the path to the plan file.
-
-   Tip: You can list recent plans with `ls -lt [plans_dir]/ | head`
-   ```
-   Wait for user input, then re-check for feedback.
-
-   **If plan file provided but NO feedback**:
-   ```
-   I've found the plan at [path]. What changes would you like to make?
-
-   For example:
-   - "Add a phase for migration handling"
-   - "Update the success criteria to include performance tests"
-   - "Adjust the scope to exclude feature X"
-   - "Split Phase 2 into two separate phases"
-   ```
-   Wait for user input.
-
-   **If BOTH plan file AND feedback provided**:
-   - Proceed immediately to Step 1
-   - No preliminary questions needed
-
-## Process Steps
+<workflow>
 
 ### Step 1: Read and Understand Current Plan
 
@@ -74,22 +49,38 @@ If the user's feedback requires understanding new code patterns or validating as
 1. **Create a research todo list** using TodoWrite
 
 2. **Spawn parallel sub-tasks for research**:
-   Use the right agent for each type of research:
 
-   **For code investigation:**
-   - **codebase-locator** - To find relevant files
-   - **codebase-analyzer** - To understand implementation details
-   - **codebase-pattern-finder** - To find similar patterns
+   Select the right agent for each type of investigation:
 
-   **For historical context:**
-   - **thoughts-locator** - To find related research or decisions
-   - **thoughts-analyzer** - To extract insights from documents
+   **Codebase investigation:**
 
-   **For external research:**
-   - **web-search-researcher** - To research external APIs, libraries, or modern patterns
+   | Agent                     | Purpose                            | When to Use                               |
+   | ------------------------- | ---------------------------------- | ----------------------------------------- |
+   | `codebase-locator`        | Find files by topic/feature        | Starting point to discover what exists    |
+   | `codebase-analyzer`       | Understand implementation details  | Deep dive into specific components        |
+   | `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples or conventions |
 
-   **Be EXTREMELY specific about directories**:
-   - Include full path context in prompts
+   **Historical context:**
+
+   | Agent               | Purpose                                 | When to Use                       |
+   | ------------------- | --------------------------------------- | --------------------------------- |
+   | `thoughts-locator`  | Discover documents in thoughts/         | Find prior research or decisions  |
+   | `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context |
+
+   **External research:**
+
+   | Agent                   | Purpose                                  | When to Use                          |
+   | ----------------------- | ---------------------------------------- | ------------------------------------ |
+   | `web-search-researcher` | Research APIs, libraries, best practices | Need information beyond the codebase |
+
+   **Guidelines:**
+   - Only spawn if truly needed — don't research for simple changes
+   - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
+   - Run multiple agents in parallel when searching for different things
+   - Each agent knows its job — provide what to find, not how to search
+   - Do not write detailed prompts about HOW to search; the agents already know
+   - Keep prompts focused on read-only operations
+   - Request specific file:line references in responses
 
 3. **Read any new files identified by research**:
    - Read them FULLY into the main context
@@ -99,7 +90,7 @@ If the user's feedback requires understanding new code patterns or validating as
 
 ### Step 3: Present Understanding and Approach
 
-Before making changes, confirm your understanding:
+Before making changes, confirm understanding:
 
 ```
 Based on your feedback, I understand you want to:
@@ -141,8 +132,9 @@ Get user confirmation before proceeding.
 ### Step 5: Review
 
 1. **Present the changes made**:
+
    ```
-   I've updated the plan at `[plans_dir]/[filename].md`
+   I've updated the plan at `[path]`
 
    Changes made:
    - [Specific change 1]
@@ -157,96 +149,65 @@ Get user confirmation before proceeding.
 
 2. **Be ready to iterate further** based on feedback
 
-## Important Guidelines
+</workflow>
 
-1. **Be Skeptical**:
-   - Don't blindly accept change requests that seem problematic
-   - Question vague feedback - ask for clarification
-   - Verify technical feasibility with code research
-   - Point out potential conflicts with existing plan phases
+<success_criteria>
 
-2. **Be Surgical**:
-   - Make precise edits, not wholesale rewrites
-   - Preserve good content that doesn't need changing
-   - Only research what's necessary for the specific changes
-   - Don't over-engineer the updates
+- All requested changes applied accurately to the plan
+- Updated sections are consistent with unchanged sections
+- File:line references are accurate for new content
+- Success criteria updated if scope changed
+- No placeholder values or unresolved questions in the plan
+- User confirms the changes match their intent
+</success_criteria>
 
-3. **Be Thorough**:
-   - Read the entire existing plan before making changes
-   - Research code patterns if changes require new technical understanding
-   - Ensure updated sections maintain quality standards
-   - Verify success criteria are still measurable
+<guidelines>
+- **Be Surgical** — precise edits over wholesale rewrites; preserve good content that doesn't need changing; only research what's necessary for the specific changes
+- **Be Skeptical** — question vague feedback; verify technical feasibility with code research; point out conflicts with existing plan phases
+- **Be Interactive** — confirm understanding before editing; show planned changes before making them; allow course corrections
+- **No Open Questions** — if changes raise questions, ASK or research immediately; never update the plan with unresolved questions
 
-4. **Be Interactive**:
-   - Confirm understanding before making changes
-   - Show what you plan to change before doing it
-   - Allow course corrections
-   - Don't disappear into research without communicating
+When updating success criteria, always maintain the automated vs manual verification distinction.
+</guidelines>
 
-5. **Track Progress**:
-   - Use TodoWrite to track update tasks if complex
-   - Update todos as you complete research
-   - Mark tasks complete when done
+<anti_patterns>
 
-6. **No Open Questions**:
-   - If the requested change raises questions, ASK
-   - Research or get clarification immediately
-   - Do NOT update the plan with unresolved questions
-   - Every change must be complete and actionable
+- Rewriting the entire plan when only a section needs updating
+- Researching code patterns for simple text/scope adjustments
+- Tracing every single import/dependency chain
+- Analyzing generated or vendored code (node_modules, build/, dist/, .git/)
+- Expanding scope beyond what was requested
+- Adding new phases or features the user didn't ask for
 
-## Success Criteria Guidelines
+Stay focused on making the specific changes requested.
+</anti_patterns>
 
-When updating success criteria, always maintain the two-category structure:
+<key_principles>
 
-1. **Automated Verification** (can be run by execution agents):
-   - Commands that can be run: `make test`, `npm run lint`, etc.
-   - Specific files that should exist
-   - Code compilation/type checking
+- Read the complete plan before making any changes — context matters
+- Confirm understanding before editing — prevent misinterpretation
+- Use parallel Task agents for research when needed, not for simple edits
+- Surgical edits over wholesale rewrites — preserve existing quality
+- Every change must be complete and actionable — no placeholders
+- Keep the main agent focused on synthesis and editing, not deep file reading
+</key_principles>
 
-2. **Manual Verification** (requires human testing):
-   - UI/UX functionality
-   - Performance under real conditions
-   - Edge cases that are hard to automate
-   - User acceptance criteria
+<circuit_breakers>
+Stop and ask the user for guidance if:
 
-## Sub-task Spawning Best Practices
+- Requested changes conflict with other plan phases
+- Research reveals the plan's assumptions are fundamentally wrong
+- Changes would require rewriting more than half the plan
+- Sub-agents return contradictory information about the codebase
+- More than 10 sub-agents needed for research (scope too broad)
 
-When spawning research sub-tasks:
+When triggered: present the issue clearly, explain what was found, and ask how to proceed.
+</circuit_breakers>
 
-1. **Only spawn if truly needed** - don't research for simple changes
-2. **Spawn multiple tasks in parallel** for efficiency
-3. **Each task should be focused** on a specific area
-4. **Provide detailed instructions** including:
-   - Exactly what to search for
-   - Which directories to focus on
-   - What information to extract
-   - Expected output format
-5. **Request specific file:line references** in responses
-6. **Wait for all tasks to complete** before synthesizing
-7. **Verify sub-task results** - if something seems off, spawn follow-up tasks
-
-## Example Interaction Flows
-
-**Scenario 1: User provides everything upfront**
-```
-User: /iterate [plans_dir]/2025-10-16-feature.md - add phase for error handling
-Assistant: [Reads plan, researches error handling patterns, updates plan]
-```
-
-**Scenario 2: User provides just plan file**
-```
-User: /iterate [plans_dir]/2025-10-16-feature.md
-Assistant: I've found the plan. What changes would you like to make?
-User: Split Phase 2 into two phases - one for backend, one for frontend
-Assistant: [Proceeds with update]
-```
-
-**Scenario 3: User provides no arguments**
-```
-User: /iterate
-Assistant: Which plan would you like to update? Please provide the path...
-User: [plans_dir]/2025-10-16-feature.md
-Assistant: I've found the plan. What changes would you like to make?
-User: Add more specific success criteria
-Assistant: [Proceeds with update]
-```
+<constraints>
+- Read the existing plan fully before making any changes — partial understanding leads to inconsistent edits
+- Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
+- Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete conclusions
+- Confirm understanding with the user before editing — prevent wasted effort on misinterpreted feedback
+- NEVER update the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+</constraints>
