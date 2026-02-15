@@ -10,8 +10,11 @@ This repository contains reusable Claude Code plugins that can be installed in o
 
 ```
 ai-foo/
-└── plugins/                    # Distributable Claude Code plugins
-    └── df/                     # Development flow plugin
+├── .claude/                    # Project-level agents and commands
+├── .claude-plugin/             # Plugin marketplace registry
+├── plugins/                    # Distributable Claude Code plugins
+│   └── df/                     # Development flow plugin
+└── thoughts/                   # Research, plans, and docs
 ```
 
 ## Plugins
@@ -104,6 +107,7 @@ plugin-name/
 
 1. Create plugin directory: `plugins/<plugin-name>/`
 2. Create metadata file: `plugins/<plugin-name>/.claude-plugin/plugin.json`
+
    ```json
    {
      "name": "<plugin-name>",
@@ -112,9 +116,11 @@ plugin-name/
      "author": { "name": "fokkoru" }
    }
    ```
+
 3. Add commands/agents as needed
 4. Create `README.md` with usage instructions
 5. Register in `.claude-plugin/marketplace.json`:
+
    ```json
    {
      "name": "<plugin-name>",
@@ -155,3 +161,32 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 - `feat(df): add validate command`
 - `fix(df): correct path resolution in plan command`
 - `docs(df): update installation instructions`
+
+## Claude Code Documentation (Source of Truth)
+
+**Concepts:**
+
+- [How Claude Code Works](https://code.claude.com/docs/en/how-claude-code-works)
+- [Features Overview](https://code.claude.com/docs/en/features-overview)
+- [Memory](https://code.claude.com/docs/en/memory)
+- [Best Practices](https://code.claude.com/docs/en/best-practices)
+- [Common Workflows](https://code.claude.com/docs/en/common-workflows)
+
+**Extensibility:**
+
+- [Skills](https://code.claude.com/docs/en/skills)
+- [Sub-agents](https://code.claude.com/docs/en/sub-agents)
+- [Hooks Guide](https://code.claude.com/docs/en/hooks-guide)
+- [Plugins](https://code.claude.com/docs/en/plugins)
+- [Discover Plugins](https://code.claude.com/docs/en/discover-plugins)
+- [MCP](https://code.claude.com/docs/en/mcp)
+- [Output Styles](https://code.claude.com/docs/en/output-styles)
+- [Headless Mode](https://code.claude.com/docs/en/headless)
+
+**Reference:**
+
+- [CLI Reference](https://code.claude.com/docs/en/cli-reference)
+- [Settings](https://code.claude.com/docs/en/settings)
+- [Hooks](https://code.claude.com/docs/en/hooks)
+- [Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
+- [Troubleshooting](https://code.claude.com/docs/en/troubleshooting)
