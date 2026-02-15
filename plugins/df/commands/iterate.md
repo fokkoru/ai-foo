@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 description: Iterate on existing implementation plans with thorough research and updates
 ---
 
@@ -18,12 +18,8 @@ If no plan file path is provided, ask the user which plan to update, then wait f
 </quick_start>
 
 <configuration>
-Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
-
-- `research_dir`: Directory for research documents (default: `thoughts/research`)
-- `plans_dir`: Directory for plans (default: `thoughts/plans`)
-
-If no settings file exists, use default paths.
+- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
+- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
 </configuration>
 
 <workflow>

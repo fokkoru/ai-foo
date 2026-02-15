@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Write, Edit, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
+allowed-tools: Read, Write, Edit, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 description: Research codebase comprehensively using parallel sub-agents
 ---
 
@@ -19,12 +19,8 @@ If no research question is provided, ask the user what they want to research bef
 </quick_start>
 
 <configuration>
-Check for `.claude/df.local.md` settings file. If it exists, read the YAML frontmatter for:
-
-- `research_dir`: Directory for research documents (default: `thoughts/research`)
-- `plans_dir`: Directory for plans (default: `thoughts/plans`)
-
-If no settings file exists, use default paths.
+- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
+- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
 </configuration>
 
 <workflow>

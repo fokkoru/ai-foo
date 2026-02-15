@@ -53,14 +53,14 @@ Commands in brackets `[]` are optional.
 claude --plugin-dir /path/to/ai-foo/plugins/df
 ```
 
-**Configure paths** by creating `.claude/df.local.md` in the target project:
+**Configure paths** using environment variables (optional):
 
-```yaml
----
-research_dir: thoughts/research
-plans_dir: thoughts/plans
----
+```bash
+export DF_RESEARCH_DIR=custom/research
+export DF_PLANS_DIR=custom/plans
 ```
+
+Defaults: `thoughts/research` and `thoughts/plans`.
 
 ## Versioning
 

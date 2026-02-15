@@ -36,21 +36,17 @@ Note: Commands in brackets `[]` are optional.
 
 ## Configuration
 
-Create `.claude/df.local.md` in your project to customize paths:
+Commands use these default paths:
 
-```yaml
----
-research_dir: thoughts/research
-plans_dir: thoughts/plans
----
+- Research documents: `thoughts/research`
+- Implementation plans: `thoughts/plans`
+
+To override, set environment variables before running Claude:
+
+```bash
+export DF_RESEARCH_DIR=docs/research
+export DF_PLANS_DIR=docs/plans
 ```
-
-### Default Paths
-
-If no configuration file exists:
-
-- Research documents: `thoughts/research/`
-- Implementation plans: `thoughts/plans/`
 
 ## Installation
 
