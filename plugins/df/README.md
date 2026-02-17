@@ -7,7 +7,7 @@ Development flow - workflow automation for individual developers.
 This plugin provides a structured workflow for feature development:
 
 ```
-/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit
+/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit → [/df:handoff]
 ```
 
 Note: Commands in brackets `[]` are optional.
@@ -22,6 +22,7 @@ Note: Commands in brackets `[]` are optional.
 | `/df:implement` | Execute plans with verification and phase-by-phase progress |
 | `/df:validate`  | Verify implementation against plan, identify issues         |
 | `/df:commit`    | Commit changes in logical chunks (Conventional Commits)     |
+| `/df:handoff`   | Create handoff document for session transfer                |
 
 ## Agents
 

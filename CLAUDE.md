@@ -24,7 +24,7 @@ ai-foo/
 Development workflow plugin providing a structured feature development cycle:
 
 ```
-/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit
+/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit → [/df:handoff]
 ```
 
 Commands in brackets `[]` are optional.
@@ -37,6 +37,7 @@ Commands in brackets `[]` are optional.
 | `/df:implement` | Execute plans phase by phase with verification           |
 | `/df:validate`  | Verify implementation against plan, identify issues      |
 | `/df:commit`    | Commit changes in logical chunks (Conventional Commits)  |
+| `/df:handoff`   | Create handoff document for session transfer              |
 
 | Agent                     | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
