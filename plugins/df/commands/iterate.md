@@ -86,6 +86,12 @@ If the user's feedback requires understanding new code patterns or validating as
 
 ### Step 3: Present Understanding and Approach
 
+**If the user's feedback contradicts your understanding of the codebase:**
+
+- DO NOT just accept the correction
+- Spawn research tasks to verify the feedback against actual code
+- Only proceed once the facts are confirmed through code investigation
+
 Before making changes, confirm understanding:
 
 ```

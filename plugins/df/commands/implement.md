@@ -63,6 +63,10 @@ If a mismatch is encountered:
 After implementing a phase:
 
 1. Run the automated success criteria checks
+   For each automated success criterion in the plan:
+   - If the check **passes**: mark `[x]` in the plan file
+   - If the check **fails**: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
+   - If the check **requires manual testing**: leave `[ ]` unchanged
 2. Fix any issues before proceeding
 3. Update progress in both the plan file and todos
 4. Check off completed items in the plan file itself using Edit

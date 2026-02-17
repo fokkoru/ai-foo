@@ -91,6 +91,26 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `style`
 
 </commit_format>
 
+<message_quality>
+
+Write commit messages that explain WHY, not just WHAT:
+
+**Focus on:**
+
+- Why the change was made (motivation, context)
+- Key decisions and tradeoffs behind the approach
+- Impact or implications of the change
+
+**Avoid:**
+
+- Mechanical lists of files modified without context
+- Restating what's obvious from the diff
+- Generic summaries that don't add value beyond the type/scope
+
+The type and scope convey WHAT changed. The message body should convey WHY it matters.
+
+</message_quality>
+
 <success_criteria>
 
 - All logical change groups committed with appropriate conventional messages
