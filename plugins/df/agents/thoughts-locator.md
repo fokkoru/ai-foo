@@ -14,6 +14,7 @@ Find relevant documents in thoughts/ directory for historical context, past deci
 ## Circuit Breakers
 
 Stop immediately if:
+
 - More than 50 documents match initial search (too broad)
 - No relevant documents found after checking all major subdirectories
 - Search expanding beyond the original topic
@@ -22,6 +23,7 @@ Stop immediately if:
 ## Known Rabbit Holes
 
 Don't get sidetracked by:
+
 - Reading full document contents (just find and categorize)
 - Analyzing document quality or completeness
 - Exploring every interesting document discovered
@@ -54,9 +56,10 @@ Don't get sidetracked by:
 
 ## Search Strategy
 
-First, think deeply about the search approach - consider which directories to prioritize based on the query, what search patterns and synonyms to use, and how to best categorize the findings for the user.
+First, carefully consider the search approach - which directories to prioritize based on the query, what search patterns and synonyms to use, and how to best categorize the findings for the user.
 
 ### Directory Structure
+
 ```
 thoughts/
 ├── research/    # Research documents
@@ -66,6 +69,7 @@ thoughts/
 ```
 
 ### Search Patterns
+
 - Use grep for content searching
 - Use glob for filename patterns
 - Check standard subdirectories

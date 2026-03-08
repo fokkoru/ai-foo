@@ -22,7 +22,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
 <verification_methodology>
 
-Use goal-backward verification instead of task-checklist verification:
+Use goal-backward verification instead of task-checklist verification. Take time to ultrathink about what must be true for the plan's goal to be achieved:
 
 1. **Truths**: What must be TRUE for the plan's goal to be achieved?
 2. **Artifacts**: What must EXIST for those truths to hold?
@@ -161,7 +161,7 @@ Structure the report as:
 - Automated criteria listed with pass/fail/not-run status
 - Manual testing steps documented clearly
 - Validation report generated with specific file:line references
-</success_criteria>
+  </success_criteria>
 
 <guidelines>
 - **Be Thorough** — check every phase and every success criterion; don't skip verification steps
@@ -178,7 +178,7 @@ If you were part of the implementation session:
 - Review the conversation history and todo list for what was completed
 - Focus validation on work done in this session
 - Be honest about any shortcuts or incomplete items
-</existing_context>
+  </existing_context>
 
 <validation_checklist>
 Always verify:
@@ -192,7 +192,7 @@ Always verify:
 - [ ] Manual test steps are clear
 - [ ] Key artifacts pass 3-level verification (exist, substantive, wired)
 - [ ] No stub implementations detected in delivered code
-</validation_checklist>
+      </validation_checklist>
 
 <anti_patterns>
 

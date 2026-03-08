@@ -27,7 +27,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 1. Read the plan completely and check for any existing checkmarks (`- [x]`)
 2. Read the original ticket and all files mentioned in the plan
 3. **Read files fully** — never use limit/offset parameters, complete context is needed
-4. Think deeply about how the pieces fit together
+4. Take time to ultrathink about how the pieces fit together
 5. Create a todo list to track progress
 6. Start implementing once the requirements are confirmed understood
 
@@ -46,7 +46,7 @@ When things don't match the plan exactly, think about why and communicate clearl
 
 If a mismatch is encountered:
 
-- STOP and think deeply about why the plan can't be followed
+- STOP and ultrathink about why the plan can't be followed
 - Present the issue clearly:
 
   ```
@@ -193,7 +193,7 @@ If context is past 70%, do not start a new phase. Complete the current one, upda
 - Plan checkboxes updated as work progresses
 - Build/test commands execute successfully
 - No unresolved mismatches between plan and implementation
-</success_criteria>
+  </success_criteria>
 
 <guidelines>
 - Follow the plan's intent, not just the letter — adapt to codebase reality

@@ -27,7 +27,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 1. Read the plan completely and check for any existing checkmarks (`- [x]`)
 2. Read the original ticket/research documents and all files mentioned in the plan
 3. **Read files fully** — never use limit/offset parameters, complete context is needed
-4. Think deeply about how the pieces fit together
+4. Take time to ultrathink about how the pieces fit together
 5. Identify the first unchecked phase (or Phase 1 if starting fresh)
 6. Create a todo list to track progress
 
@@ -43,7 +43,7 @@ Implement only the current phase. Do not start the next phase.
 
 If a mismatch is encountered:
 
-- STOP and think deeply about why the plan can't be followed
+- STOP and ultrathink about why the plan can't be followed
 - Present the issue clearly:
 
   ```
@@ -236,7 +236,7 @@ If context is past 70%, do not start a new phase. Complete the current one, comm
 - Each phase gets its own atomic commit with a conventional message
 - Plan checkboxes updated as work progresses
 - No unresolved mismatches between plan and implementation
-</success_criteria>
+  </success_criteria>
 
 <guidelines>
 - Follow the plan's intent, not just the letter — adapt to codebase reality

@@ -28,7 +28,7 @@ Then wait for input before proceeding.
 
 <plan_shaping>
 
-Before diving into detailed steps, understand how to shape the planning approach:
+Before diving into detailed steps, ultrathink about how to shape the planning approach:
 
 ### Define the Solution Envelope
 
@@ -201,6 +201,7 @@ After structure approval:
 [A Specification of the desired end state after this plan is complete, and how to verify it]
 
 ### Key Discoveries:
+
 - [Important finding with file:line reference]
 - [Pattern to follow]
 - [Constraint to work within]
@@ -212,6 +213,7 @@ After structure approval:
 ## Rabbit Holes to Avoid
 
 [Document known complexity traps specific to this implementation:]
+
 - [Premature optimization areas]
 - [Over-engineering temptations]
 - [Scope creep risks identified during research]
@@ -226,11 +228,13 @@ After structure approval:
 ## Phase 1: [Descriptive Name]
 
 ### Overview
+
 [What this phase accomplishes]
 
 ### Changes Required:
 
 #### 1. [Component/File Group]
+
 **File**: `path/to/file.ext`
 **Changes**: [Summary of changes]
 
@@ -241,10 +245,12 @@ After structure approval:
 ### Success Criteria:
 
 #### Automated Verification:
+
 - [ ] [Command to run or file to check]
 - [ ] [Another automated check]
 
 #### Manual Verification:
+
 - [ ] [UI or UX check requiring human judgment]
 - [ ] [Performance or edge case verification]
 
@@ -259,13 +265,16 @@ After structure approval:
 ## Testing Strategy
 
 ### Unit Tests:
+
 - [What to test]
 - [Key edge cases]
 
 ### Integration Tests:
+
 - [End-to-end scenarios]
 
 ### Manual Testing Steps:
+
 1. [Specific step to verify feature]
 2. [Another verification step]
 3. [Edge case to test manually]
@@ -284,7 +293,7 @@ After structure approval:
 - Similar implementation: `[file:line]`
 ````
 
-   If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
+If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
 
 ### Step 5: Sync and Review
 
@@ -317,7 +326,7 @@ After structure approval:
 - All research questions resolved (no "TBD" or open questions in final plan)
 - Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
 - User confirms plan structure, phasing, and technical approach
-</success_criteria>
+  </success_criteria>
 
 <success_criteria_guidelines>
 
@@ -464,7 +473,7 @@ Stay focused on planning what was actually requested.
 - Encourage sub-agents to find examples and usage patterns, not just definitions
 - Include temporal context (when the plan was created)
 - Link to GitHub when possible for permanent references
-</key_principles>
+  </key_principles>
 
 <context_budget>
 
