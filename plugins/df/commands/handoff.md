@@ -27,10 +27,10 @@ Compact and summarize context without losing key details.
 ### Step 1: Gather Context
 
 1. **Collect metadata**:
-   - Current date/time: !`date +"%Y-%m-%d %H:%M:%S %Z"`
-   - Author: !`git config user.name`
-   - Git commit: !`git rev-parse HEAD`
-   - Branch: !`git rev-parse --abbrev-ref HEAD`
+   - Current date/time: `date +"%Y-%m-%d %H:%M:%S %Z"`
+   - Author: `git config user.name`
+   - Git commit: `git rev-parse HEAD`
+   - Branch: `git rev-parse --abbrev-ref HEAD`
 
 2. **Assess current work state**:
    - Run `git status` to see uncommitted changes

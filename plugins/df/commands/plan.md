@@ -172,10 +172,10 @@ Once aligned on approach:
 After structure approval:
 
 1. **Gather metadata before writing the document**:
-   - Get current date/time with timezone: !`date +"%Y-%m-%d %H:%M:%S %Z"`
-   - Get author name: !`git config user.name`
-   - Get git commit hash: !`git rev-parse HEAD`
-   - Get current branch name: !`git rev-parse --abbrev-ref HEAD`
+   - Get current date/time with timezone: `date +"%Y-%m-%d %H:%M:%S %Z"`
+   - Get author name: `git config user.name`
+   - Get git commit hash: `git rev-parse HEAD`
+   - Get current branch name: `git rev-parse --abbrev-ref HEAD`
    - Filename: `[plans_dir]/YYYY-MM-DD_HHMM_topic.md`
 
 2. **Use this template structure**:
