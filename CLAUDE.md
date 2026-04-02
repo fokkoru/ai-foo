@@ -37,7 +37,7 @@ Commands in brackets `[]` are optional.
 | `/df:implement` | Execute plans phase by phase with verification           |
 | `/df:validate`  | Verify implementation against plan, identify issues      |
 | `/df:commit`    | Commit changes in logical chunks (Conventional Commits)  |
-| `/df:handoff`   | Create handoff document for session transfer              |
+| `/df:handoff`   | Create handoff document for session transfer             |
 
 | Agent                     | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
@@ -75,16 +75,19 @@ When committing changes to a plugin, update its version in `.claude-plugin/marke
 | New features (new commands, agents, skills)           | MINOR | 1.0.0 → 1.1.0 |
 | Bug fixes, docs, minor tweaks                         | PATCH | 1.0.0 → 1.0.1 |
 
-**Files to update:**
+**File to update:**
 
-1. `plugins/<name>/.claude-plugin/plugin.json` — update `"version"` field
-2. `.claude-plugin/marketplace.json` — update `"version"` in the plugin entry
+`.claude-plugin/marketplace.json` — update `"version"` in the plugin entry
+
+> Note: For relative-path plugins, version lives only in `marketplace.json`. Do not set `version` in `plugin.json` — it silently overrides the marketplace version.
 
 **When to update:**
 
 - Any change to files in `plugins/<name>/commands/` or `plugins/<name>/agents/` → bump version
 - Changes only to README or docs → bump PATCH
 - No version bump needed for changes outside plugin folders
+
+**Version bumps are always separate commits:** `chore(<plugin>): bump version to X.Y.Z`
 
 ## Plugin Structure
 
@@ -112,7 +115,6 @@ plugin-name/
    ```json
    {
      "name": "<plugin-name>",
-     "version": "1.0.0",
      "description": "Brief description",
      "author": { "name": "fokkoru" }
    }
@@ -163,31 +165,6 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 - `fix(df): correct path resolution in plan command`
 - `docs(df): update installation instructions`
 
-## Claude Code Documentation (Source of Truth)
+## Gotchas
 
-**Concepts:**
-
-- [How Claude Code Works](https://code.claude.com/docs/en/how-claude-code-works)
-- [Features Overview](https://code.claude.com/docs/en/features-overview)
-- [Memory](https://code.claude.com/docs/en/memory)
-- [Best Practices](https://code.claude.com/docs/en/best-practices)
-- [Common Workflows](https://code.claude.com/docs/en/common-workflows)
-
-**Extensibility:**
-
-- [Skills](https://code.claude.com/docs/en/skills)
-- [Sub-agents](https://code.claude.com/docs/en/sub-agents)
-- [Hooks Guide](https://code.claude.com/docs/en/hooks-guide)
-- [Plugins](https://code.claude.com/docs/en/plugins)
-- [Discover Plugins](https://code.claude.com/docs/en/discover-plugins)
-- [MCP](https://code.claude.com/docs/en/mcp)
-- [Output Styles](https://code.claude.com/docs/en/output-styles)
-- [Headless Mode](https://code.claude.com/docs/en/headless)
-
-**Reference:**
-
-- [CLI Reference](https://code.claude.com/docs/en/cli-reference)
-- [Settings](https://code.claude.com/docs/en/settings)
-- [Hooks](https://code.claude.com/docs/en/hooks)
-- [Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
-- [Troubleshooting](https://code.claude.com/docs/en/troubleshooting)
+- In command/skill `.md` files, `` !`command` `` is **preprocessing** — it runs at invocation time and injects output before Claude sees the prompt. Use plain `` `command` `` in workflow instructions for commands Claude should execute itself.
