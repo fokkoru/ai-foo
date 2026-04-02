@@ -9,6 +9,14 @@ Update an existing implementation plan based on feedback.
 Be skeptical, thorough, and ensure changes are grounded in actual codebase reality.
 </objective>
 
+<artifact_scope>
+This is a document-only command.
+You ONLY edit or write files under [plans_dir].
+NEVER create, write, or modify files anywhere else.
+Before any Write or Edit call, verify the target path is inside [plans_dir] — if it is not, stop and ask the user.
+If you identify a beneficial code change, document it in the plan and suggest the user run /df:implement. Do not make code changes in this command.
+</artifact_scope>
+
 <quick_start>
 If both a plan file path and feedback are provided, skip the prompts — immediately read the plan FULLY and begin the update process.
 
@@ -161,7 +169,7 @@ Get user confirmation before proceeding.
 - Success criteria updated if scope changed
 - No placeholder values or unresolved questions in the plan
 - User confirms the changes match their intent
-</success_criteria>
+  </success_criteria>
 
 <guidelines>
 - **Be Surgical** — precise edits over wholesale rewrites; preserve good content that doesn't need changing; only research what's necessary for the specific changes
@@ -192,7 +200,7 @@ Stay focused on making the specific changes requested.
 - Surgical edits over wholesale rewrites — preserve existing quality
 - Every change must be complete and actionable — no placeholders
 - Keep the main agent focused on synthesis and editing, not deep file reading
-</key_principles>
+  </key_principles>
 
 <circuit_breakers>
 Stop and ask the user for guidance if:
@@ -207,6 +215,7 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 </circuit_breakers>
 
 <constraints>
+- You ONLY edit or write files in [plans_dir] — NEVER modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read the existing plan fully before making any changes — partial understanding leads to inconsistent edits
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete conclusions

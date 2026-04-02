@@ -1,11 +1,19 @@
 ---
-allowed-tools: Read, Write, Edit, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
+allowed-tools: Read, Write, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 description: Research codebase comprehensively using parallel sub-agents
 ---
 
 <objective>
 Conduct comprehensive codebase research to answer a user's question by decomposing it into parallel sub-agent tasks and synthesizing findings into a structured research document.
 </objective>
+
+<artifact_scope>
+This is a document-only command.
+Your ONLY output artifact is a single document under [research_dir].
+NEVER create, write, or modify files anywhere else.
+Before any Write call, verify the target path is inside [research_dir] — if it is not, stop and ask the user.
+If you identify a beneficial code change, document it in the research document and suggest the user run /df:implement. Do not make code changes in this command.
+</artifact_scope>
 
 <quick_start>
 If no research question is provided, ask the user what they want to research before proceeding.
@@ -16,7 +24,7 @@ If no research question is provided, ask the user what they want to research bef
 4. Wait for ALL sub-agents to complete
 5. Synthesize findings and write research document
 6. Present concise summary with key file references
-</quick_start>
+   </quick_start>
 
 <configuration>
 - `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
@@ -83,35 +91,44 @@ last_updated_by: "[git user name]"
 **Branch**: [branch name]
 
 ## Research Question
+
 [Original user query]
 
 ## Summary
+
 [High-level findings answering the user's question]
 
 ## Detailed Findings
 
 ### [Component/Area 1]
+
 - Finding with reference ([file.ext:line](permalink))
 - Connection to other components
 - Implementation details
 
 ### [Component/Area 2]
+
 ...
 
 ## Code References
+
 - `path/to/file.py:123` - Description of what's there
 - `another/file.ts:45-67` - Description of the code block
 
 ## Architecture Insights
+
 [Patterns, conventions, and design decisions discovered]
 
 ## Historical Context (from thoughts/)
+
 [Relevant insights from thoughts/ directory with document references]
 
 ## Related Research
+
 [Links to other research documents in the research directory]
 
 ## Open Questions
+
 [Areas that need further investigation]
 ```
 
@@ -136,7 +153,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 - Findings include specific file paths and line numbers
 - User's question answered with concrete evidence from codebase
 - Summary presented with key file references for navigation
-</success_criteria>
+  </success_criteria>
 
 <agent_selection>
 
@@ -195,7 +212,7 @@ Stay focused on answering the user's actual question.
 - Encourage sub-agents to find examples and usage patterns, not just definitions
 - Include temporal context (when the research was conducted)
 - Link to GitHub when possible for permanent references
-</key_principles>
+  </key_principles>
 
 <circuit_breakers>
 Stop and reframe the research if:
@@ -210,6 +227,7 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 </circuit_breakers>
 
 <constraints>
+- Your ONLY output artifact is a research document in [research_dir] — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at research time, not after

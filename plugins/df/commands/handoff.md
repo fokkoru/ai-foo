@@ -9,6 +9,13 @@ Create a concise handoff document that captures current work state for seamless 
 Compact and summarize context without losing key details.
 </objective>
 
+<artifact_scope>
+This is a document-only command.
+Your ONLY output artifact is a single document under [handoffs_dir].
+NEVER create, write, or modify files anywhere else.
+Before any Write call, verify the target path is inside [handoffs_dir] — if it is not, stop and ask the user.
+</artifact_scope>
+
 <quick_start>
 
 1. Run `git status` and `git diff --stat HEAD` to understand current work state
@@ -16,7 +23,7 @@ Compact and summarize context without losing key details.
 3. Analyze the current session's work: what was done, what's pending, what was learned
 4. Write the handoff document
 5. Present the resume instruction to the user
-</quick_start>
+   </quick_start>
 
 <configuration>
 - `[handoffs_dir]`: !`printenv DF_HANDOFFS_DIR || echo thoughts/handoffs`
@@ -46,7 +53,7 @@ Compact and summarize context without losing key details.
 
 Use this template:
 
-````markdown
+```markdown
 ---
 date: "[date/time with timezone]"
 author: "[git user name]"
@@ -62,6 +69,7 @@ status: complete
 ## Tasks
 
 [Description of tasks worked on with status of each:]
+
 - **Completed**: [what was finished]
 - **In Progress**: [what's partially done, with specifics on where it stopped]
 - **Planned**: [what was discussed but not started]
@@ -71,28 +79,33 @@ status: complete
 ## Critical References
 
 [2-3 most important files that must be read to continue this work:]
+
 - `path/to/plan.md` — implementation plan being followed
 - `path/to/key-file.ext:line` — critical code context
 
 ## Recent Changes
 
 [Changes made to the codebase in this session:]
+
 - `path/to/file.ext:line-range` — [what was changed and why]
 
 ## Learnings
 
 [Important discoveries that the next session must know:]
+
 - [Pattern, root cause, or insight with file:line references]
 - [Gotcha or non-obvious behavior encountered]
 
 ## Artifacts
 
 [Files produced or updated during this session:]
+
 - `path/to/artifact.md` — [what it contains]
 
 ## Next Steps
 
 [Ordered list of what to do next:]
+
 1. [Most important next action]
 2. [Following action]
 3. [Further actions]
@@ -100,7 +113,7 @@ status: complete
 ## Notes
 
 [Other context that doesn't fit above — references, related files, useful commands]
-````
+```
 
 ### Step 3: Present Resume Instruction
 
@@ -122,7 +135,7 @@ To resume in a new session, provide this file:
 - File:line references included for recent changes and critical references
 - Next steps are ordered and concrete
 - Git metadata captured accurately in frontmatter
-</success_criteria>
+  </success_criteria>
 
 <guidelines>
 - **More information, not less** — the template is a minimum; include additional context when relevant
@@ -153,6 +166,7 @@ When triggered: explain what's missing and ask the user what they want captured.
 </circuit_breakers>
 
 <constraints>
+- Your ONLY output artifact is a handoff document in [handoffs_dir] — NEVER write or modify files anywhere else.
 - NEVER fabricate work that wasn't done — only document actual session activity
 - NEVER include sensitive data (credentials, tokens, keys) in handoff documents
 - NEVER skip the Learnings section — this is the highest-value content for session transfer

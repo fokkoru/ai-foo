@@ -1,5 +1,5 @@
 ---
-allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 description: Create detailed implementation plans with thorough research and iteration
 ---
 
@@ -8,6 +8,14 @@ Create a detailed implementation plan through interactive research and collabora
 
 Work through an iterative process — be skeptical, thorough, and collaborate with the user to produce high-quality technical specifications.
 </objective>
+
+<artifact_scope>
+This is a document-only command.
+Your ONLY output artifact is a single document under [plans_dir].
+NEVER create, write, or modify files anywhere else.
+Before any Write call, verify the target path is inside [plans_dir] — if it is not, stop and ask the user.
+If you identify a beneficial code change, document it in the plan document and suggest the user run /df:implement. Do not make code changes in this command.
+</artifact_scope>
 
 <quick_start>
 If a file path or task description is provided, skip the prompt — immediately read any provided files FULLY and begin the research process.
@@ -503,6 +511,7 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 </circuit_breakers>
 
 <constraints>
+- Your ONLY output artifact is a plan document in [plans_dir] — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
