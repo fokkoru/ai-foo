@@ -21,8 +21,13 @@ Note: Commands in brackets `[]` are optional.
 | `/df:iterate`   | Update existing plans based on feedback                     |
 | `/df:implement` | Execute plans with verification and phase-by-phase progress |
 | `/df:validate`  | Verify implementation against plan, identify issues         |
-| `/df:commit`    | Commit changes in logical chunks (Conventional Commits)     |
 | `/df:handoff`   | Create handoff document for session transfer                |
+
+## Skills
+
+| Skill         | Invocation                                                      | Description                                             |
+| ------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
+| `df:commit`   | `/df:commit` or natural language ("commit these changes", etc.) | Commit changes in logical chunks (full Conventional Commits 1.0.0 spec incl. breaking changes, issue refs) |
 
 ## Agents
 
@@ -64,16 +69,17 @@ claude --plugin-dir /path/to/ai-foo/plugins/df
 claude --plugin-dir /path/to/df
 ```
 
-### As Project-Local Commands
+### As Project-Local Files
 
-Copy commands directly into your project's `.claude/` directory:
+Copy commands, skills, and agents directly into your project's `.claude/` directory:
 
 ```bash
 cp -r df/commands your-project/.claude/commands/df
+cp -r df/skills your-project/.claude/skills/df
 cp -r df/agents your-project/.claude/agents
 ```
 
-Note: Project-local installation embeds the commands in your repository. Plugin installation keeps them external.
+Note: Project-local installation embeds the commands, skills, and agents in your repository. Plugin installation keeps them external.
 
 ## Usage Examples
 

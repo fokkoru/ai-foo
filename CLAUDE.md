@@ -36,8 +36,11 @@ Commands in brackets `[]` are optional.
 | `/df:iterate`   | Update existing plans based on feedback                  |
 | `/df:implement` | Execute plans phase by phase with verification           |
 | `/df:validate`  | Verify implementation against plan, identify issues      |
-| `/df:commit`    | Commit changes in logical chunks (Conventional Commits)  |
 | `/df:handoff`   | Create handoff document for session transfer             |
+
+| Skill         | Purpose                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| `df:commit`   | Commit changes in logical chunks (auto-triggers on commit intent; also invocable as `/df:commit`) |
 
 | Agent                     | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
