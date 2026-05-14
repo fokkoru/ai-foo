@@ -1,6 +1,7 @@
 ---
-allowed-tools: Read, Write, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
-description: Research codebase comprehensively using parallel sub-agents
+name: research
+description: Use when researching the codebase comprehensively using parallel sub-agents
+allowed-tools: Read, Write, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
@@ -9,9 +10,9 @@ Conduct comprehensive codebase research to answer a user's question by decomposi
 
 <artifact_scope>
 This is a document-only command.
-Your ONLY output artifact is a single document under [research_dir].
+Your ONLY output artifact is a single document under thoughts/research.
 NEVER create, write, or modify files anywhere else.
-Before any Write call, verify the target path is inside [research_dir] — if it is not, stop and ask the user.
+Before any Write call, verify the target path is inside thoughts/research — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the research document and suggest the user run /df:implement. Do not make code changes in this command.
 </artifact_scope>
 
@@ -25,11 +26,6 @@ If no research question is provided, ask the user what they want to research bef
 5. Synthesize findings and write research document
 6. Present concise summary with key file references
    </quick_start>
-
-<configuration>
-- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
-- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
-</configuration>
 
 <workflow>
 
@@ -66,7 +62,7 @@ Gather metadata before writing the document:
 - Get author name: `git config user.name`
 - Get current commit hash: `git rev-parse HEAD`
 - Get current branch name: `git rev-parse --abbrev-ref HEAD`
-- Filename: `[research_dir]/YYYY-MM-DD_HHMM_topic.md`
+- Filename: `thoughts/research/YYYY-MM-DD_HHMM_topic.md`
 
 Structure the document with YAML frontmatter followed by content:
 
@@ -222,12 +218,13 @@ Stop and reframe the research if:
 - Sub-agents return contradictory information
 - More than 10 sub-agents needed (scope too broad)
 - Research expanding beyond original question
+- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be researched and why.
 </circuit_breakers>
 
 <constraints>
-- Your ONLY output artifact is a research document in [research_dir] — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
+- Your ONLY output artifact is a research document in thoughts/research — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at research time, not after

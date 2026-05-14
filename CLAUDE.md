@@ -27,20 +27,18 @@ Development workflow plugin providing a structured feature development cycle:
 /df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit → [/df:handoff]
 ```
 
-Commands in brackets `[]` are optional.
+Steps in brackets `[]` are optional. All workflow steps are skills — they auto-trigger on intent and are also invocable as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI.
 
-| Command         | Purpose                                                  |
-| --------------- | -------------------------------------------------------- |
-| `/df:research`  | Comprehensive codebase research with parallel sub-agents |
-| `/df:plan`      | Create detailed implementation plans                     |
-| `/df:iterate`   | Update existing plans based on feedback                  |
-| `/df:implement` | Execute plans phase by phase with verification           |
-| `/df:validate`  | Verify implementation against plan, identify issues      |
-| `/df:handoff`   | Create handoff document for session transfer             |
-
-| Skill         | Purpose                                                                                           |
-| ------------- | ------------------------------------------------------------------------------------------------- |
-| `df:commit`   | Commit changes in logical chunks (auto-triggers on commit intent; also invocable as `/df:commit`) |
+| Skill                 | Purpose                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| `df:research`         | Comprehensive codebase research with parallel sub-agents                                          |
+| `df:plan`             | Create detailed implementation plans                                                              |
+| `df:iterate`          | Update existing plans based on feedback                                                           |
+| `df:implement`        | Execute plans phase by phase with verification                                                    |
+| `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                     |
+| `df:validate`         | Verify implementation against plan, identify issues                                               |
+| `df:handoff`          | Create handoff document for session transfer                                                      |
+| `df:commit`           | Commit changes in logical chunks (auto-triggers on commit intent; also invocable as `/df:commit`) |
 
 | Agent                     | Purpose                                   |
 | ------------------------- | ----------------------------------------- |
@@ -57,14 +55,7 @@ Commands in brackets `[]` are optional.
 claude --plugin-dir /path/to/ai-foo/plugins/df
 ```
 
-**Configure paths** using environment variables (optional):
-
-```bash
-export DF_RESEARCH_DIR=custom/research
-export DF_PLANS_DIR=custom/plans
-```
-
-Defaults: `thoughts/research` and `thoughts/plans`.
+**Customize paths (optional):** add a line to your project's CLAUDE.md, e.g. "df: write plans to docs/plans". No env vars needed.
 
 ## Versioning
 

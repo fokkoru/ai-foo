@@ -1,6 +1,7 @@
 ---
+name: handoff
+description: Use when creating a handoff document for transferring in-progress work to another session
 allowed-tools: Read, Write, Grep, Glob, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
-description: Create handoff document for transferring work to another session
 ---
 
 <objective>
@@ -11,9 +12,9 @@ Compact and summarize context without losing key details.
 
 <artifact_scope>
 This is a document-only command.
-Your ONLY output artifact is a single document under [handoffs_dir].
+Your ONLY output artifact is a single document under thoughts/handoffs.
 NEVER create, write, or modify files anywhere else.
-Before any Write call, verify the target path is inside [handoffs_dir] — if it is not, stop and ask the user.
+Before any Write call, verify the target path is inside thoughts/handoffs — if it is not, stop and ask the user.
 </artifact_scope>
 
 <quick_start>
@@ -24,10 +25,6 @@ Before any Write call, verify the target path is inside [handoffs_dir] — if it
 4. Write the handoff document
 5. Present the resume instruction to the user
    </quick_start>
-
-<configuration>
-- `[handoffs_dir]`: !`printenv DF_HANDOFFS_DIR || echo thoughts/handoffs`
-</configuration>
 
 <workflow>
 
@@ -46,7 +43,7 @@ Before any Write call, verify the target path is inside [handoffs_dir] — if it
    - Review any plan files or research docs that were being worked from
 
 3. **Determine filename**:
-   - Format: `[handoffs_dir]/YYYY-MM-DD_HHMM_description.md`
+   - Format: `thoughts/handoffs/YYYY-MM-DD_HHMM_description.md`
    - Description: kebab-case summary of the work (e.g., `auth-refactor`, `api-endpoint-migration`)
 
 ### Step 2: Write Handoff Document
@@ -130,7 +127,7 @@ To resume in a new session, provide this file:
 
 <success_criteria>
 
-- Handoff document created at `[handoffs_dir]/YYYY-MM-DD_HHMM_description.md`
+- Handoff document created at `thoughts/handoffs/YYYY-MM-DD_HHMM_description.md`
 - All sections populated with specific, actionable content
 - File:line references included for recent changes and critical references
 - Next steps are ordered and concrete
@@ -166,7 +163,7 @@ When triggered: explain what's missing and ask the user what they want captured.
 </circuit_breakers>
 
 <constraints>
-- Your ONLY output artifact is a handoff document in [handoffs_dir] — NEVER write or modify files anywhere else.
+- Your ONLY output artifact is a handoff document in thoughts/handoffs — NEVER write or modify files anywhere else.
 - NEVER fabricate work that wasn't done — only document actual session activity
 - NEVER include sensitive data (credentials, tokens, keys) in handoff documents
 - NEVER skip the Learnings section — this is the highest-value content for session transfer

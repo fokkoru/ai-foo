@@ -1,6 +1,7 @@
 ---
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(make:*), Bash(npm run:*)
-description: Implement technical plans from plans directory with verification
+name: implement
+description: Use when implementing a technical plan from the plans directory with verification
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(make:*), Bash(npm run:*)
 ---
 
 <objective>
@@ -14,11 +15,6 @@ If a plan file path is provided, skip the prompt — immediately read the plan F
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 </quick_start>
-
-<configuration>
-- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
-- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
-</configuration>
 
 <workflow>
 
@@ -225,6 +221,7 @@ Stop and ask the user for guidance if:
 - The plan references files or APIs that no longer exist
 - Implementation reveals the plan's approach is fundamentally flawed
 - Scope of changes exceeds what the phase describes
+- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was attempted, and ask how to proceed.
 </circuit_breakers>

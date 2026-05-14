@@ -1,6 +1,7 @@
 ---
-allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
-description: Iterate on existing implementation plans with thorough research and updates
+name: iterate
+description: Use when iterating on an existing implementation plan with feedback and updates
+allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 
 <objective>
@@ -11,9 +12,9 @@ Be skeptical, thorough, and ensure changes are grounded in actual codebase reali
 
 <artifact_scope>
 This is a document-only command.
-You ONLY edit or write files under [plans_dir].
+You ONLY edit or write files under thoughts/plans.
 NEVER create, write, or modify files anywhere else.
-Before any Write or Edit call, verify the target path is inside [plans_dir] — if it is not, stop and ask the user.
+Before any Write or Edit call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan and suggest the user run /df:implement. Do not make code changes in this command.
 </artifact_scope>
 
@@ -24,11 +25,6 @@ If a plan file path is provided but no feedback, read the plan FULLY and ask the
 
 If no plan file path is provided, ask the user which plan to update, then wait for input before proceeding.
 </quick_start>
-
-<configuration>
-- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
-- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
-</configuration>
 
 <workflow>
 
@@ -210,12 +206,13 @@ Stop and ask the user for guidance if:
 - Changes would require rewriting more than half the plan
 - Sub-agents return contradictory information about the codebase
 - More than 10 sub-agents needed for research (scope too broad)
+- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
 </circuit_breakers>
 
 <constraints>
-- You ONLY edit or write files in [plans_dir] — NEVER modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
+- You ONLY edit or write files in thoughts/plans — NEVER modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read the existing plan fully before making any changes — partial understanding leads to inconsistent edits
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete conclusions

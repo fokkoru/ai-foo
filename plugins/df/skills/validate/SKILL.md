@@ -1,6 +1,7 @@
 ---
-allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
-description: Validate implementation against plan, verify success criteria, identify issues
+name: validate
+description: Use when validating an implementation against its plan, verifying success criteria, and identifying issues
+allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 
 <objective>
@@ -14,11 +15,6 @@ If a plan file path is provided, skip the prompt — immediately read the plan F
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 </quick_start>
-
-<configuration>
-- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
-- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
-</configuration>
 
 <verification_methodology>
 
@@ -213,6 +209,7 @@ Stop and ask the user for guidance if:
 - More than half the plan phases appear unimplemented
 - Verification reveals the implementation contradicts the plan's approach
 - Sub-agents return contradictory findings about the implementation
+- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
 </circuit_breakers>

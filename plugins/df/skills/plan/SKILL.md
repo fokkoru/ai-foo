@@ -1,6 +1,7 @@
 ---
-allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(printenv:*), Bash(echo:*), Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
-description: Create detailed implementation plans with thorough research and iteration
+name: plan
+description: Use when creating an implementation plan for the df workflow — runs between df:research and df:implement. Triggers on '/df:plan', '$df:plan', or natural-language requests to plan a coding feature with parallel research agents and phased success criteria. Does NOT trigger on generic 'plan a trip', 'plan an event', or other non-coding planning intents.
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
@@ -11,9 +12,9 @@ Work through an iterative process — be skeptical, thorough, and collaborate wi
 
 <artifact_scope>
 This is a document-only command.
-Your ONLY output artifact is a single document under [plans_dir].
+Your ONLY output artifact is a single document under thoughts/plans.
 NEVER create, write, or modify files anywhere else.
-Before any Write call, verify the target path is inside [plans_dir] — if it is not, stop and ask the user.
+Before any Write call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan document and suggest the user run /df:implement. Do not make code changes in this command.
 </artifact_scope>
 
@@ -28,11 +29,6 @@ If no task description is provided, ask the user for:
 
 Then wait for input before proceeding.
 </quick_start>
-
-<configuration>
-- `[research_dir]`: !`printenv DF_RESEARCH_DIR || echo thoughts/research`
-- `[plans_dir]`: !`printenv DF_PLANS_DIR || echo thoughts/plans`
-</configuration>
 
 <plan_shaping>
 
@@ -184,7 +180,7 @@ After structure approval:
    - Get author name: `git config user.name`
    - Get git commit hash: `git rev-parse HEAD`
    - Get current branch name: `git rev-parse --abbrev-ref HEAD`
-   - Filename: `[plans_dir]/YYYY-MM-DD_HHMM_topic.md`
+   - Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
 2. **Use this template structure**:
 
@@ -297,7 +293,7 @@ After structure approval:
 
 ## References
 
-- Related research: `[research_dir]/[relevant].md`
+- Related research: `thoughts/research/[relevant].md`
 - Similar implementation: `[file:line]`
 ````
 
@@ -309,7 +305,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
    ```
    I've created the initial implementation plan at:
-   `[plans_dir]/YYYY-MM-DD_HHMM_topic.md`
+   `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
    Please review it and let me know:
    - Are the phases properly scoped?
@@ -330,7 +326,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
 <success_criteria>
 
-- Plan file created at `[plans_dir]/YYYY-MM-DD_HHMM_topic.md` with all sections populated
+- Plan file created at `thoughts/plans/YYYY-MM-DD_HHMM_topic.md` with all sections populated
 - All research questions resolved (no "TBD" or open questions in final plan)
 - Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
 - User confirms plan structure, phasing, and technical approach
@@ -506,12 +502,13 @@ Stop and reframe the planning process if:
 - Sub-agents return contradictory information
 - More than 10 sub-agents needed (scope too broad)
 - Planning expanding beyond the original task
+- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be resolved and why.
 </circuit_breakers>
 
 <constraints>
-- Your ONLY output artifact is a plan document in [plans_dir] — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
+- Your ONLY output artifact is a plan document in thoughts/plans — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
