@@ -1,0 +1,22 @@
+{
+  "name": "df",
+  "version": "1.6.0",
+  "description": "Feature development and code review workflow automation for individual developers",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "license": "MIT",
+  "keywords": ["workflow", "development", "planning", "research", "commits"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "df — Dream Flow",
+    "shortDescription": "Feature dev & code review workflows",
+    "longDescription": "Workflow automation skills and subagents for individual developers: research, plan, implement, phased-implement, validate, iterate, handoff, commit. Skills auto-trigger on intent and are also invocable as /df:<name>; subagents must be installed separately (see plugin README).",
+    "developerName": "fokkoru",
+    "category": "Coding",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/fokkoru/ai-foo",
+    "defaultPrompt": ["Create atomic commits for my current changes"]
+  }
+}

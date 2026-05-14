@@ -1,0 +1,22 @@
+{
+  "name": "ai-foo",
+  "interface": {
+    "displayName": "ai-foo plugins"
+  },
+  "plugins": [
+    {
+      "name": "df",
+      "source": {
+        "source": "git-subdir",
+        "url": "fokkoru/ai-foo",
+        "path": "plugins/df",
+        "ref": "v1.6.0"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "NONE"
+      },
+      "category": "Coding"
+    }
+  ]
+}
