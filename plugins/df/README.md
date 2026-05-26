@@ -45,15 +45,14 @@ All workflow surfaces are skills (no slash commands). They auto-trigger on descr
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
 
-**Codex CLI**: Codex plugins cannot bundle subagents; the canonical TOML versions live at `plugins/df/codex/agents/*.toml`. After installing the plugin, copy them into `~/.codex/agents/` once:
+**Codex CLI**: Codex plugins cannot bundle subagents; the canonical TOML versions live at `plugins/df/codex/agents/*.toml`. After installing the plugin, run the **required** install helper once to copy them into `~/.codex/agents/`:
 
 ```bash
-git clone --depth 1 https://github.com/fokkoru/ai-foo /tmp/ai-foo
-mkdir -p ~/.codex/agents
-cp /tmp/ai-foo/plugins/df/codex/agents/*.toml ~/.codex/agents/
+bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/install-codex-agents.sh)
+# …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-The `web-search-researcher` Codex agent additionally requires `web_search` enabled in `~/.codex/config.toml` under `[tools]`.
+This step is required, not optional — without it `research`/`plan`/`iterate` fail with "agent not found". The `web-search-researcher` Codex agent additionally requires `web_search` enabled in `~/.codex/config.toml` under `[tools]`.
 
 ## Customize paths (optional)
 
@@ -72,7 +71,7 @@ See the root [`README.md`](../../README.md) of `fokkoru/ai-foo` for canonical in
 Brief recap:
 
 - **Claude Code** loads the plugin from `plugins/df/` automatically once the marketplace has been registered against `fokkoru/ai-foo` (see the root README for the exact command).
-- **Codex CLI** auto-discovers the marketplace at `.agents/plugins/marketplace.json`; enable the plugin with `[plugins."df@ai-foo"] enabled = true` in `~/.codex/config.toml`, then perform the one-time subagent copy step above.
+- **Codex CLI**, in three steps: `codex plugin marketplace add fokkoru/ai-foo` → `codex plugin add df@ai-foo` → run `install-codex-agents.sh` (the required subagent step above). Opening the repo directly with `cd ai-foo && codex` auto-discovers the marketplace from `.agents/plugins/marketplace.json` as a dev-only shortcut, but the subagent step is still required.
 
 ### As Project-Local Files (Claude Code only)
 

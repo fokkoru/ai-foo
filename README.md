@@ -41,25 +41,25 @@ claude /plugin install df@ai-foo
 
 ```bash
 # 1. Add the marketplace
-codex marketplace add fokkoru/ai-foo
+codex plugin marketplace add fokkoru/ai-foo
 
-# 2. Enable the plugin in ~/.codex/config.toml
-#    [plugins."df@ai-foo"]
-#    enabled = true
+# 2. Install and enable the plugin (installs the skills)
+codex plugin add df@ai-foo
 
-# 3. (Optional) Install subagents — Codex plugins don't bundle agents,
-#    so copy them by hand:
-git clone --depth 1 https://github.com/fokkoru/ai-foo /tmp/ai-foo
-mkdir -p ~/.codex/agents
-cp /tmp/ai-foo/plugins/df/codex/agents/*.toml ~/.codex/agents/
+# 3. REQUIRED: install subagents — Codex plugins can't bundle them, and
+#    research/plan/iterate depend on them.
+bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/install-codex-agents.sh)
+# …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-If the repo is opened directly with `cd ai-foo && codex`, the marketplace is auto-discovered from `.agents/plugins/marketplace.json` — no `codex marketplace add` needed; only the plugin-enable line in `~/.codex/config.toml` is required.
+Step 3 is **required**, not optional: Codex plugins can only bundle skills, so the 6 subagents that `research`/`plan`/`iterate` spawn must be copied into `~/.codex/agents/` separately. The script does that (and reminds you to enable `web_search` for `web-search-researcher`).
+
+As a **dev-only** shortcut, opening the repo directly with `cd ai-foo && codex` auto-discovers the marketplace from `.agents/plugins/marketplace.json` — no `codex plugin marketplace add` needed, only the plugin-enable line in `~/.codex/config.toml`. The subagent step (3) is still required even on this path.
 
 After install you have:
 
 - **Skills** (auto-trigger in both runtimes on natural-language matches against each skill's `description`): `commit`, `research`, `plan`, `implement`, `phased-implement`, `validate`, `iterate`, `handoff`. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
-- **Subagents**: 6 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`. Claude Code auto-loads them; Codex CLI requires the one-time `cp` step above. The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`.
+- **Subagents**: 6 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`.
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 
 ### Naming and invocation
@@ -79,7 +79,8 @@ claude /plugin marketplace upgrade ai-foo
 
 # Codex CLI
 codex plugin marketplace upgrade ai-foo
-# then re-copy agents if any agent body changed
+# then re-run the subagent install if any agent body changed:
+bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/install-codex-agents.sh)
 ```
 
 ### From a local clone
