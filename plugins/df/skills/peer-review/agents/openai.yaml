@@ -1,0 +1,5 @@
+interface:
+  display_name: "Peer Review"
+  short_description: "Independent two-stage code review against the plan"
+policy:
+  allow_implicit_invocation: false

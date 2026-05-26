@@ -165,6 +165,7 @@ Structure the report as:
 - **Be Evidence-Based** — cite specific file:line references and git diffs; compare plan text to actual code
 - **Be Honest** — report issues constructively; don't gloss over incomplete work
 - **Be Read-Only** — NEVER modify the plan, codebase, or any files during validation
+- **Self-check vs. independent review** — `df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
 
 Use parallel Task agents for verification to minimize context usage. Separate automated from manual verification — only the user can confirm manual criteria.
 </guidelines>

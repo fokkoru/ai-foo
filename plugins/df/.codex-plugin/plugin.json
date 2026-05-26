@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "df — Dream Flow",
     "shortDescription": "Feature dev & code review workflows",
-    "longDescription": "Workflow automation skills and subagents for individual developers: research, plan, implement, phased-implement, validate, iterate, handoff, commit. Invoke skills as $df:<name>; only commit auto-triggers on intent, the rest are manual-only. Subagents must be installed separately — run scripts/install-codex-agents.sh.",
+    "longDescription": "Workflow automation skills and subagents for individual developers: research, plan, implement, phased-implement, validate, peer-review, iterate, handoff, commit. Invoke skills as $df:<name>; only commit auto-triggers on intent, the rest are manual-only. Subagents must be installed separately — run scripts/install-codex-agents.sh.",
     "developerName": "fokkoru",
     "category": "Coding",
     "capabilities": ["Read", "Write"],

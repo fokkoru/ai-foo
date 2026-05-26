@@ -24,10 +24,10 @@ ai-foo/
 Development workflow plugin providing a structured feature development cycle:
 
 ```
-/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit → [/df:handoff]
+/df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → [/df:peer-review] → /df:commit → [/df:handoff]
 ```
 
-Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other seven are manual-only — the model cannot invoke them, so you run them yourself.
+Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other eight are manual-only — the model cannot invoke them, so you run them yourself.
 
 | Skill                 | Purpose                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------------------- |
@@ -37,17 +37,19 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 | `df:implement`        | Execute plans phase by phase with verification                                                    |
 | `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                     |
 | `df:validate`         | Verify implementation against plan, identify issues                                               |
+| `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                        |
 | `df:handoff`          | Create handoff document for session transfer                                                      |
 | `df:commit`           | Commit changes in logical chunks (auto-triggers on commit intent; also invocable as `/df:commit`) |
 
-| Agent                     | Purpose                                   |
-| ------------------------- | ----------------------------------------- |
-| `codebase-locator`        | Find files by topic/feature               |
-| `codebase-analyzer`       | Understand implementation details         |
-| `codebase-pattern-finder` | Find similar patterns and examples        |
-| `thoughts-locator`        | Discover documents in thoughts/ directory |
-| `thoughts-analyzer`       | Extract insights from thought documents   |
-| `web-search-researcher`   | Research modern web information           |
+| Agent                     | Purpose                                       |
+| ------------------------- | --------------------------------------------- |
+| `codebase-locator`        | Find files by topic/feature                   |
+| `codebase-analyzer`       | Understand implementation details             |
+| `codebase-pattern-finder` | Find similar patterns and examples            |
+| `thoughts-locator`        | Discover documents in thoughts/ directory     |
+| `thoughts-analyzer`       | Extract insights from thought documents       |
+| `web-search-researcher`   | Research modern web information               |
+| `code-reviewer`           | Independent, isolated two-stage code reviewer |
 
 **Install in another project:**
 
@@ -92,7 +94,7 @@ No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins the `git-su
 
 ## Codex Distribution
 
-There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so the 6 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — there is no way to deliver them via `codex plugin add`.
+There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so the 7 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — there is no way to deliver them via `codex plugin add`.
 
 `scripts/sync-to-codex-plugin.sh` publishes `plugins/df/` to the official `openai/plugins` catalog. It is an **internal/parked maintainer tool**, not a user install channel — it is not advertised in the user docs, and it cannot carry subagents either.
 

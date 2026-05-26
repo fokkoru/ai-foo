@@ -7,7 +7,7 @@ Development flow — workflow automation for individual developers. Runs on both
 This plugin provides a structured workflow for feature development:
 
 ```
-research → plan → [iterate] → implement → [validate] → commit → [handoff]
+research → plan → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
 ```
 
 Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
@@ -19,7 +19,7 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 
 ## Skills
 
-All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
+All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other eight are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
 
 | Skill                 | Description                                                                                    |
 | --------------------- | ---------------------------------------------------------------------------------------------- |
@@ -29,19 +29,21 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | `df:implement`        | Execute plans with verification and phase-by-phase progress                                    |
 | `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                  |
 | `df:validate`         | Verify implementation against plan, identify issues                                            |
+| `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                     |
 | `df:handoff`          | Create handoff document for session transfer                                                   |
 | `df:commit`           | Commit changes in logical chunks (full Conventional Commits 1.0.0 spec incl. breaking changes) |
 
 ## Subagents
 
-| Agent                     | Description                               |
-| ------------------------- | ----------------------------------------- |
-| `codebase-locator`        | Find files by topic/feature               |
-| `codebase-analyzer`       | Understand implementation details         |
-| `codebase-pattern-finder` | Find similar patterns and examples        |
-| `thoughts-locator`        | Discover documents in thoughts/ directory |
-| `thoughts-analyzer`       | Extract insights from thought documents   |
-| `web-search-researcher`   | Research modern web information           |
+| Agent                     | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| `codebase-locator`        | Find files by topic/feature                   |
+| `codebase-analyzer`       | Understand implementation details             |
+| `codebase-pattern-finder` | Find similar patterns and examples            |
+| `thoughts-locator`        | Discover documents in thoughts/ directory     |
+| `thoughts-analyzer`       | Extract insights from thought documents       |
+| `web-search-researcher`   | Research modern web information               |
+| `code-reviewer`           | Independent, isolated two-stage code reviewer |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
 
@@ -111,6 +113,13 @@ $df:plan Add rate limiting to the API     # Codex
 $df:implement thoughts/plans/2024-01-15_rate-limiting.md     # Codex
 ```
 
+### Independent code review
+
+```
+/df:peer-review thoughts/plans/2024-01-15_rate-limiting.md     # Claude
+$df:peer-review thoughts/plans/2024-01-15_rate-limiting.md     # Codex
+```
+
 ### Commit changes
 
 ```
@@ -124,4 +133,5 @@ $df:implement thoughts/plans/2024-01-15_rate-limiting.md     # Codex
 3. **Iterate**: Adjust the plan based on findings
 4. **Implement**: Execute the plan phase by phase with verification
 5. **Validate**: Verify implementation against plan, identify issues
-6. **Commit**: Create logical, well-organized commits
+6. **Review**: Independent, isolated two-stage code review (spec compliance, then code quality)
+7. **Commit**: Create logical, well-organized commits
