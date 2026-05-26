@@ -10,7 +10,7 @@
         "source": "git-subdir",
         "url": "fokkoru/ai-foo",
         "path": "plugins/df",
-        "ref": "v1.6.0"
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",

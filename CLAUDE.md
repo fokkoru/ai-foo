@@ -69,19 +69,32 @@ When committing changes to a plugin, update its version in `.claude-plugin/marke
 | New features (new commands, agents, skills)           | MINOR | 1.0.0 → 1.1.0 |
 | Bug fixes, docs, minor tweaks                         | PATCH | 1.0.0 → 1.0.1 |
 
-**File to update:**
+**A `df` version bump touches exactly these two fields, bumped together in one commit:**
 
-`.claude-plugin/marketplace.json` — update `"version"` in the plugin entry
+| Location                               | Runtime     | Field                |
+| -------------------------------------- | ----------- | -------------------- |
+| `.claude-plugin/marketplace.json`      | Claude Code | `plugins[0].version` |
+| `plugins/df/.codex-plugin/plugin.json` | Codex CLI   | `version`            |
 
-> Note: For relative-path plugins, version lives only in `marketplace.json`. Do not set `version` in `plugin.json` — it silently overrides the marketplace version.
+There is no bump script — edit both fields to the same value in a single `chore(df): bump version to X.Y.Z` commit. Do not split them across commits.
+
+No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins the `git-subdir` source to `"ref": "main"`, so Codex always tracks the latest `plugins/df` on `main` — nothing to bump there, no tag to create or push.
+
+> `plugins/df/.claude-plugin/plugin.json` must NOT carry a `version` (it would override the marketplace version for this relative-path plugin). The **Codex** manifest (`plugins/df/.codex-plugin/plugin.json`) is the opposite: it *must* carry the version. `.agents/plugins/marketplace.json` uses `"ref": "main"` and carries no version — nothing to bump there.
 
 **When to update:**
 
-- Any change to files in `plugins/<name>/commands/` or `plugins/<name>/agents/` → bump version
+- Any change to files in `plugins/<name>/skills/`, `plugins/<name>/agents/`, or `plugins/<name>/codex/` → bump version
 - Changes only to README or docs → bump PATCH
 - No version bump needed for changes outside plugin folders
 
 **Version bumps are always separate commits:** `chore(<plugin>): bump version to X.Y.Z`
+
+## Codex Distribution
+
+There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so the 6 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — there is no way to deliver them via `codex plugin add`.
+
+`scripts/sync-to-codex-plugin.sh` publishes `plugins/df/` to the official `openai/plugins` catalog. It is an **internal/parked maintainer tool**, not a user install channel — it is not advertised in the user docs, and it cannot carry subagents either.
 
 ## Plugin Structure
 
