@@ -1,6 +1,7 @@
 ---
 name: plan
-description: Use when creating an implementation plan for the df workflow — runs between df:research and df:implement. Triggers on '/df:plan', '$df:plan', or natural-language requests to plan a coding feature with parallel research agents and phased success criteria. Does NOT trigger on generic 'plan a trip', 'plan an event', or other non-coding planning intents.
+description: Use when creating an implementation plan for the df workflow — runs between df:research and df:implement. Produces a phased plan with parallel research agents and phased success criteria.
+disable-model-invocation: true
 allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 

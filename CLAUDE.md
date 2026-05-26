@@ -27,7 +27,7 @@ Development workflow plugin providing a structured feature development cycle:
 /df:research → /df:plan → [/df:iterate] → /df:implement → [/df:validate] → /df:commit → [/df:handoff]
 ```
 
-Steps in brackets `[]` are optional. All workflow steps are skills — they auto-trigger on intent and are also invocable as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI.
+Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other seven are manual-only — the model cannot invoke them, so you run them yourself.
 
 | Skill                 | Purpose                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------------------- |

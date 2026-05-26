@@ -1,6 +1,7 @@
 ---
 name: iterate
 description: Use when iterating on an existing implementation plan with feedback and updates
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: handoff
 description: Use when creating a handoff document for transferring in-progress work to another session
+disable-model-invocation: true
 allowed-tools: Read, Write, Grep, Glob, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 

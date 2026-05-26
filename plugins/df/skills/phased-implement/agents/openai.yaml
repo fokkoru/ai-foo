@@ -1,0 +1,5 @@
+interface:
+  display_name: "Phased Implement"
+  short_description: "Implement a plan phase by phase with a commit per phase"
+policy:
+  allow_implicit_invocation: false

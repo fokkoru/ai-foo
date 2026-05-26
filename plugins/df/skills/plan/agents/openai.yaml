@@ -1,0 +1,5 @@
+interface:
+  display_name: "Plan"
+  short_description: "Create a detailed, phased implementation plan"
+policy:
+  allow_implicit_invocation: false

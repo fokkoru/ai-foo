@@ -1,6 +1,7 @@
 ---
 name: implement
 description: Use when implementing a technical plan from the plans directory with verification
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(make:*), Bash(npm run:*)
 ---
 

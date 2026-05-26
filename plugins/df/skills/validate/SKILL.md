@@ -1,6 +1,7 @@
 ---
 name: validate
 description: Use when validating an implementation against its plan, verifying success criteria, and identifying issues
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 

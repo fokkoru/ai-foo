@@ -1,0 +1,5 @@
+interface:
+  display_name: "Iterate Plan"
+  short_description: "Update an existing implementation plan with feedback"
+policy:
+  allow_implicit_invocation: false

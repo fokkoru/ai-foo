@@ -1,0 +1,5 @@
+interface:
+  display_name: "Handoff"
+  short_description: "Create a handoff document for session transfer"
+policy:
+  allow_implicit_invocation: false

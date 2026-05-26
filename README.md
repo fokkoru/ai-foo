@@ -12,7 +12,7 @@ Development workflow plugin providing a structured feature development cycle:
 research → plan → [iterate] → implement → [validate] → commit → [handoff]
 ```
 
-Steps in brackets `[]` are optional. Each step is a skill that auto-triggers on intent and is also reachable via explicit invocation:
+Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
 
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
@@ -58,7 +58,7 @@ As a **dev-only** shortcut, opening the repo directly with `cd ai-foo && codex` 
 
 After install you have:
 
-- **Skills** (auto-trigger in both runtimes on natural-language matches against each skill's `description`): `commit`, `research`, `plan`, `implement`, `phased-implement`, `validate`, `iterate`, `handoff`. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
+- **Skills**: `commit`, `research`, `plan`, `implement`, `phased-implement`, `validate`, `iterate`, `handoff`. Only `commit` auto-triggers on natural-language matches against its `description`; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
 - **Subagents**: 6 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`.
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 

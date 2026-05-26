@@ -10,7 +10,7 @@ This plugin provides a structured workflow for feature development:
 research → plan → [iterate] → implement → [validate] → commit → [handoff]
 ```
 
-Steps in brackets `[]` are optional. Each step is a skill that auto-triggers on intent, and is also reachable via explicit invocation:
+Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
 
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
@@ -19,7 +19,7 @@ Steps in brackets `[]` are optional. Each step is a skill that auto-triggers on 
 
 ## Skills
 
-All workflow surfaces are skills (no slash commands). They auto-trigger on description matches in both runtimes.
+All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
 
 | Skill                 | Description                                                                                    |
 | --------------------- | ---------------------------------------------------------------------------------------------- |
@@ -93,13 +93,15 @@ The `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Co
 ### Research the codebase
 
 ```
-> How does authentication work in this project?  (auto-triggers df:research)
+/df:research How does authentication work in this project?     # Claude
+$df:research How does authentication work in this project?     # Codex
 ```
 
 ### Create an implementation plan
 
 ```
-> I need to add rate limiting to the API  (auto-triggers df:plan)
+/df:plan Add rate limiting to the API     # Claude
+$df:plan Add rate limiting to the API     # Codex
 ```
 
 ### Execute a plan

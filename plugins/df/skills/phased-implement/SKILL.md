@@ -1,6 +1,7 @@
 ---
 name: phased-implement
 description: Use when implementing a structured plan phase by phase with human review and a commit per phase
+disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(make:*), Bash(npm run:*)
 ---
 

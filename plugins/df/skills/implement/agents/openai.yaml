@@ -1,0 +1,5 @@
+interface:
+  display_name: "Implement"
+  short_description: "Execute a technical plan with verification"
+policy:
+  allow_implicit_invocation: false

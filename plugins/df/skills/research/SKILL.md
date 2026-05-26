@@ -1,6 +1,7 @@
 ---
 name: research
 description: Use when researching the codebase comprehensively using parallel sub-agents
+disable-model-invocation: true
 allowed-tools: Read, Write, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
