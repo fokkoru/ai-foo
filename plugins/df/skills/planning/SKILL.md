@@ -13,14 +13,14 @@ Work through an iterative process — be skeptical, thorough, and collaborate wi
 
 <artifact_scope>
 This is a document-only command.
-Your ONLY output artifact is a single document under thoughts/plans.
-NEVER create, write, or modify files anywhere else.
+Your only output artifact is a single document under thoughts/plans.
+Don't create, write, or modify files anywhere else.
 Before any Write call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan document and suggest the user run /df:implement. Do not make code changes in this command.
 </artifact_scope>
 
 <quick_start>
-If a file path or task description is provided, skip the prompt — immediately read any provided files FULLY and begin the research process.
+If a file path or task description is provided, skip the prompt — immediately read any provided files fully and begin the research process.
 
 If no task description is provided, ask the user for:
 
@@ -64,13 +64,13 @@ Document complexity traps upfront:
 
 ### Step 1: Context Gathering & Initial Analysis
 
-1. **Read all mentioned files immediately and FULLY**:
+1. **Read all mentioned files immediately and fully**:
    - Research documents
    - Related implementation plans
    - Any JSON/data files mentioned
-   - **IMPORTANT**: Use the Read tool WITHOUT limit/offset parameters to read entire files
-   - **CRITICAL**: DO NOT spawn sub-tasks before reading these files in the main context
-   - **NEVER** read files partially - if a file is mentioned, read it completely
+   - Use the Read tool without limit/offset parameters to read entire files
+   - Don't spawn sub-tasks before reading these files in the main context
+   - Don't read files partially — if a file is mentioned, read it completely
 
 2. **Spawn initial research tasks to gather context**:
    Before asking the user any questions, use specialized agents to research in parallel:
@@ -84,8 +84,8 @@ Document complexity traps upfront:
    - Return detailed explanations with file:line references
 
 3. **Read all files identified by research tasks**:
-   - After research tasks complete, read ALL files they identified as relevant
-   - Read them FULLY into the main context
+   - After research tasks complete, read all files they identified as relevant
+   - Read them fully into the main context
    - This ensures complete understanding before proceeding
 
 4. **Analyze and verify understanding**:
@@ -117,7 +117,7 @@ Document complexity traps upfront:
 After getting initial clarifications:
 
 1. **If the user corrects any misunderstanding**:
-   - DO NOT just accept the correction
+   - Don't just accept the correction
    - Spawn new research tasks to verify the correct information
    - Read the specific files/directories they mention
    - Only proceed once the facts are verified
@@ -128,7 +128,7 @@ After getting initial clarifications:
    - Create multiple Task agents to research different aspects concurrently
    - Use the right agent for each type of research (see Agent Selection section)
 
-4. **Wait for ALL sub-tasks to complete** before proceeding
+4. **Wait for all sub-tasks to complete** before proceeding
 
 5. **Present findings and design options**:
 
@@ -470,8 +470,8 @@ Stay focused on planning what was actually requested.
 
 <key_principles>
 
-- Always use parallel Task agents to maximize efficiency and minimize context usage
-- Always run fresh codebase research; never rely solely on existing research documents
+- Use parallel Task agents to maximize efficiency and minimize context usage
+- Run fresh codebase research; don't rely solely on existing research documents
 - Focus on concrete file paths and line numbers for developer reference
 - Plans should be self-contained with all necessary context
 - Keep the main agent focused on synthesis, not deep file reading
@@ -500,9 +500,9 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 </circuit_breakers>
 
 <constraints>
-- Your ONLY output artifact is a plan document in thoughts/plans — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
+- Your only output artifact is a plan document in thoughts/plans — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
-- NEVER write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+- Don't write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
 </constraints>

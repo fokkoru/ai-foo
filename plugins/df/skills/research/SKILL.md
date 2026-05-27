@@ -11,8 +11,8 @@ Conduct comprehensive codebase research to answer a user's question by decomposi
 
 <artifact_scope>
 This is a document-only command.
-Your ONLY output artifact is a single document under thoughts/research.
-NEVER create, write, or modify files anywhere else.
+Your only output artifact is a single document under thoughts/research.
+Don't create, write, or modify files anywhere else.
 Before any Write call, verify the target path is inside thoughts/research — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the research document and suggest the user run /df:implement. Do not make code changes in this command.
 </artifact_scope>
@@ -23,7 +23,7 @@ If no research question is provided, ask the user what they want to research bef
 1. Read any mentioned files fully in main context first
 2. Decompose the research question into parallel sub-agent tasks
 3. Select appropriate agents and spawn them in parallel
-4. Wait for ALL sub-agents to complete
+4. Wait for all sub-agents to complete
 5. Synthesize findings and write research document
 6. Present concise summary with key file references
    </quick_start>
@@ -45,7 +45,7 @@ Take time to ultrathink about the underlying patterns, connections, and architec
 
 ### Synthesis
 
-Wait for ALL sub-agent tasks to complete before synthesizing. Never proceed with partial results.
+Wait for all sub-agent tasks to complete before synthesizing. Don't proceed with partial results.
 
 - Compile all sub-agent results (codebase and thoughts findings)
 - Prioritize live codebase findings as primary source of truth
@@ -201,8 +201,8 @@ Stay focused on answering the user's actual question.
 
 <key_principles>
 
-- Always use parallel Task agents to maximize efficiency and minimize context usage
-- Always run fresh codebase research; never rely solely on existing research documents
+- Use parallel Task agents to maximize efficiency and minimize context usage
+- Run fresh codebase research; don't rely solely on existing research documents
 - Focus on concrete file paths and line numbers for developer reference
 - Research documents should be self-contained with all necessary context
 - Keep the main agent focused on synthesis, not deep file reading
@@ -225,9 +225,9 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 </circuit_breakers>
 
 <constraints>
-- Your ONLY output artifact is a research document in thoughts/research — NEVER write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
+- Your only output artifact is a research document in thoughts/research — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at research time, not after
-- NEVER write the research document with placeholder values — research documents are permanent artifacts that others will reference
+- Don't write the research document with placeholder values — research documents are permanent artifacts that others will reference
 </constraints>

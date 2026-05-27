@@ -12,7 +12,7 @@ Follow the plan's intent while adapting to codebase reality.
 </objective>
 
 <quick_start>
-If a plan file path is provided, skip the prompt — immediately read the plan FULLY and begin implementation.
+If a plan file path is provided, skip the prompt — immediately read the plan fully and begin implementation.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 </quick_start>
@@ -224,7 +224,7 @@ When triggered: present the issue clearly, explain what was attempted, and ask h
 - Read the plan and all mentioned files fully before starting implementation — partial understanding leads to incorrect changes
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
-- NEVER check off manual verification items without user confirmation — only the user can verify manual criteria
+- Don't check off manual verification items without user confirmation — only the user can verify manual criteria
 - Continue to the next phase automatically when manual verification is empty or absent — stopping is the exception, not the rule
 - When manual verification exists but doesn't block the next phase, defer it — present all deferred checks at the end grouped by phase
 </constraints>

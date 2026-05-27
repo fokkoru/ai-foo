@@ -12,7 +12,7 @@ Each phase is a discrete unit: implement → verify → review → commit → ne
 </objective>
 
 <quick_start>
-If a plan file path is provided, skip the prompt — immediately read the plan FULLY and begin with the first unchecked phase.
+If a plan file path is provided, skip the prompt — immediately read the plan fully and begin with the first unchecked phase.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 </quick_start>
@@ -238,8 +238,6 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
   - `codebase-pattern-finder` — finding usage examples of APIs being modified
   - `codebase-locator` — locating related files not mentioned in the plan
 - When stuck, communicate clearly — present mismatches with context and ask for guidance
-- NEVER stage all files — use specific file names, never `git add .` or `git add -A`
-- NEVER add AI signatures — no Co-Authored-By, no "Generated with" lines
 </guidelines>
 
 <anti_patterns>
@@ -272,11 +270,11 @@ When triggered: present the issue clearly, explain what was attempted, and ask h
 <constraints>
 - Read the plan and all mentioned files fully before starting implementation — partial understanding leads to incorrect changes
 - Implement one phase at a time — complete verification before presenting results
-- ALWAYS stop after each phase — never auto-continue to the next phase
+- Always stop after each phase — never auto-continue to the next phase
 - Wait for explicit user confirmation before committing — present the plan first
-- NEVER check off manual verification items without user confirmation — only the user can verify manual criteria
-- NEVER commit without user approval — always present results and wait
-- NEVER stage all files — use specific file names for each phase's commit
-- NEVER add AI signatures — no Co-Authored-By lines in commit messages
-- NEVER modify code during the commit step — only stage and commit existing changes
+- Don't check off manual verification items without user confirmation — only the user can verify manual criteria
+- Don't commit without user approval — always present results and wait
+- Don't stage all files — use specific file names for each phase's commit; never `git add .` or `git add -A`
+- Don't add AI signatures — no Co-Authored-By or "Generated with" lines in commit messages
+- Don't modify code during the commit step — only stage and commit existing changes
 </constraints>

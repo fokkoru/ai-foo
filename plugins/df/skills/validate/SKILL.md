@@ -12,7 +12,7 @@ Systematically verify that each phase was correctly implemented, run success cri
 </objective>
 
 <quick_start>
-If a plan file path is provided, skip the prompt — immediately read the plan FULLY and begin the validation process.
+If a plan file path is provided, skip the prompt — immediately read the plan fully and begin the validation process.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 </quick_start>
@@ -54,7 +54,7 @@ Flag these as Level 2 failures:
 
 ### Step 1: Context Discovery
 
-1. **Read the implementation plan** completely using the Read tool WITHOUT limit/offset parameters
+1. **Read the implementation plan** completely using the Read tool without limit/offset parameters
 2. **Gather implementation evidence** from git history:
    - Check recent commits for implementation work
    - Review diffs to understand what actually changed
@@ -79,7 +79,7 @@ Example verification tasks:
 - **Test coverage**: Check if tests were added/modified as specified
 - **Pattern compliance**: Verify new code follows existing codebase conventions
 
-Wait for ALL verification tasks to complete before proceeding.
+Wait for all verification tasks to complete before proceeding.
 
 ### Step 3: Systematic Phase Validation
 
@@ -164,7 +164,7 @@ Structure the report as:
 - **Be Thorough** — check every phase and every success criterion; don't skip verification steps
 - **Be Evidence-Based** — cite specific file:line references and git diffs; compare plan text to actual code
 - **Be Honest** — report issues constructively; don't gloss over incomplete work
-- **Be Read-Only** — NEVER modify the plan, codebase, or any files during validation
+- **Be Read-Only** — don't modify the plan, codebase, or any files during validation
 - **Self-check vs. independent review** — `df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
 
 Use parallel Task agents for verification to minimize context usage. Separate automated from manual verification — only the user can confirm manual criteria.
@@ -220,6 +220,6 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 - Read the plan completely before starting any verification — partial understanding leads to incorrect assessments
 - Gather git evidence before spawning verification agents — agents need to know what changed
 - Wait for all verification agents to complete before writing the report — partial results lead to incomplete conclusions
-- NEVER claim automated checks passed without actually verifying them — accuracy is the whole point of validation
-- NEVER run build/test/lint commands without user permission — the user's CLAUDE.md explicitly requires this
+- Don't claim automated checks passed without actually verifying them — accuracy is the whole point of validation
+- Don't run build/test/lint commands without user permission — the user's CLAUDE.md explicitly requires this
 </constraints>
