@@ -10,7 +10,7 @@
       "name": "df",
       "source": "./plugins/df",
       "description": "Feature development and code review workflow automation for individual developers",
-      "version": "1.7.0",
+      "version": "1.8.0",
       "author": {
         "name": "fokkoru"
       },
