@@ -7,7 +7,7 @@ Development flow — workflow automation for individual developers. Runs on both
 This plugin provides a structured workflow for feature development:
 
 ```
-research → plan → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
+research → planning → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
 ```
 
 Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
@@ -15,7 +15,7 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
 
-**Naming**: skills are namespaced as `df:<name>` on Claude Code (`/df:plan`) and on Codex CLI (`$df:plan` or `$<name>`). Always use the namespaced form — the unprefixed `/plan`, `/research`, etc. are not provided by this plugin and may resolve to something else (a personal skill, a bundled command, another plugin) in your environment.
+**Naming**: skills are namespaced as `df:<name>` on Claude Code (`/df:planning`) and on Codex CLI (`$df:planning` or `$<name>`). Always use the namespaced form — the unprefixed `/research`, etc. are not provided by this plugin and may resolve to something else (a personal skill, a bundled command, another plugin) in your environment.
 
 ## Skills
 
@@ -24,7 +24,7 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | Skill                 | Description                                                                                    |
 | --------------------- | ---------------------------------------------------------------------------------------------- |
 | `df:research`         | Comprehensive codebase research with parallel sub-agents                                       |
-| `df:plan`             | Create detailed implementation plans with thorough research                                    |
+| `df:planning`         | Create detailed implementation plans with thorough research                                    |
 | `df:iterate`          | Update existing plans based on feedback                                                        |
 | `df:implement`        | Execute plans with verification and phase-by-phase progress                                    |
 | `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                  |
@@ -54,7 +54,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-This step is required, not optional — without it `research`/`plan`/`iterate` fail with "agent not found". The `web-search-researcher` Codex agent additionally requires `web_search` enabled in `~/.codex/config.toml` under `[tools]`.
+This step is required, not optional — without it `research`/`planning`/`iterate` fail with "agent not found". The `web-search-researcher` Codex agent additionally requires `web_search` enabled in `~/.codex/config.toml` under `[tools]`.
 
 ## Customize paths (optional)
 
@@ -102,8 +102,8 @@ $df:research How does authentication work in this project?     # Codex
 ### Create an implementation plan
 
 ```
-/df:plan Add rate limiting to the API     # Claude
-$df:plan Add rate limiting to the API     # Codex
+/df:planning Add rate limiting to the API     # Claude
+$df:planning Add rate limiting to the API     # Codex
 ```
 
 ### Execute a plan

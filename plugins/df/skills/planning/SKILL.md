@@ -1,5 +1,5 @@
 ---
-name: plan
+name: planning
 description: Use when creating an implementation plan for the df workflow — runs between df:research and df:implement. Produces a phased plan with parallel research agents and phased success criteria.
 disable-model-invocation: true
 allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)

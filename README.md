@@ -9,7 +9,7 @@ Reusable plugins for development workflows. Runs on both **Claude Code** and **C
 Development workflow plugin providing a structured feature development cycle:
 
 ```
-research → plan → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
+research → planning → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
 ```
 
 Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
@@ -20,7 +20,7 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 | Skill                 | Purpose                                                                       |
 | --------------------- | ----------------------------------------------------------------------------- |
 | `df:research`         | Comprehensive codebase research with parallel sub-agents                      |
-| `df:plan`             | Create detailed implementation plans                                          |
+| `df:planning`         | Create detailed implementation plans                                          |
 | `df:iterate`          | Update existing plans based on feedback                                       |
 | `df:implement`        | Execute plans phase by phase with verification                                |
 | `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase |
@@ -48,18 +48,18 @@ codex plugin marketplace add fokkoru/ai-foo
 codex plugin add df@ai-foo
 
 # 3. REQUIRED: install subagents — Codex plugins can't bundle them, and
-#    research/plan/iterate depend on them.
+#    research/planning/iterate depend on them.
 bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/install-codex-agents.sh)
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-Step 3 is **required**, not optional: Codex plugins can only bundle skills, so the 7 subagents that `research`/`plan`/`iterate`/`peer-review` spawn must be copied into `~/.codex/agents/` separately. The script does that (and reminds you to enable `web_search` for `web-search-researcher`).
+Step 3 is **required**, not optional: Codex plugins can only bundle skills, so the 7 subagents that `research`/`planning`/`iterate`/`peer-review` spawn must be copied into `~/.codex/agents/` separately. The script does that (and reminds you to enable `web_search` for `web-search-researcher`).
 
 As a **dev-only** shortcut, opening the repo directly with `cd ai-foo && codex` auto-discovers the marketplace from `.agents/plugins/marketplace.json` — no `codex plugin marketplace add` needed, only the plugin-enable line in `~/.codex/config.toml`. The subagent step (3) is still required even on this path.
 
 After install you have:
 
-- **Skills**: `commit`, `research`, `plan`, `implement`, `phased-implement`, `validate`, `peer-review`, `iterate`, `handoff`. Only `commit` auto-triggers on natural-language matches against its `description`; the other eight are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
+- **Skills**: `commit`, `research`, `planning`, `implement`, `phased-implement`, `validate`, `peer-review`, `iterate`, `handoff`. Only `commit` auto-triggers on natural-language matches against its `description`; the other eight are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
 - **Subagents**: 7 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`, `code-reviewer`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`.
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 
@@ -67,10 +67,10 @@ After install you have:
 
 All df skills are plugin-namespaced. The canonical invocation forms are:
 
-- **Claude Code**: `/df:<name>` (e.g. `/df:plan`, `/df:research`). Per the Claude Code skills docs, plugin skills use a `plugin-name:skill-name` namespace and cannot collide with personal, project, or enterprise skills of the same short name.
-- **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:plan`). The Claude-style `/df:plan` slash is **not** a valid Codex command and will error.
+- **Claude Code**: `/df:<name>` (e.g. `/df:planning`, `/df:research`). Per the Claude Code skills docs, plugin skills use a `plugin-name:skill-name` namespace and cannot collide with personal, project, or enterprise skills of the same short name.
+- **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:planning`). The Claude-style `/df:planning` slash is **not** a valid Codex command and will error.
 
-The unprefixed forms `/plan`, `/research`, `/implement`, etc. are **not** provided by this plugin. If your environment binds them to something (a personal skill, a bundled command, a different plugin), that's a different artifact — invoke df's workflows via `/df:<name>` to be explicit.
+The unprefixed forms `/research`, `/implement`, etc. are **not** provided by this plugin. If your environment binds them to something (a personal skill, a bundled command, a different plugin), that's a different artifact — invoke df's workflows via `/df:<name>` to be explicit.
 
 ### Update
 
