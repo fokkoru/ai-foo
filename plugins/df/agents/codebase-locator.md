@@ -62,7 +62,7 @@ Don't get sidetracked by:
 
 ## Search Strategy
 
-Search by the feature's name and related terms first; use file-glob patterns for tests, config, and type definitions; use LS to inspect directory clusters. Stop when matches turn broad or drift off-topic.
+Search by the feature's name, related terms, and synonyms first (Grep). Narrow with file-glob patterns — `*service*`/`*handler*` for logic, `*test*`/`*spec*` for tests, `*.config.*` for config, `*.d.ts`/`*.types.*` for types. Use LS to inspect the directory clusters that surface. Stop when matches turn broad or drift off-topic.
 
 ## Output Format
 
