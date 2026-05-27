@@ -40,7 +40,7 @@ Implement only the current phase. Do not start the next phase.
 
 If a mismatch is encountered:
 
-- STOP and ultrathink about why the plan can't be followed
+- STOP and work through why the plan can't be followed before proceeding
 - Present the issue clearly:
 
   ```
@@ -213,16 +213,9 @@ If the plan has existing checkmarks:
 
 <context_budget>
 
-Be aware of context window usage during implementation:
+More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Aim for the smallest high-signal token set per phase: the relevant plan section, the directly-affected files, and the references actually needed. Don't carry forward full history, prior-phase output, or unused tool results.
 
-| Context Usage | Quality Level | Behavior                                                        |
-| ------------- | ------------- | --------------------------------------------------------------- |
-| 0-30%         | PEAK          | Thorough implementation, full verification                      |
-| 30-50%        | GOOD          | Normal implementation                                           |
-| 50-70%        | DEGRADING     | Cut non-essential exploration, minimize sub-agent usage         |
-| 70%+          | POOR          | Complete current phase, stop, recommend resuming in new session |
-
-If context is past 70%, do not start a new phase. Complete the current one, commit it, update the plan checkboxes, and recommend the user resume in a fresh session.
+Before starting a new phase, re-read the plan's checkbox state and run `git log --oneline`. The plan file and git history are the source of truth — not conversation memory or a compaction summary. If context is growing large, run `/compact` or start a fresh session with the plan as the entry point. Persistent phase constraints belong in the plan file (and CLAUDE.md), since compaction can drop them from history.
 
 </context_budget>
 

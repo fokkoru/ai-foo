@@ -482,16 +482,7 @@ Stay focused on planning what was actually requested.
 
 <context_budget>
 
-Plans should be scoped so each phase can be implemented within ~50% of the context window:
-
-| Context Usage | Quality Level | Implication for Planning              |
-| ------------- | ------------- | ------------------------------------- |
-| 0-30%         | PEAK          | Thorough, comprehensive work possible |
-| 30-50%        | GOOD          | Confident, solid work                 |
-| 50-70%        | DEGRADING     | Cut non-essential exploration         |
-| 70%+          | POOR          | Rushed, minimal quality               |
-
-If a plan has many phases or complex phases, consider splitting into smaller plans. The implementer will lose quality past 50% context usage.
+More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Scope each phase so it can be implemented from the smallest high-signal token set: the relevant plan section, the directly-affected files, and the references actually needed. Each phase should be independently resumable from the plan section + affected files alone, without prior-phase output or full conversation history. If a phase is large or sprawling, split it into smaller phases or separate plans.
 
 </context_budget>
 
