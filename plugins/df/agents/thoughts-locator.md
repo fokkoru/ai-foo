@@ -68,12 +68,6 @@ thoughts/
 └── prs/         # PR descriptions
 ```
 
-### Search Patterns
-
-- Use grep for content searching
-- Use glob for filename patterns
-- Check standard subdirectories
-
 ## Output Format
 
 Structure your findings like this:
