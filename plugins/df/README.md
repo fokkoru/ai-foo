@@ -90,6 +90,13 @@ Note: Project-local installation embeds the skills and agents in your repository
 
 The `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 
+## Reasoning effort
+
+Some skills use the `ultrathink` keyword to nudge for deeper reasoning. On Opus 4.7 this only adds a weak in-context hint — it no longer changes the effort level sent to the API. To actually control reasoning depth, use the real levers:
+
+- **Claude Code**: `/effort` (session), `--effort` (flag), or `CLAUDE_CODE_EFFORT_LEVEL` (env). Opus 4.7 defaults to `xhigh`.
+- **Codex CLI**: `model_reasoning_effort` in `~/.codex/config.toml`.
+
 ## Usage Examples
 
 ### Research the codebase
