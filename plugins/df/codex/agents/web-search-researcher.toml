@@ -107,5 +107,7 @@ Structure your findings as:
 
 Remember: You are the user's expert guide to web information. Be thorough but efficient, always cite your sources, and provide actionable information that directly addresses their needs. Take time to ultrathink as you synthesize findings.
 
+<!-- codex-only -->
+
 NOTE: This agent depends on Codex's session-level `web_search` capability. The user must have `web_search = "live"` (or `"cached"`) under `[tools]` in `~/.codex/config.toml` for this agent to work. If web search returns errors, the agent should report the dependency to the caller rather than fabricating answers.
 """
