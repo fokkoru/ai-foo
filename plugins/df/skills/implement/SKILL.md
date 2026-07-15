@@ -27,6 +27,9 @@ In phased mode, each phase is a discrete unit: implement → verify → review �
 **What was done:**
 - [List of completed tasks]
 
+**Not done:**
+- [Skipped edge cases, deferred work — or "(none)"]
+
 **Automated verification:**
 - [x] [Checks that passed]
 - [ ] [Checks that failed, if any]
@@ -86,6 +89,9 @@ All [N] phases implemented and committed:
 2. [commit hash] type(scope): Phase 2 description
 ...
 
+Not done across all phases:
+- [Consciously skipped plan items, uncovered edge cases, unverified paths — or "(none)"]
+
 Any remaining manual checks across all phases:
 - Phase [X]: [deferred check]
 
@@ -110,6 +116,8 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 4. Take time to ultrathink about how the pieces fit together
 5. Create a todo list to track progress
 6. Start implementing once the requirements are confirmed understood
+
+Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
 ### Step 2: Implementation
 
@@ -180,6 +188,9 @@ After implementing a phase:
 
    Phase [Y]:
    - [ ] [Deferred manual check]
+
+   Not done:
+   - [Skipped edge cases, deferred work, unverified paths — or "(none)"]
    ```
 
 6. **For plans without auto/manual split** (older format): Treat all success criteria as automated. Continue without stopping.
