@@ -75,13 +75,14 @@ If the user's feedback requires understanding new code patterns or validating as
    | `web-search-researcher` | Research APIs, libraries, best practices | Need information beyond the codebase |
 
    **Guidelines:**
-   - Only spawn if truly needed — don't research for simple changes
+
    - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
    - Run multiple agents in parallel when searching for different things
    - Each agent knows its job — provide what to find, not how to search
    - Do not write detailed prompts about HOW to search; the agents already know
    - Keep prompts focused on read-only operations
    - Request specific file:line references in responses
+   - Verify sub-task results — if unexpected, spawn follow-up tasks and cross-check against the actual codebase
 
 3. **Read any new files identified by research**:
    - Read them FULLY into the main context

@@ -184,6 +184,8 @@ Select the right agent for each type of investigation:
 - Each agent knows its job — provide what to find, not how to search
 - Do not write detailed prompts about HOW to search; the agents already know
 - Keep prompts focused on read-only operations
+- Request specific file:line references in responses
+- Verify sub-task results — if unexpected, spawn follow-up tasks and cross-check against the actual codebase
 
 </agent_selection>
 
