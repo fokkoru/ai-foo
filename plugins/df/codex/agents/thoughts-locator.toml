@@ -78,7 +78,7 @@ Structure your findings like this:
 - `thoughts/tickets/eng_1234.md` - Implement rate limiting for API
 
 ### Research Documents
-- `thoughts/research/2024-01-15_rate_limiting_approaches.md` - Research on different rate limiting strategies
+- `thoughts/research/2026-07-14_rate_limiting_approaches.md` - Research on different rate limiting strategies
 
 ### Implementation Plans
 - `thoughts/plans/api-rate-limiting.md` - Detailed implementation plan for rate limits

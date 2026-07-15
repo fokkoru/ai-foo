@@ -92,9 +92,9 @@ The `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Co
 
 ## Reasoning effort
 
-Some skills use the `ultrathink` keyword to nudge for deeper reasoning. On Opus 4.7 this only adds a weak in-context hint — it no longer changes the effort level sent to the API. To actually control reasoning depth, use the real levers:
+Some skills use the `ultrathink` keyword as a weak in-context nudge for deeper reasoning — on current models it does not change the effort level sent to the API. The real levers:
 
-- **Claude Code**: `/effort` (session), `--effort` (flag), or `CLAUDE_CODE_EFFORT_LEVEL` (env). Opus 4.7 defaults to `xhigh`.
+- **Claude Code**: `/effort` (session), `--effort` (flag), `CLAUDE_CODE_EFFORT_LEVEL` (env), or `effort:` frontmatter on a skill/agent. Check your model's default with `/effort`.
 - **Codex CLI**: `model_reasoning_effort` in `~/.codex/config.toml`.
 
 ## Usage Examples
@@ -116,15 +116,15 @@ $df:planning Add rate limiting to the API     # Codex
 ### Execute a plan
 
 ```
-/df:implement thoughts/plans/2024-01-15_rate-limiting.md     # Claude
-$df:implement thoughts/plans/2024-01-15_rate-limiting.md     # Codex
+/df:implement thoughts/plans/2026-07-14_rate-limiting.md     # Claude
+$df:implement thoughts/plans/2026-07-14_rate-limiting.md     # Codex
 ```
 
 ### Independent code review
 
 ```
-/df:peer-review thoughts/plans/2024-01-15_rate-limiting.md     # Claude
-$df:peer-review thoughts/plans/2024-01-15_rate-limiting.md     # Codex
+/df:peer-review thoughts/plans/2026-07-14_rate-limiting.md     # Claude
+$df:peer-review thoughts/plans/2026-07-14_rate-limiting.md     # Codex
 ```
 
 ### Commit changes
