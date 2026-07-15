@@ -1,8 +1,8 @@
 ---
 name: implement
-description: Use when implementing a technical plan from the plans directory with verification
+description: Use when implementing a technical plan from the plans directory with verification — continuous by default, or phase-by-phase with human review and a commit per phase when the user asks for phased execution
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(make:*), Bash(npm run:*)
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(make:*), Bash(npm run:*)
 ---
 
 <objective>
@@ -10,6 +10,89 @@ Execute an approved technical plan phase by phase with verification and human ch
 
 Follow the plan's intent while adapting to codebase reality.
 </objective>
+
+<mode_selection>
+
+This skill runs in one of two modes:
+
+**Continuous (default)**: implement phases back to back, stopping only for manual verification items that block the next phase (see Step 3 in the workflow). Use this mode unless the user asks otherwise.
+
+**Phased**: enabled ONLY when the user explicitly asks for it ("phased", "phase by phase", "commit per phase"). If the plan itself calls for a commit per phase but the user did not specify a mode, ask one question before starting — "The plan calls for per-phase commits — run in phased mode?" — never enable phased mode silently.
+
+In phased mode, each phase is a discrete unit: implement → verify → review → commit → next. Always stop after each phase and present a summary:
+
+```
+## Phase [N] Complete
+
+**What was done:**
+- [List of completed tasks]
+
+**Automated verification:**
+- [x] [Checks that passed]
+- [ ] [Checks that failed, if any]
+
+**Manual verification needed:**
+- [List manual checks from the plan, or "(none)"]
+
+**Files changed:**
+- [List of modified/created files]
+
+Ready to commit Phase [N] and proceed to Phase [N+1], or let me know if anything needs adjusting.
+```
+
+Wait for the user to:
+
+- Confirm manual checks passed (if any)
+- Report issues that need fixing
+- Give permission to commit and continue
+
+If the user reports issues:
+
+- Fix the reported problems
+- Re-run verification
+- Present updated results
+- Wait again for confirmation
+
+Repeat until the user is satisfied with the phase.
+
+Once the user approves the phase, commit it:
+
+1. Run `git status` and `git diff HEAD` to review changes
+2. Identify the specific files that belong to this phase
+3. Present the commit plan and wait for confirmation:
+
+   ```
+   Committing Phase [N]:
+     type(scope): description
+     Files: file1.ts, file2.ts
+
+   Proceed?
+   ```
+
+4. Stage specific files for this phase: `git add <files>`
+5. Commit with a conventional message: `git commit -m "type(scope): description"`
+6. Verify with `git status`
+
+Do not stage files unrelated to the current phase. If unrelated changes exist, note them and leave them unstaged.
+
+After committing: if more phases remain, continue with the next phase. When all phases are done, present the final summary:
+
+```
+## Implementation Complete
+
+All [N] phases implemented and committed:
+
+1. [commit hash] type(scope): Phase 1 description
+2. [commit hash] type(scope): Phase 2 description
+...
+
+Any remaining manual checks across all phases:
+- Phase [X]: [deferred check]
+
+Next: run /df:validate or create a PR.
+```
+
+</mode_selection>
 
 <quick_start>
 If a plan file path is provided, skip the prompt — immediately read the plan fully and begin implementation.
@@ -67,7 +150,7 @@ After implementing a phase:
 2. Fix any issues before proceeding
 3. Update progress in both the plan file and todos
 4. Check off completed items in the plan file itself using Edit
-5. **Determine whether to continue or stop**:
+5. **Determine whether to continue or stop** (in phased mode, always stop — see `<mode_selection>`):
 
    Read the phase's success criteria in the plan:
    - If `#### Manual Verification` is **empty, absent, or says "(none)"** → **continue to next phase**
@@ -124,6 +207,7 @@ Use sub-tasks sparingly — mainly for targeted debugging or exploring unfamilia
 If the plan has existing checkmarks:
 
 - Trust that completed work is done
+- Check git log to see which phases were already committed
 - Pick up from the first unchecked item
 - Verify previous work only if something seems off
 
@@ -168,6 +252,20 @@ Never present a manual checkpoint with a broken or unverified environment. The u
 
 </checkpoint_protocol>
 
+<commit_format>
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+type(scope): description
+```
+
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `style`
+
+Write commit messages that explain WHY, not just WHAT. The type and scope convey what changed — the message body should convey why it matters.
+
+</commit_format>
+
 <context_budget>
 
 More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Aim for the smallest high-signal token set per phase: the relevant plan section, the directly-affected files, and the references actually needed. Don't carry forward full history, prior-phase output, or unused tool results.
@@ -203,6 +301,8 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 - Investigating test failures unrelated to the current phase
 - Rewriting working code that the plan doesn't touch
 - Adding features or improvements not in the plan scope
+- Proceeding to the next phase without user confirmation (phased mode)
+- Committing multiple phases in a single commit (phased mode)
 
 Stay focused on implementing what was actually planned.
 </anti_patterns>
@@ -227,4 +327,13 @@ When triggered: present the issue clearly, explain what was attempted, and ask h
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria
 - Continue to the next phase automatically when manual verification is empty or absent — stopping is the exception, not the rule
 - When manual verification exists but doesn't block the next phase, defer it — present all deferred checks at the end grouped by phase
+
+Apply in phased mode:
+
+- Always stop after each phase — never auto-continue to the next phase
+- Wait for explicit user confirmation before committing — present the plan first
+- Don't commit without user approval — always present results and wait
+- Don't stage all files — use specific file names for each phase's commit; never `git add .` or `git add -A`
+- Don't add AI signatures — no Co-Authored-By or "Generated with" lines in commit messages
+- Don't modify code during the commit step — only stage and commit existing changes
 </constraints>

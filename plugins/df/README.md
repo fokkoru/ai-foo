@@ -19,15 +19,14 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 
 ## Skills
 
-All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other eight are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
+All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
 
 | Skill                 | Description                                                                                    |
 | --------------------- | ---------------------------------------------------------------------------------------------- |
 | `df:research`         | Comprehensive codebase research with parallel sub-agents                                       |
 | `df:planning`         | Create detailed implementation plans with thorough research                                    |
 | `df:iterate`          | Update existing plans based on feedback                                                        |
-| `df:implement`        | Execute plans with verification and phase-by-phase progress                                    |
-| `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                  |
+| `df:implement`        | Execute plans with verification and phase-by-phase progress (continuous or phased mode)        |
 | `df:validate`         | Verify implementation against plan, identify issues                                            |
 | `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                     |
 | `df:handoff`          | Create handoff document for session transfer                                                   |

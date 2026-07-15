@@ -27,15 +27,14 @@ Development workflow plugin providing a structured feature development cycle:
 /df:research → /df:planning → [/df:iterate] → /df:implement → [/df:validate] → [/df:peer-review] → /df:commit → [/df:handoff]
 ```
 
-Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other eight are manual-only — the model cannot invoke them, so you run them yourself.
+Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other seven are manual-only — the model cannot invoke them, so you run them yourself.
 
 | Skill                 | Purpose                                                                                           |
 | --------------------- | ------------------------------------------------------------------------------------------------- |
 | `df:research`         | Comprehensive codebase research with parallel sub-agents                                          |
 | `df:planning`         | Create detailed implementation plans                                                              |
 | `df:iterate`          | Update existing plans based on feedback                                                           |
-| `df:implement`        | Execute plans phase by phase with verification                                                    |
-| `df:phased-implement` | Implement a plan one phase at a time with human review and a commit per phase                     |
+| `df:implement`        | Execute plans phase by phase with verification (continuous or phased mode)                        |
 | `df:validate`         | Verify implementation against plan, identify issues                                               |
 | `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                        |
 | `df:handoff`          | Create handoff document for session transfer                                                      |
