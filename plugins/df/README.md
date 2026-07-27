@@ -30,7 +30,7 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | `df:validate`         | Verify implementation against plan, identify issues                                            |
 | `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                     |
 | `df:handoff`          | Create handoff document for session transfer                                                   |
-| `df:commit`           | Commit changes in logical chunks (full Conventional Commits 1.0.0 spec incl. breaking changes) |
+| `df:commit`           | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0) |
 
 ## Subagents
 
@@ -84,6 +84,10 @@ cp -r df/agents your-project/.claude/agents
 ```
 
 Note: Project-local installation embeds the skills and agents in your repository. Plugin installation keeps them external.
+
+### Optional: humanizer
+
+`df:commit` writes plain commit bodies on its own. If you also install the [humanizer](https://github.com/blader/humanizer) plugin, the skill runs any body through it before committing.
 
 ## Tool gating differences
 

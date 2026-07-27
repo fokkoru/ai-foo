@@ -1,15 +1,14 @@
 ---
 name: commit
 description: Use when the user explicitly asks to create one or more git commits from current working tree changes. Creates focused, atomic commits by analyzing changes and grouping them logically using Conventional Commits format, with a required user-confirmation step before staging or committing.
-allowed-tools: Read, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git branch:*)
+allowed-tools: Read, Skill, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git branch:*)
 shell: bash
-model: haiku
 ---
 
 <objective>
 Create focused, atomic commits by analyzing changes and grouping them logically using Conventional Commits format.
 
-**Core principle:** Analyze → Group → Confirm → Execute → Verify.
+**Core principle:** Analyze → Group → Size → Confirm → Execute → Verify.
 
 **Announce at start:** "I'm using the df-commit skill to create atomic commits with logical grouping."
 </objective>
@@ -20,7 +19,7 @@ Current repository state, captured at skill-load time:
 - git status: !`git status`
 - diff summary (shortstat): !`git diff --stat HEAD`
 - current branch: !`git branch --show-current`
-- recent commits: !`git log --oneline -5`
+- recent commits: !`git log -5 --pretty=format:'%h %s%n%b'`
 </context>
 
 <quick_start>
@@ -28,9 +27,10 @@ Current repository state, captured at skill-load time:
 1. Review the `<context>` block above (status, shortstat, branch, recent commits)
 2. Run `git diff HEAD -- <file>` for files whose content you need to read for grouping decisions
 3. Determine logical grouping strategy (single vs multiple commits)
-4. Present commit plan and wait for user confirmation
-5. Execute staged commits with conventional messages
-6. Verify with `git status` and `git log`
+4. Size each message — pick a tier, add a body only against a stated reason
+5. Present commit plan and wait for user confirmation
+6. Execute staged commits with conventional messages
+7. Verify with `git status` and `git log`
 </quick_start>
 
 <workflow>
@@ -59,28 +59,42 @@ If the `<context>` snapshot is stale (user edited files after skill loaded), ref
 
 When a file contains unrelated changes, ask the user to manually stage the relevant hunks, or commit the file as-is and note the mixed concern for a future cleanup commit.
 
-### Step 3: Present Plan
+### Step 3: Size Each Message
+
+For each group from Step 2, write these two lines down before drafting any message text:
+
+    Tier: trivial | moderate | complex
+    Body: none | required, because <one clause>
+
+If you cannot fill in the "because" clause, the answer is none. Write the subject first. A body gets added only against a reason already written down, never drafted first and justified after.
+
+Most commits are trivial and need no body.
+
+If a group lands at Complex, try to split it into groups that each land at Trivial or Moderate before moving on. Splitting is the first response to complexity; a longer message is the fallback when splitting is not possible. Step 2's groupings win: never break apart files that must land together to keep the tree buildable.
+
+### Step 4: Present Plan
 
 Present the commit plan and wait for confirmation:
 
 ```
 I plan to create N commit(s):
 
-1. type(scope): message
+1. type(scope): message   [trivial]
    - file1.ts
    - file2.ts
 
-2. type(scope): message
+2. type(scope): message   [moderate]
    - file3.ts
+   body: one paragraph on why the timeout moved to 30s
 
 Proceed?
 ```
 
-Subject lines must follow the rules in `<message_rules>` below: imperative mood, ≤50 characters, no trailing period.
+Subject lines must follow the rules in `<message_rules>` below: imperative mood, ≤50 characters, no trailing period. Message length follows the tiers in `<commit_scale>`.
 
 Do not stage or commit until the user confirms. Read-only inspection commands (`git diff <file>`, `git status`) may still run if needed to answer follow-up questions.
 
-### Step 4: Execute
+### Step 5: Execute
 
 If files were pre-staged, run `git restore --staged .` first to start clean.
 
@@ -115,7 +129,7 @@ EOF
 
 Use the single-quoted HEREDOC (`<<'EOF'`) to prevent shell expansion of `$`, backticks, or `!` in the message body.
 
-### Step 5: Verify
+### Step 6: Verify
 
 Run `git status` to confirm no uncommitted changes remain.
 Show `git log --oneline -N` with the created commits.
@@ -195,25 +209,76 @@ Refs: abc123def
 
 </commit_format>
 
-<message_quality>
+<commit_scale>
 
-Write commit messages that explain WHY, not just WHAT:
+Size the message to the change. The default is no body.
 
-**Focus on:**
+### The test
 
-- Why the change was made (motivation, context)
-- Key decisions and tradeoffs behind the approach
-- Impact or implications of the change
+Read your subject line, then read the diff. Could a reviewer holding both work out why the change was made? If yes, the message is done. Ship the subject alone.
 
-**Avoid:**
+Diff size is a hint, not the rule. A 400-line regenerated file is trivial. A three-line change to lock ordering may need a paragraph.
 
-- Mechanical lists of files modified without context
-- Restating what's obvious from the diff
-- Generic summaries that don't add value beyond the type/scope
+### Tiers
 
-The type and scope convey WHAT changed. The message body should convey WHY it matters.
+| Tier     | When                                                                                  | Body                    |
+| -------- | ------------------------------------------------------------------------------------- | ----------------------- |
+| Trivial  | Subject plus diff already explain the change. Mechanical, generated, or self-evident. | None                    |
+| Moderate | Subject is accurate, but the motivation is not visible in the diff.                   | One paragraph, ~3 lines |
+| Complex  | Two or more rationales, or a tradeoff a reader would otherwise re-litigate.           | Split first, see below  |
 
-</message_quality>
+Trivial covers version bumps, typo and comment fixes, dependency updates, formatting, renames, regenerated files, and single-file edits whose subject says everything.
+
+Moderate covers a bug fix whose root cause is not visible in the patch, a refactor with one stated reason, a default value chosen deliberately.
+
+Complex is a split signal before it is a writing signal. Break the change into commits that each land at Trivial or Moderate. Only when the change is genuinely atomic, meaning a split would leave the tree broken or the halves meaningless, does it earn a body: at most two short paragraphs covering the reason and the one decision a reader would otherwise question.
+
+Split along independent concerns only. The groupings from Step 2 take precedence: a feature layer (interface, implementation, wiring, tests) and a functional unit (migration plus schema) stay in one commit even when their rationale is compound, because splitting them leaves intermediate commits that do not build. A compound rationale is not by itself a reason to split. Two independent concerns is. If splitting would push the count past five groups, `<circuit_breakers>` applies: stop and ask.
+
+### The cap is a split signal
+
+If a body is outgrowing its tier, the commit is too big. Split it. Do not extend the message. This is the rule the kernel and Git submitting-patches docs both state: a description that keeps growing means the patch covers more than one problem.
+
+If a change genuinely cannot be split and still needs more than two paragraphs, stop and tell the user, naming the split you considered and why it does not work.
+
+### Report the tier
+
+Mark each commit with its tier in the Step 4 plan so the user can push back before anything is staged.
+
+</commit_scale>
+
+<message_voice>
+
+Bodies are prose. Never a bullet list of what changed. The diff is already that list.
+
+Do not:
+
+- Restate the diff. Type, scope, and subject carry WHAT. A body carries WHY.
+- Narrate the session. No "initially tried X, then switched to Y", no "as requested", no "per review feedback". The commit records the change, not how it was arrived at.
+- Open with "This commit", "This change", or "This PR".
+- Guess at rationale you do not have. If you cannot state why from the diff and this session, write the shorter message.
+- Reach for inflated words: robust, comprehensive, seamless, powerful, significantly, enhance, leverage, streamline.
+- Tack on -ing clauses: "ensuring correctness", "allowing future growth", "improving performance".
+- Group items into threes for rhythm.
+- Use bold, emoji, or headings.
+- Hedge, or close with a summary sentence that adds nothing.
+
+Match the repository's voice. The `<context>` block shows recent full messages. Follow their register, sentence length, and punctuation habits, including whether they use em dashes.
+
+If the `humanizer` skill is available, invoke it in embedded mode on any body before committing; it returns final text with no commentary. Its rule against diff-anchored writing does not apply here, since a commit message is version-scoped by definition and that rule exempts version-scoped documents. The tier cap still governs the result: if the returned body is longer than its tier allows, keep the shorter text. If humanizer is not installed, the rules above are the baseline, not a fallback.
+
+</message_voice>
+
+<message_rules>
+
+- **NEVER add AI signatures** — no `Co-authored-by: Claude`, no "Generated with Claude Code", no "🤖" markers. The user adds co-authors manually if they want them.
+- **Message length**: sized by `<commit_scale>`, written per `<message_voice>`. Most commits are subject-only.
+- **Subject line**: imperative mood, ≤50 chars, no trailing period. Lowercase after the colon unless proper noun.
+- **Body** (when present): wrap at ~72 chars per line. One blank line between subject and body.
+- **Footer** (when present): one blank line after body. Use the tokens in `<commit_format>`.
+- **Breaking changes**: use both `!` on subject and `BREAKING CHANGE:` footer for clarity.
+
+</message_rules>
 
 <success_criteria>
 
@@ -232,23 +297,12 @@ The type and scope convey WHAT changed. The message body should convey WHY it ma
 
 </staging_rules>
 
-<message_rules>
-
-- **NEVER add AI signatures** — no `Co-authored-by: Claude`, no "Generated with Claude Code", no "🤖" markers. The user adds co-authors manually if they want them.
-- **Focus on WHY, not WHAT** — the diff shows what changed. The message explains motivation, constraints, tradeoffs.
-- **Subject line**: imperative mood, ≤50 chars, no trailing period. Lowercase after the colon unless proper noun.
-- **Body** (when present): wrap at ~72 chars per line. One blank line between subject and body.
-- **Footer** (when present): one blank line after body. Use the tokens in `<commit_format>`.
-- **Breaking changes**: use both `!` on subject and `BREAKING CHANGE:` footer for clarity.
-
-</message_rules>
-
 <scope_anti_patterns>
 
 - Suggesting code changes or fixes while committing
 - Reformatting or linting files before committing
 - Creating overly granular commits for trivially related changes
-- Investigating why changes were made — focus on what changed
+- Digging through issue trackers or prior branches to reconstruct rationale — use what the diff and this session give you
 - Running tests or builds as part of the commit process
 
 Stay focused on creating clean, well-grouped commits.

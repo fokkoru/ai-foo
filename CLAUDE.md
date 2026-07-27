@@ -38,7 +38,7 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 | `df:validate`         | Verify implementation against plan, identify issues                                               |
 | `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                        |
 | `df:handoff`          | Create handoff document for session transfer                                                      |
-| `df:commit`           | Commit changes in logical chunks (auto-triggers on commit intent; also invocable as `/df:commit`) |
+| `df:commit`           | Commit changes in logical chunks, message length sized to the change (auto-triggers on commit intent; also invocable as `/df:commit`) |
 
 | Agent                     | Purpose                                       |
 | ------------------------- | --------------------------------------------- |
