@@ -1,5 +1,5 @@
 interface:
   display_name: "Peer Review"
-  short_description: "Independent two-stage code review against the plan"
+  short_description: "Independent isolated code review — one pass, spec + quality verdicts"
 policy:
   allow_implicit_invocation: false

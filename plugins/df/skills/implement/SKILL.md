@@ -113,9 +113,23 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 1. Read the plan completely and check for any existing checkmarks (`- [x]`)
 2. Read the original ticket and all files mentioned in the plan
 3. **Read files fully** — never use limit/offset parameters, complete context is needed
-4. Take time to ultrathink about how the pieces fit together
-5. Create a todo list to track progress
-6. Start implementing once the requirements are confirmed understood
+4. **Pre-flight conflict scan** — before writing any code, check every phase's stated assumptions against the current codebase: do the referenced files, symbols, and APIs exist as the plan describes? Do the plan's Global Constraints still hold? Collect every conflict and raise them as **one** batched question:
+
+   ```
+   Pre-flight: [N] conflicts between the plan and the current codebase
+
+   1. Phase [N] — Expected: [what the plan says]
+                  Found:    [actual state]
+                  Impact:   [what breaks if unaddressed]
+   2. ...
+
+   How should I proceed?
+   ```
+
+   Ask once, then implement. If the scan finds nothing, say so in one line and start. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
+5. Take time to ultrathink about how the pieces fit together
+6. Create a todo list to track progress
+7. Start implementing once the requirements are confirmed understood
 
 Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
@@ -155,7 +169,7 @@ After implementing a phase:
    - If the check **passes**: mark `[x]` in the plan file
    - If the check **fails**: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
    - If the check **requires manual testing**: leave `[ ]` unchanged
-2. Fix any issues before proceeding
+2. Fix any failures before proceeding. **Three fix rounds maximum per phase.** At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
 3. Update progress in both the plan file and todos
 4. Check off completed items in the plan file itself using Edit
 5. **Determine whether to continue or stop** (in phased mode, always stop — see `<mode_selection>`):
@@ -322,7 +336,7 @@ Stay focused on implementing what was actually planned.
 Stop and ask the user for guidance if:
 
 - A phase's changes conflict with current codebase state
-- Build/verification fails after 3 fix attempts
+- Verification still fails after the third fix round — present the dispositions from Step 3 and ask
 - The plan references files or APIs that no longer exist
 - Implementation reveals the plan's approach is fundamentally flawed
 - Scope of changes exceeds what the phase describes

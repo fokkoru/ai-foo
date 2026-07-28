@@ -24,7 +24,7 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 | `df:iterate`          | Update existing plans based on feedback                                       |
 | `df:implement`        | Execute plans phase by phase with verification (continuous or phased mode)   |
 | `df:validate`         | Verify implementation against plan, identify issues                           |
-| `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer    |
+| `df:peer-review`      | Independent code review by an isolated reviewer — one pass, spec + quality    |
 | `df:handoff`          | Create handoff document for session transfer                                  |
 | `df:commit`           | Commit changes in logical chunks (Conventional Commits)                       |
 

@@ -49,6 +49,16 @@ Before diving into detailed steps, ultrathink about how to shape the planning ap
 - Set **quality standards**, not specific patterns
 - Provide **guardrails**, not detailed instructions
 
+### Right-Size the Phases
+
+A phase is the smallest unit that carries its own verification and is worth an independent reviewer's gate.
+
+- Fold setup, configuration, scaffolding, and documentation steps into the phase whose deliverable needs them.
+- Split only where a reviewer could meaningfully reject one phase while approving its neighbour.
+- Each phase ends with an independently verifiable deliverable.
+
+This is a gate test, not a size limit. Phase count is an outcome of the test.
+
 ### Known Rabbit Holes
 
 Document complexity traps upfront:
@@ -184,6 +194,14 @@ After structure approval:
    - Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
 2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
+
+3. **Self-review the finished plan before presenting it.** Read it once, checking exactly three things:
+
+   - **Spec coverage** — every requirement in the source task maps to a phase. Name any that do not.
+   - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in any phase's Changes Required or Success Criteria. Every value is concrete.
+   - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
+
+   Fix what the review finds, then present.
 
 If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
 

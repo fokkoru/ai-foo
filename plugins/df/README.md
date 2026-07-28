@@ -28,7 +28,7 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | `df:iterate`          | Update existing plans based on feedback                                                        |
 | `df:implement`        | Execute plans with verification and phase-by-phase progress (continuous or phased mode)        |
 | `df:validate`         | Verify implementation against plan, identify issues                                            |
-| `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                     |
+| `df:peer-review`      | Independent code review by an isolated reviewer — one pass, spec + quality verdicts            |
 | `df:handoff`          | Create handoff document for session transfer                                                   |
 | `df:commit`           | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0) |
 
@@ -42,7 +42,7 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | `thoughts-locator`        | Discover documents in thoughts/ directory     |
 | `thoughts-analyzer`       | Extract insights from thought documents       |
 | `web-search-researcher`   | Research modern web information               |
-| `code-reviewer`           | Independent, isolated two-stage code reviewer |
+| `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
 
@@ -143,5 +143,5 @@ $df:peer-review thoughts/plans/2026-07-14_rate-limiting.md     # Codex
 3. **Iterate**: Adjust the plan based on findings
 4. **Implement**: Execute the plan phase by phase with verification
 5. **Validate**: Verify implementation against plan, identify issues
-6. **Review**: Independent, isolated two-stage code review (spec compliance, then code quality)
+6. **Review**: Independent, isolated review — one pass over the diff returning a spec-compliance verdict and quality findings
 7. **Commit**: Create logical, well-organized commits

@@ -129,6 +129,8 @@ Get user confirmation before proceeding.
 2. **Ensure consistency**:
    - If adding a new phase, ensure it follows the existing pattern
    - If modifying scope, update "What We're NOT Doing" section
+   - If a constraint changes, copy the new wording verbatim from its source into "Global Constraints" — never paraphrase it, and never drop a constraint while editing around it
+   - If a phase's `Produces` changes, update every later phase whose `Consumes` names it
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
 

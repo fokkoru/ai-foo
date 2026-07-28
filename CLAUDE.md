@@ -36,7 +36,7 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 | `df:iterate`          | Update existing plans based on feedback                                                           |
 | `df:implement`        | Execute plans phase by phase with verification (continuous or phased mode)                        |
 | `df:validate`         | Verify implementation against plan, identify issues                                               |
-| `df:peer-review`      | Independent two-stage (spec + quality) code review by an isolated reviewer                        |
+| `df:peer-review`      | Independent code review by an isolated reviewer — one pass, spec + quality verdicts               |
 | `df:handoff`          | Create handoff document for session transfer                                                      |
 | `df:commit`           | Commit changes in logical chunks, message length sized to the change (auto-triggers on commit intent; also invocable as `/df:commit`) |
 
@@ -48,7 +48,7 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 | `thoughts-locator`        | Discover documents in thoughts/ directory     |
 | `thoughts-analyzer`       | Extract insights from thought documents       |
 | `web-search-researcher`   | Research modern web information               |
-| `code-reviewer`           | Independent, isolated two-stage code reviewer |
+| `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
 
 **Install in another project:**
 
@@ -177,3 +177,4 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 - In command/skill `.md` files, `` !`command` `` is **preprocessing** — it runs at invocation time and injects output before Claude sees the prompt. Use plain `` `command` `` in workflow instructions for commands Claude should execute itself.
 - Run `scripts/check-codex-agent-drift.sh` after editing any agent — it verifies the `plugins/df/agents/*.md` ↔ `plugins/df/codex/agents/*.toml` mirror bodies haven't drifted.
+- Never lower `code-reviewer`'s model tier (`model: opus` / `model_reasoning_effort = "high"`). A cheap reviewer doesn't merely miss defects — it argues for them: in a measured comparison, a haiku-tier reviewer flagged **0 of 10** planted defects at correct severity, praising a DRY violation as YAGNI and calling an assert-nothing test plan-compliant.

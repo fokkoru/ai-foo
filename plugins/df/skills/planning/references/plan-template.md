@@ -23,6 +23,17 @@
 - [Pattern to follow]
 - [Constraint to work within]
 
+## Global Constraints
+
+[Project-wide rules every phase must satisfy — version floors, API contracts, security requirements, compatibility guarantees. Write "(none)" if there are none.]
+
+Copy each constraint **verbatim from its source** — the ticket, the spec, a config file, CLAUDE.md. Do not paraphrase it into a process instruction; a re-worded constraint stops being enforced.
+
+- [Constraint, in the source's own words] — source: `path/to/source:line`
+- [Constraint, in the source's own words] — source: `path/to/source:line`
+
+Every phase's requirements implicitly include this section.
+
 ## What We're NOT Doing
 
 [Explicitly list out-of-scope items to prevent scope creep]
@@ -47,6 +58,13 @@
 ### Overview
 
 [What this phase accomplishes]
+
+### Interfaces
+
+- **Consumes**: [what this phase uses from earlier phases — exact names, signatures, and types, or "(nothing)"]
+- **Produces**: [what later phases rely on — exact function, type, and file names with parameter and return types, or "(nothing)"]
+
+A phase must be implementable from its own section plus the files it names. This block is how a resumed session learns what its neighbours did.
 
 ### Changes Required:
 
