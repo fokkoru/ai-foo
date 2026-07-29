@@ -308,16 +308,6 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 - No unresolved mismatches between plan and implementation
   </success_criteria>
 
-<guidelines>
-- Follow the plan's intent, not just the letter — adapt to codebase reality
-- One phase at a time — complete verification before moving forward
-- Update the plan file as work progresses — it's the progress record for resuming later
-- Continue automatically through phases with only automated verification — stop only for manual verification items that block the next phase
-- Defer non-blocking manual checks to the end — present them grouped by phase
-- Use sub-tasks sparingly — the main agent should do the implementation work
-- When stuck, communicate clearly — present mismatches with context and ask for guidance
-</guidelines>
-
 <anti_patterns>
 
 - Refactoring code beyond what the plan specifies

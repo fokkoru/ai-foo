@@ -124,15 +124,6 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 ```
 </report_format>
 
-<guidelines>
-- **Be isolated** — the reviewer subagent gets artifacts only; never forward session history.
-- **Fix spec gaps first** — quality findings are advisory until spec compliance passes.
-- **Be honest about severity** — Critical means blocks commit; don't inflate nits.
-- **Logic over style** — skip anything the linter/type-checker/CI enforces.
-- **Be read-only** — never modify code during review; fixes happen as an explicit, separate step.
-- **Scope re-review, don't suppress it** — name the changed surface; findings outside it come back non-blocking under Out-of-Scope Observations.
-</guidelines>
-
 <anti_patterns>
 - Forwarding the development conversation or your own intent to the reviewer (defeats isolation)
 - Pasting the diff into a dispatch prompt instead of passing its file path
@@ -161,4 +152,5 @@ When triggered: present the issue clearly and ask how to proceed.
 - Write the diff to a file and capture the SHAs before spawning the reviewer — the reviewer needs the exact work product.
 - NEVER modify code during review — review is read-only; fixes are a separate, explicit step.
 - NEVER run build/test/lint commands without user permission — the user's CLAUDE.md requires this.
+- Critical means the finding blocks the commit — reserve it for that, and don't inflate nits to reach it
 </constraints>

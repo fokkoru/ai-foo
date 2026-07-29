@@ -9,6 +9,8 @@ allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff
 Validate the implementation against the approved plan.
 
 Systematically verify that each phase was correctly implemented, run success criteria checks, and identify deviations or issues.
+
+`df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
 </objective>
 
 <quick_start>
@@ -106,6 +108,7 @@ For each phase in the plan:
    - Were error conditions handled?
    - Are there missing validations?
    - Could the implementation break existing functionality?
+   - Documentation updated if needed
 
 6. **Goal-backward check**:
    - Re-read the plan's overview and desired end state
@@ -160,16 +163,6 @@ Structure the report as:
 - Validation report generated with specific file:line references
   </success_criteria>
 
-<guidelines>
-- **Be Thorough** — check every phase and every success criterion; don't skip verification steps
-- **Be Evidence-Based** — cite specific file:line references and git diffs; compare plan text to actual code
-- **Be Honest** — report issues constructively; don't gloss over incomplete work
-- **Be Read-Only** — don't modify the plan, codebase, or any files during validation
-- **Self-check vs. independent review** — `df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
-
-Use parallel Task agents for verification to minimize context usage. Separate automated from manual verification — only the user can confirm manual criteria.
-</guidelines>
-
 <existing_context>
 If you were part of the implementation session:
 
@@ -177,20 +170,6 @@ If you were part of the implementation session:
 - Focus validation on work done in this session
 - Be honest about any shortcuts or incomplete items
   </existing_context>
-
-<validation_checklist>
-Always verify:
-
-- [ ] All phases marked complete are actually done
-- [ ] Code follows existing patterns
-- [ ] No regressions introduced
-- [ ] Error handling is robust
-- [ ] Automated tests pass (if applicable and user permits running)
-- [ ] Documentation updated if needed
-- [ ] Manual test steps are clear
-- [ ] Key artifacts pass 3-level verification (exist, substantive, wired)
-- [ ] No stub implementations detected in delivered code
-      </validation_checklist>
 
 <anti_patterns>
 
@@ -222,4 +201,5 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 - Wait for all verification agents to complete before writing the report — partial results lead to incomplete conclusions
 - Don't claim automated checks passed without actually verifying them — accuracy is the whole point of validation
 - Don't run build/test/lint commands without user permission — the user's CLAUDE.md explicitly requires this
+- Don't modify the plan, codebase, or any files during validation — validation is read-only
 </constraints>

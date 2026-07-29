@@ -201,18 +201,6 @@ Select the right agent for each type of investigation:
 Stay focused on answering the user's actual question.
 </anti_patterns>
 
-<key_principles>
-
-- Use parallel Task agents to maximize efficiency and minimize context usage
-- Run fresh codebase research; don't rely solely on existing research documents
-- Focus on concrete file paths and line numbers for developer reference
-- Research documents should be self-contained with all necessary context
-- Keep the main agent focused on synthesis, not deep file reading
-- Encourage sub-agents to find examples and usage patterns, not just definitions
-- Include temporal context (when the research was conducted)
-- Link to GitHub when possible for permanent references
-  </key_principles>
-
 <circuit_breakers>
 Stop and reframe the research if:
 
@@ -232,4 +220,5 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at research time, not after
 - Don't write the research document with placeholder values — research documents are permanent artifacts that others will reference
+- Research documents must be self-contained — a reader with no access to this session should be able to act on the document alone
 </constraints>

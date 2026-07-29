@@ -171,15 +171,6 @@ Get user confirmation before proceeding.
 - User confirms the changes match their intent
   </success_criteria>
 
-<guidelines>
-- **Be Surgical** — precise edits over wholesale rewrites; preserve good content that doesn't need changing; only research what's necessary for the specific changes
-- **Be Skeptical** — question vague feedback; verify technical feasibility with code research; point out conflicts with existing plan phases
-- **Be Interactive** — confirm understanding before editing; show planned changes before making them; allow course corrections
-- **No Open Questions** — if changes raise questions, ASK or research immediately; never update the plan with unresolved questions
-
-When updating success criteria, always maintain the automated vs manual verification distinction.
-</guidelines>
-
 <anti_patterns>
 
 - Rewriting the entire plan when only a section needs updating
@@ -191,16 +182,6 @@ When updating success criteria, always maintain the automated vs manual verifica
 
 Stay focused on making the specific changes requested.
 </anti_patterns>
-
-<key_principles>
-
-- Read the complete plan before making any changes — context matters
-- Confirm understanding before editing — prevent misinterpretation
-- Use parallel Task agents for research when needed, not for simple edits
-- Surgical edits over wholesale rewrites — preserve existing quality
-- Every change must be complete and actionable — no placeholders
-- Keep the main agent focused on synthesis and editing, not deep file reading
-  </key_principles>
 
 <circuit_breakers>
 Stop and ask the user for guidance if:

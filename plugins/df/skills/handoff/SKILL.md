@@ -135,12 +135,6 @@ To resume in a new session, provide this file:
 - Git metadata captured accurately in frontmatter
   </success_criteria>
 
-<guidelines>
-- **Be thorough and precise** — include both high-level objectives and implementation details
-- **Avoid excessive code snippets** — prefer `file:line` references over inline code blocks; only include code when it describes a specific error or pattern that can't be referenced by location
-- **Focus on what a new session needs** — assume no prior context; everything needed to resume should be in the document
-</guidelines>
-
 <anti_patterns>
 
 - Including large code blocks or full diffs (use file:line references instead)
@@ -168,4 +162,6 @@ When triggered: explain what's missing and ask the user what they want captured.
 - NEVER include sensitive data (credentials, tokens, keys) in handoff documents
 - NEVER skip the Learnings section — this is the highest-value content for session transfer
 - Gather git metadata at handoff time, not earlier — it must reflect the actual state when the handoff is created
+- **Avoid excessive code snippets** — prefer `file:line` references over inline code blocks; only include code when it describes a specific error or pattern that can't be referenced by location
+- **Focus on what a new session needs** — assume no prior context; everything needed to resume should be in the document
 </constraints>

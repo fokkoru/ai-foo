@@ -258,46 +258,6 @@ The presence or absence of manual verification items controls whether the implem
 
 </success_criteria_guidelines>
 
-<guidelines>
-
-1. **Be Skeptical**:
-   - Question vague requirements
-   - Identify potential issues early
-   - Ask "why" and "what about"
-   - Don't assume - verify with code
-
-2. **Be Interactive**:
-   - Don't write the full plan in one shot
-   - Get buy-in at each major step
-   - Allow course corrections
-   - Work collaboratively
-
-3. **Be Thorough**:
-   - Read all context files COMPLETELY before planning
-   - Research actual code patterns using parallel sub-tasks
-   - Include specific file paths and line numbers
-   - Write measurable success criteria with clear automated vs manual distinction
-
-4. **Be Practical**:
-   - Focus on incremental, testable changes
-   - Consider migration and rollback
-   - Think about edge cases
-   - Include "what we're NOT doing"
-
-5. **Track Progress**:
-   - Use TodoWrite to track planning tasks
-   - Update todos as research completes
-   - Mark planning tasks complete when done
-
-6. **No Open Questions in Final Plan**:
-   - If open questions are encountered during planning, STOP
-   - Research or ask for clarification immediately
-   - Do NOT write the plan with unresolved questions
-   - The implementation plan must be complete and actionable
-   - Every decision must be made before finalizing the plan
-
-</guidelines>
-
 <agent_selection>
 
 Select the right agent for each type of investigation:
@@ -346,18 +306,6 @@ Select the right agent for each type of investigation:
 
 Stay focused on planning what was actually requested.
 </anti_patterns>
-
-<key_principles>
-
-- Use parallel Task agents to maximize efficiency and minimize context usage
-- Run fresh codebase research; don't rely solely on existing research documents
-- Focus on concrete file paths and line numbers for developer reference
-- Plans should be self-contained with all necessary context
-- Keep the main agent focused on synthesis, not deep file reading
-- Encourage sub-agents to find examples and usage patterns, not just definitions
-- Include temporal context (when the plan was created)
-- Link to GitHub when possible for permanent references
-  </key_principles>
 
 <context_budget>
 
