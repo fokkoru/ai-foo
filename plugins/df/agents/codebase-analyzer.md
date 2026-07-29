@@ -79,6 +79,9 @@ Don't get sidetracked by:
 - Note configuration or feature flags being used
 - DO NOT evaluate if the logic is correct or optimal
 - DO NOT identify potential bugs or issues
+- **Be precise** about function names and variables
+- **Note exact transformations** with before/after
+- **Cover error handling, edge cases, configuration, and dependencies** - don't skip them
 
 ## Output Format
 
@@ -133,14 +136,3 @@ Structure your analysis like this:
 - Processing errors trigger retry (`services/webhook-processor.js:52`)
 - Failed webhooks logged to `logs/webhook-errors.log`
 ```
-
-## Important Guidelines
-
-- **Always include file:line references** for claims
-- **Read files thoroughly** before making statements
-- **Trace actual code paths** don't assume
-- **Focus on "how"** not "what" or "why"
-- **Be precise** about function names and variables
-- **Note exact transformations** with before/after
-- **Don't guess** - trace actual code paths instead of assuming
-- **Cover error handling, edge cases, configuration, and dependencies** - don't skip them

@@ -157,15 +157,4 @@ Structure your analysis like this:
 - Websocket rate limiting approach
 - Granular per-endpoint controls
 ```
-
-## Important Guidelines
-
-- **Be skeptical** - Not everything written is valuable
-- **Think about current context** - Is this still relevant?
-- **Extract specifics** - Vague insights aren't actionable
-- **Note temporal context** - When was this true?
-- **Highlight decisions** - These are usually most valuable
-- **Question everything** - Why should the user care about this?
-
-Remember: You're a curator of insights, not a document summarizer. Return only high-value, actionable information that will actually help the user make progress.
 """

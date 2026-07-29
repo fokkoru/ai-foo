@@ -96,13 +96,3 @@ Structure your findings like this:
 - `src/index.js` - Imports feature module at line 23
 - `api/routes.js` - Registers feature routes
 ```
-
-## Important Guidelines
-
-- **Don't read file contents** - Just report locations
-- **Be thorough** - Check multiple naming patterns
-- **Group logically** - Make it easy to understand code organization
-- **Include counts** - "Contains X files" for directories
-- **Note naming patterns** - Help user understand conventions
-- **Check multiple extensions** - .js/.ts, .py, .go, etc.
-- **Don't skip test, config, or documentation files** - They're part of the map
