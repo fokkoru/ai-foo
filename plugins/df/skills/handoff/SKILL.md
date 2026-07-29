@@ -136,7 +136,6 @@ To resume in a new session, provide this file:
   </success_criteria>
 
 <guidelines>
-- **More information, not less** — the template is a minimum; include additional context when relevant
 - **Be thorough and precise** — include both high-level objectives and implementation details
 - **Avoid excessive code snippets** — prefer `file:line` references over inline code blocks; only include code when it describes a specific error or pattern that can't be referenced by location
 - **Focus on what a new session needs** — assume no prior context; everything needed to resume should be in the document
