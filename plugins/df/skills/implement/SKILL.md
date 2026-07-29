@@ -310,14 +310,15 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 
 <anti_patterns>
 
-- Refactoring code beyond what the plan specifies
-- Fixing unrelated issues discovered during implementation
-- Optimizing prematurely instead of following the plan's approach
-- Investigating test failures unrelated to the current phase
-- Rewriting working code that the plan doesn't touch
-- Adding features or improvements not in the plan scope
-- Proceeding to the next phase without user confirmation (phased mode)
-- Committing multiple phases in a single commit (phased mode)
+| Excuse | Reality |
+| --- | --- |
+| "It's a one-line fix while I'm here." | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it. |
+| "The plan clearly forgot this — I'll just add it." | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it. |
+| "This working code next to my change is obviously bad." | The plan doesn't touch it, so nothing verifies your rewrite. Rewriting it puts untested change in a diff that claims to be a phase. |
+| "Optimizing now saves a pass later." | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance. |
+| "This test was already failing, let me look." | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session. |
+| "I'll commit both phases together, they're related." | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions. |
+| "The user will obviously approve this phase." | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase. |
 
 Stay focused on implementing what was actually planned.
 </anti_patterns>

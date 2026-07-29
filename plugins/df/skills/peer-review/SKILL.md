@@ -88,6 +88,13 @@ If any appears, **rewrite the sentence it sits in** so the framing is gone. Dele
 The string scan is a backstop, not the mechanism. The mechanism is Step 2's closed list of artifacts. The gap it does not close is the task description you write in Step 1: "the missing validation was an intentional simplification" matches none of the strings above and pre-judges anyway. Write that paragraph as what the code does, never as why a gap is acceptable.
 
 Scoping is not suppression. To narrow a re-review, name the surface that changed — never name findings the reviewer should not report. Anything the reviewer notices outside that surface comes back under `Out-of-Scope Observations`, where you classify it. Those do not block.
+
+| Excuse | Reality |
+| --- | --- |
+| "The diff is small — pasting it is simpler than a temp file." | Everything pasted into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn. Size is why it feels safe, not why it is. |
+| "The reviewer will waste a turn asking what this was for." | That is the task description in Step 1, written from the plan. Explaining your reasoning is the thing isolation exists to prevent. |
+| "This finding really was deliberate — I'll say so up front." | Then say it after the verdict, not before. A reviewer told the answer grades your explanation, not the code. |
+| "Re-review only needs to look at what I changed." | Correct — name the changed surface. Naming findings it should skip is a different act, and it destroys information you never see. |
 </no_pre_judging>
 
 <report_format>
