@@ -9,6 +9,7 @@ allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git 
 Create a detailed implementation plan through interactive research and collaborative design.
 
 Work through an iterative process — be skeptical, thorough, and collaborate with the user to produce high-quality technical specifications.
+
 </objective>
 
 <artifact_scope>
@@ -17,6 +18,7 @@ Your only output artifact is a single document under thoughts/plans.
 Don't create, write, or modify files anywhere else.
 Before any Write call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan document and suggest the user run /df:implement. Do not make code changes in this command.
+
 </artifact_scope>
 
 <quick_start>
@@ -29,6 +31,7 @@ If no task description is provided, ask the user for:
 3. Links to related research or previous implementations
 
 Then wait for input before proceeding.
+
 </quick_start>
 
 <plan_shaping>
@@ -196,7 +199,6 @@ After structure approval:
 2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
 
 3. **Self-review the finished plan before presenting it.** Read it once, checking exactly three things:
-
    - **Spec coverage** — every requirement in the source task maps to a phase. Name any that do not.
    - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in any phase's Changes Required or Success Criteria. Every value is concrete.
    - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
@@ -236,7 +238,8 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 - All research questions resolved (no "TBD" or open questions in final plan)
 - Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
 - User confirms plan structure, phasing, and technical approach
-  </success_criteria>
+
+</success_criteria>
 
 <success_criteria_guidelines>
 
@@ -305,6 +308,7 @@ Select the right agent for each type of investigation:
 - Over-specifying implementation details that should be left to the implementer
 
 Stay focused on planning what was actually requested.
+
 </anti_patterns>
 
 <context_budget>
@@ -324,6 +328,7 @@ Stop and reframe the planning process if:
 - If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be resolved and why.
+
 </circuit_breakers>
 
 <constraints>
@@ -332,4 +337,5 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
 - Don't write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+
 </constraints>

@@ -9,6 +9,7 @@ allowed-tools: Read, Write, Grep, Glob, Bash(date:*), Bash(git config:*), Bash(g
 Create a concise handoff document that captures current work state for seamless session transfer.
 
 Compact and summarize context without losing key details.
+
 </objective>
 
 <artifact_scope>
@@ -16,6 +17,7 @@ This is a document-only command.
 Your ONLY output artifact is a single document under thoughts/handoffs.
 NEVER create, write, or modify files anywhere else.
 Before any Write call, verify the target path is inside thoughts/handoffs — if it is not, stop and ask the user.
+
 </artifact_scope>
 
 <quick_start>
@@ -25,7 +27,8 @@ Before any Write call, verify the target path is inside thoughts/handoffs — if
 3. Analyze the current session's work: what was done, what's pending, what was learned
 4. Write the handoff document
 5. Present the resume instruction to the user
-   </quick_start>
+
+</quick_start>
 
 <workflow>
 
@@ -133,7 +136,8 @@ To resume in a new session, provide this file:
 - File:line references included for recent changes and critical references
 - Next steps are ordered and concrete
 - Git metadata captured accurately in frontmatter
-  </success_criteria>
+
+</success_criteria>
 
 <anti_patterns>
 
@@ -144,6 +148,7 @@ To resume in a new session, provide this file:
 - Including information that's already in referenced plan/research documents
 
 Stay focused on creating a useful transfer document, not a comprehensive report.
+
 </anti_patterns>
 
 <circuit_breakers>
@@ -154,6 +159,7 @@ Stop and ask the user for guidance if:
 - The handoffs directory doesn't exist and can't be created
 
 When triggered: explain what's missing and ask the user what they want captured.
+
 </circuit_breakers>
 
 <constraints>
@@ -164,4 +170,5 @@ When triggered: explain what's missing and ask the user what they want captured.
 - Gather git metadata at handoff time, not earlier — it must reflect the actual state when the handoff is created
 - **Avoid excessive code snippets** — prefer `file:line` references over inline code blocks; only include code when it describes a specific error or pattern that can't be referenced by location
 - **Focus on what a new session needs** — assume no prior context; everything needed to resume should be in the document
+
 </constraints>

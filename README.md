@@ -17,16 +17,16 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
 
-| Skill                 | Purpose                                                                       |
-| --------------------- | ----------------------------------------------------------------------------- |
-| `df:research`         | Comprehensive codebase research with parallel sub-agents                      |
-| `df:planning`         | Create detailed implementation plans                                          |
-| `df:iterate`          | Update existing plans based on feedback                                       |
-| `df:implement`        | Execute plans phase by phase with verification (continuous or phased mode)   |
-| `df:validate`         | Verify implementation against plan, identify issues                           |
-| `df:peer-review`      | Independent code review by an isolated reviewer — one pass, spec + quality    |
-| `df:handoff`          | Create handoff document for session transfer                                  |
-| `df:commit`           | Commit changes in logical chunks (Conventional Commits)                       |
+| Skill            | Purpose                                                                    |
+| ---------------- | -------------------------------------------------------------------------- |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents                   |
+| `df:planning`    | Create detailed implementation plans                                       |
+| `df:iterate`     | Update existing plans based on feedback                                    |
+| `df:implement`   | Execute plans phase by phase with verification (continuous or phased mode) |
+| `df:validate`    | Verify implementation against plan, identify issues                        |
+| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality |
+| `df:handoff`     | Create handoff document for session transfer                               |
+| `df:commit`      | Commit changes in logical chunks (Conventional Commits)                    |
 
 ## Install
 

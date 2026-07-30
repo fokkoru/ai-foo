@@ -9,6 +9,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(git log:*), 
 Update an existing implementation plan based on feedback.
 
 Be skeptical, thorough, and ensure changes are grounded in actual codebase reality.
+
 </objective>
 
 <artifact_scope>
@@ -17,6 +18,7 @@ You ONLY edit or write files under thoughts/plans.
 NEVER create, write, or modify files anywhere else.
 Before any Write or Edit call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan and suggest the user run /df:implement. Do not make code changes in this command.
+
 </artifact_scope>
 
 <quick_start>
@@ -25,6 +27,7 @@ If both a plan file path and feedback are provided, skip the prompts — immedia
 If a plan file path is provided but no feedback, read the plan FULLY and ask the user what changes they want to make, then wait for input before proceeding.
 
 If no plan file path is provided, ask the user which plan to update, then wait for input before proceeding.
+
 </quick_start>
 
 <workflow>
@@ -75,7 +78,6 @@ If the user's feedback requires understanding new code patterns or validating as
    | `web-search-researcher` | Research APIs, libraries, best practices | Need information beyond the codebase |
 
    **Guidelines:**
-
    - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
    - Run multiple agents in parallel when searching for different things
    - Each agent knows its job — provide what to find, not how to search
@@ -169,7 +171,8 @@ Get user confirmation before proceeding.
 - Success criteria updated if scope changed
 - No placeholder values or unresolved questions in the plan
 - User confirms the changes match their intent
-  </success_criteria>
+
+</success_criteria>
 
 <anti_patterns>
 
@@ -181,6 +184,7 @@ Get user confirmation before proceeding.
 - Adding new phases or features the user didn't ask for
 
 Stay focused on making the specific changes requested.
+
 </anti_patterns>
 
 <circuit_breakers>
@@ -194,6 +198,7 @@ Stop and ask the user for guidance if:
 - If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
+
 </circuit_breakers>
 
 <constraints>
@@ -203,4 +208,5 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete conclusions
 - Confirm understanding with the user before editing — prevent wasted effort on misinterpreted feedback
 - NEVER update the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+
 </constraints>

@@ -21,30 +21,30 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 
 All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
 
-| Skill                 | Description                                                                                    |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `df:research`         | Comprehensive codebase research with parallel sub-agents                                       |
-| `df:planning`         | Create detailed implementation plans with thorough research                                    |
-| `df:iterate`          | Update existing plans based on feedback                                                        |
-| `df:implement`        | Execute plans with verification and phase-by-phase progress (continuous or phased mode)        |
-| `df:validate`         | Verify implementation against plan, identify issues                                            |
-| `df:peer-review`      | Independent code review by an isolated reviewer — one pass, spec + quality verdicts            |
-| `df:handoff`          | Create handoff document for session transfer                                                   |
-| `df:commit`           | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0) |
+| Skill            | Description                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------ |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents                                               |
+| `df:planning`    | Create detailed implementation plans with thorough research                                            |
+| `df:iterate`     | Update existing plans based on feedback                                                                |
+| `df:implement`   | Execute plans with verification and phase-by-phase progress (continuous or phased mode)                |
+| `df:validate`    | Verify implementation against plan, identify issues                                                    |
+| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                    |
+| `df:handoff`     | Create handoff document for session transfer                                                           |
+| `df:commit`      | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0) |
 
 ## Subagents
 
-| Agent                     | Description                                   |
-| ------------------------- | --------------------------------------------- |
-| `codebase-locator`        | Find files by topic/feature                   |
-| `codebase-analyzer`       | Understand implementation details             |
-| `codebase-pattern-finder` | Find similar patterns and examples            |
-| `thoughts-locator`        | Discover documents in thoughts/ directory     |
-| `thoughts-analyzer`       | Extract insights from thought documents       |
-| `web-search-researcher`   | Research modern web information               |
+| Agent                     | Description                                              |
+| ------------------------- | -------------------------------------------------------- |
+| `codebase-locator`        | Find files by topic/feature                              |
+| `codebase-analyzer`       | Understand implementation details                        |
+| `codebase-pattern-finder` | Find similar patterns and examples                       |
+| `thoughts-locator`        | Discover documents in thoughts/ directory                |
+| `thoughts-analyzer`       | Extract insights from thought documents                  |
+| `web-search-researcher`   | Research modern web information                          |
 | `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
-| `codex-advisor`           | Fast second opinion from Codex on one narrow decision |
-| `architecture-advisor`    | Review a solution design before it becomes code |
+| `codex-advisor`           | Fast second opinion from Codex on one narrow decision    |
+| `architecture-advisor`    | Review a solution design before it becomes code          |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
 

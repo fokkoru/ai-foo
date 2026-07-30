@@ -7,6 +7,7 @@ allowed-tools: Read, Write, TodoWrite, Task, Bash(date:*), Bash(git config:*), B
 
 <objective>
 Conduct comprehensive codebase research to answer a user's question by decomposing it into parallel sub-agent tasks and synthesizing findings into a structured research document.
+
 </objective>
 
 <artifact_scope>
@@ -15,6 +16,7 @@ Your only output artifact is a single document under thoughts/research.
 Don't create, write, or modify files anywhere else.
 Before any Write call, verify the target path is inside thoughts/research — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the research document and suggest the user run /df:implement. Do not make code changes in this command.
+
 </artifact_scope>
 
 <quick_start>
@@ -26,7 +28,8 @@ If no research question is provided, ask the user what they want to research bef
 4. Wait for all sub-agents to complete
 5. Synthesize findings and write research document
 6. Present concise summary with key file references
-   </quick_start>
+
+</quick_start>
 
 <workflow>
 
@@ -150,7 +153,8 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 - Findings include specific file paths and line numbers
 - User's question answered with concrete evidence from codebase
 - Summary presented with key file references for navigation
-  </success_criteria>
+
+</success_criteria>
 
 <agent_selection>
 
@@ -199,6 +203,7 @@ Select the right agent for each type of investigation:
 - Historical changes unless specifically about evolution/decisions
 
 Stay focused on answering the user's actual question.
+
 </anti_patterns>
 
 <circuit_breakers>
@@ -212,6 +217,7 @@ Stop and reframe the research if:
 - If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be researched and why.
+
 </circuit_breakers>
 
 <constraints>
@@ -221,4 +227,5 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 - Gather metadata before writing the document — git state should be captured at research time, not after
 - Don't write the research document with placeholder values — research documents are permanent artifacts that others will reference
 - Research documents must be self-contained — a reader with no access to this session should be able to act on the document alone
+
 </constraints>

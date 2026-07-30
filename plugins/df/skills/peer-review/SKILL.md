@@ -9,11 +9,13 @@ allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*
 Run an independent, epistemically-isolated code review of the current implementation against its plan/spec.
 
 Dispatch an isolated code-reviewer subagent that sees ONLY the work product (the diff, as a file path), the spec/plan, and acceptance criteria — never this session's conversation. One dispatch returns both a spec-compliance verdict and quality findings. Return a severity-ranked report and a verdict.
+
 </objective>
 
 <quick_start>
 If a plan/spec path is provided, read it FULLY and begin.
 If no plan path is provided, ask for: (1) the plan/spec file path, and (2) optionally a commit range to review. Then wait for input.
+
 </quick_start>
 
 <review_model>
@@ -22,11 +24,13 @@ This review is deliberately isolated. A reviewer that sees how the code was buil
 One dispatch, two verdicts. The reviewer reads the diff once — from a file — and returns both a spec-compliance verdict and quality findings.
 
 Spec compliance governs the **fix order**, not the dispatch order. If the spec verdict is FAIL, fix the spec gaps first: a polished implementation of the wrong thing is still wrong. Quality findings from a failed pass are advisory until the spec verdict passes.
+
 </review_model>
 
 <workflow>
 
 ### Step 1: Assemble the work product (main thread)
+
 1. Read the plan/spec FULLY (no limit/offset). Extract the desired end state and acceptance criteria.
 2. Determine the review range:
    - Default: everything implemented since the branch diverged — `git merge-base HEAD main` as base, comparing base → working tree (committed + uncommitted). Capture base and head SHAs.
@@ -39,10 +43,13 @@ Spec compliance governs the **fix order**, not the dispatch order. If the spec v
    Do not `cat`, read, or echo the diff. The path is what you pass on. Everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
 
    The file is ephemeral and is left for the OS to reap. Do not delete it — `rm` is deliberately not in this skill's `allowed-tools`, and a re-review needs the previous diff to still exist.
+
 4. Write a one-paragraph factual description of what was built, taken from the plan — not from this session's reasoning.
 
 ### Step 2: Dispatch the reviewer (isolated)
+
 Spawn the `code-reviewer` subagent via Task. Construct its prompt from artifacts ONLY:
+
 - The factual task description
 - The plan/spec text and acceptance criteria
 - The commit range (base/head SHA)
@@ -51,6 +58,7 @@ Spawn the `code-reviewer` subagent via Task. Construct its prompt from artifacts
 Do NOT include this session's conversation, your own reasoning, or what the author intended. Do NOT include the diff text. Wait for the subagent to finish.
 
 ### Step 3: Act on the verdicts (bounded fix loop)
+
 A round is one fix pass plus one re-review scoped to the changed surface. **Three rounds maximum.**
 
 Within a round, fix in this order: spec-compliance gaps, then Critical, then Important. `⚠️ CANNOT VERIFY` items are yours to resolve — you hold the cross-phase context the reviewer lacks. Either supply the missing evidence in the next dispatch, or rule on it and write the ruling down.
@@ -59,16 +67,17 @@ Re-review by writing a fresh diff file and dispatching again with the changed su
 
 At the cap, every still-open finding gets exactly one written disposition:
 
-| Disposition | Meaning |
-| --- | --- |
-| Fixed | Addressed in the diff |
-| Parked with ruling | Not a defect — state the reason |
-| Deferred | A real defect, deliberately not fixed now — state the reason |
-| BLOCKED | Cannot proceed — escalate to the user |
+| Disposition        | Meaning                                                      |
+| ------------------ | ------------------------------------------------------------ |
+| Fixed              | Addressed in the diff                                        |
+| Parked with ruling | Not a defect — state the reason                              |
+| Deferred           | A real defect, deliberately not fixed now — state the reason |
+| BLOCKED            | Cannot proceed — escalate to the user                        |
 
 A silent discard is forbidden. A finding you stop working on and do not list is a discarded finding.
 
 ### Step 4: Synthesize and present
+
 Combine the reviewer's verdicts and your fix rounds into one report (template below). State the final verdict: **Approve**, **Approve with fixes**, or **Reject**. The decision to commit stays with the user.
 
 </workflow>
@@ -89,15 +98,17 @@ The string scan is a backstop, not the mechanism. The mechanism is Step 2's clos
 
 Scoping is not suppression. To narrow a re-review, name the surface that changed — never name findings the reviewer should not report. Anything the reviewer notices outside that surface comes back under `Out-of-Scope Observations`, where you classify it. Those do not block.
 
-| Excuse | Reality |
-| --- | --- |
+| Excuse                                                        | Reality                                                                                                                                                                           |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | "The diff is small — pasting it is simpler than a temp file." | Everything pasted into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn. Size is why it feels safe, not why it is. |
-| "The reviewer will waste a turn asking what this was for." | That is the task description in Step 1, written from the plan. Explaining your reasoning is the thing isolation exists to prevent. |
-| "This finding really was deliberate — I'll say so up front." | Then say it after the verdict, not before. A reviewer told the answer grades your explanation, not the code. |
-| "Re-review only needs to look at what I changed." | Correct — name the changed surface. Naming findings it should skip is a different act, and it destroys information you never see. |
+| "The reviewer will waste a turn asking what this was for."    | That is the task description in Step 1, written from the plan. Explaining your reasoning is the thing isolation exists to prevent.                                                |
+| "This finding really was deliberate — I'll say so up front."  | Then say it after the verdict, not before. A reviewer told the answer grades your explanation, not the code.                                                                      |
+| "Re-review only needs to look at what I changed."             | Correct — name the changed surface. Naming findings it should skip is a different act, and it destroys information you never see.                                                 |
+
 </no_pre_judging>
 
 <report_format>
+
 ```
 ## Code Review Report: [Plan/Feature Name]
 
@@ -129,19 +140,23 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 ### Recommended next step
 [Fix-and-re-review, or proceed to df:commit — user decides]
 ```
+
 </report_format>
 
 <anti_patterns>
+
 - Forwarding the development conversation or your own intent to the reviewer (defeats isolation)
 - Pasting the diff into a dispatch prompt instead of passing its file path
 - Nitpicking style, formatting, or anything CI already checks
 - Reviewing generated, vendored, or lock files
 - Letting a finding disappear without a written disposition
 - Marking nits as Critical, or issuing no clear verdict
+
 </anti_patterns>
 
 <circuit_breakers>
 Stop and ask the user if:
+
 - The plan/spec cannot be found or has no acceptance criteria to review against
 - The diff is empty (nothing to review) or spans unrelated work
 - The spec verdict is still FAIL after the third round (the approach may be wrong — escalate)
@@ -150,6 +165,7 @@ Stop and ask the user if:
 - If agent spawning fails with "agent not found" (Codex CLI), the code-reviewer subagent may not be installed — see the plugin README for the `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly and ask how to proceed.
+
 </circuit_breakers>
 
 <constraints>
@@ -160,4 +176,5 @@ When triggered: present the issue clearly and ask how to proceed.
 - NEVER modify code during review — review is read-only; fixes are a separate, explicit step.
 - NEVER run build/test/lint commands without user permission — the user's CLAUDE.md requires this.
 - Critical means the finding blocks the commit — reserve it for that, and don't inflate nits to reach it
+
 </constraints>

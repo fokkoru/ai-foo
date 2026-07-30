@@ -11,12 +11,14 @@ Validate the implementation against the approved plan.
 Systematically verify that each phase was correctly implemented, run success criteria checks, and identify deviations or issues.
 
 `df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
+
 </objective>
 
 <quick_start>
 If a plan file path is provided, skip the prompt — immediately read the plan fully and begin the validation process.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
+
 </quick_start>
 
 <verification_methodology>
@@ -161,7 +163,8 @@ Structure the report as:
 - Automated criteria listed with pass/fail/not-run status
 - Manual testing steps documented clearly
 - Validation report generated with specific file:line references
-  </success_criteria>
+
+</success_criteria>
 
 <existing_context>
 If you were part of the implementation session:
@@ -169,7 +172,8 @@ If you were part of the implementation session:
 - Review the conversation history and todo list for what was completed
 - Focus validation on work done in this session
 - Be honest about any shortcuts or incomplete items
-  </existing_context>
+
+</existing_context>
 
 <anti_patterns>
 
@@ -180,6 +184,7 @@ If you were part of the implementation session:
 - Revalidating phases the user has already confirmed
 
 Stay focused on verifying what the plan actually specified.
+
 </anti_patterns>
 
 <circuit_breakers>
@@ -193,6 +198,7 @@ Stop and ask the user for guidance if:
 - If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
+
 </circuit_breakers>
 
 <constraints>
@@ -202,4 +208,5 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 - Don't claim automated checks passed without actually verifying them — accuracy is the whole point of validation
 - Don't run build/test/lint commands without user permission — the user's CLAUDE.md explicitly requires this
 - Don't modify the plan, codebase, or any files during validation — validation is read-only
+
 </constraints>

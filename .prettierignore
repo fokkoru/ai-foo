@@ -1,0 +1,7 @@
+# Mirrored byte-for-byte into plugins/df/codex/agents/*.toml, which Prettier
+# cannot reformat. Letting it touch only the .md side breaks the drift check
+# (scripts/check-codex-agent-drift.sh).
+plugins/df/agents/
+
+# Dated research and plan artifacts — reformatting rewrites history for no gain.
+thoughts/

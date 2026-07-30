@@ -11,6 +11,7 @@ Create focused, atomic commits by analyzing changes and grouping them logically 
 **Core principle:** Analyze → Group → Size → Confirm → Execute → Verify.
 
 **Announce at start:** "I'm using the df-commit skill to create atomic commits with logical grouping."
+
 </objective>
 
 <context>
@@ -20,6 +21,7 @@ Current repository state, captured at skill-load time:
 - diff summary (shortstat): !`git diff --stat HEAD`
 - current branch: !`git branch --show-current`
 - recent commits: !`git log -5 --pretty=format:'%h %s%n%b'`
+
 </context>
 
 <quick_start>
@@ -31,6 +33,7 @@ Current repository state, captured at skill-load time:
 5. Present commit plan and wait for user confirmation
 6. Execute staged commits with conventional messages
 7. Verify with `git status` and `git log`
+
 </quick_start>
 
 <workflow>
@@ -150,17 +153,17 @@ type(scope): description
 
 ### Type Quick Reference
 
-| Type       | Use For                                       |
-| ---------- | --------------------------------------------- |
-| `feat`     | New feature                                   |
-| `fix`      | Bug fix                                       |
-| `refactor` | Code refactoring (no behavior change)         |
-| `docs`     | Documentation only                            |
-| `test`     | Adding or updating tests                      |
-| `chore`    | Maintenance (deps, configs, version bumps)    |
-| `perf`     | Performance improvement                       |
-| `style`    | Formatting, whitespace (no logic change)      |
-| `revert`   | Reverts a previous commit                     |
+| Type       | Use For                                    |
+| ---------- | ------------------------------------------ |
+| `feat`     | New feature                                |
+| `fix`      | Bug fix                                    |
+| `refactor` | Code refactoring (no behavior change)      |
+| `docs`     | Documentation only                         |
+| `test`     | Adding or updating tests                   |
+| `chore`    | Maintenance (deps, configs, version bumps) |
+| `perf`     | Performance improvement                    |
+| `style`    | Formatting, whitespace (no logic change)   |
+| `revert`   | Reverts a previous commit                  |
 
 ### Subject Discipline
 
@@ -286,6 +289,7 @@ If the `humanizer` skill is available, invoke it in embedded mode on any body be
 - No uncommitted changes remain (unless user chose to defer some)
 - Each commit is atomic and self-contained
 - Commit messages accurately describe the changes based on diff content
+
 </success_criteria>
 
 <staging_rules>
@@ -306,6 +310,7 @@ If the `humanizer` skill is available, invoke it in embedded mode on any body be
 - Running tests or builds as part of the commit process
 
 Stay focused on creating clean, well-grouped commits.
+
 </scope_anti_patterns>
 
 ## Integration
@@ -329,4 +334,5 @@ Stop and ask the user for guidance if:
 - Unsure whether changes should be one commit or multiple
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
+
 </circuit_breakers>

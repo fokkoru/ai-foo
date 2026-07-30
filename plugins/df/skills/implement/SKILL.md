@@ -9,6 +9,7 @@ allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:
 Execute an approved technical plan phase by phase with verification and human checkpoints.
 
 Follow the plan's intent while adapting to codebase reality.
+
 </objective>
 
 <mode_selection>
@@ -104,6 +105,7 @@ Next: run /df:validate or create a PR.
 If a plan file path is provided, skip the prompt — immediately read the plan fully and begin implementation.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
+
 </quick_start>
 
 <workflow>
@@ -127,6 +129,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
    ```
 
    Ask once, then implement. If the scan finds nothing, say so in one line and start. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
+
 5. Take time to ultrathink about how the pieces fit together
 6. Create a todo list to track progress
 7. Start implementing once the requirements are confirmed understood
@@ -306,21 +309,23 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 - Plan checkboxes updated as work progresses
 - Build/test commands execute successfully
 - No unresolved mismatches between plan and implementation
-  </success_criteria>
+
+</success_criteria>
 
 <anti_patterns>
 
-| Excuse | Reality |
-| --- | --- |
-| "It's a one-line fix while I'm here." | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it. |
-| "The plan clearly forgot this — I'll just add it." | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it. |
+| Excuse                                                  | Reality                                                                                                                             |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| "It's a one-line fix while I'm here."                   | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it.                      |
+| "The plan clearly forgot this — I'll just add it."      | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.         |
 | "This working code next to my change is obviously bad." | The plan doesn't touch it, so nothing verifies your rewrite. Rewriting it puts untested change in a diff that claims to be a phase. |
-| "Optimizing now saves a pass later." | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance. |
-| "This test was already failing, let me look." | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session. |
-| "I'll commit both phases together, they're related." | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions. |
-| "The user will obviously approve this phase." | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase. |
+| "Optimizing now saves a pass later."                    | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance.                 |
+| "This test was already failing, let me look."           | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session.                                |
+| "I'll commit both phases together, they're related."    | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                           |
+| "The user will obviously approve this phase."           | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                    |
 
 Stay focused on implementing what was actually planned.
+
 </anti_patterns>
 
 <circuit_breakers>
@@ -334,6 +339,7 @@ Stop and ask the user for guidance if:
 - If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was attempted, and ask how to proceed.
+
 </circuit_breakers>
 
 <constraints>
@@ -352,4 +358,5 @@ Apply in phased mode:
 - Don't stage all files — use specific file names for each phase's commit; never `git add .` or `git add -A`
 - Don't add AI signatures — no Co-Authored-By or "Generated with" lines in commit messages
 - Don't modify code during the commit step — only stage and commit existing changes
+
 </constraints>
