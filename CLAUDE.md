@@ -49,6 +49,8 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 | `thoughts-analyzer`       | Extract insights from thought documents       |
 | `web-search-researcher`   | Research modern web information               |
 | `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
+| `codex-advisor`           | Fast second opinion from Codex on one narrow decision |
+| `architecture-advisor`    | Review a solution design before it becomes code |
 
 **Install in another project:**
 

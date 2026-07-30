@@ -43,6 +43,8 @@ All workflow surfaces are skills (no slash commands). Only `commit` auto-trigger
 | `thoughts-analyzer`       | Extract insights from thought documents       |
 | `web-search-researcher`   | Research modern web information               |
 | `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
+| `codex-advisor`           | Fast second opinion from Codex on one narrow decision |
+| `architecture-advisor`    | Review a solution design before it becomes code |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
 
@@ -53,7 +55,23 @@ bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-This step is required, not optional — without it `research`/`planning`/`iterate` fail with "agent not found". The `web-search-researcher` Codex agent additionally requires `web_search` enabled in `~/.codex/config.toml` under `[tools]`.
+This step is required, not optional — without it the 7 subagents that `research`/`planning`/`iterate`/`peer-review` spawn are missing and those skills fail with "agent not found". The helper copies all nine TOMLs, including the two advisors, which no skill spawns — you invoke those yourself.
+
+### Advisor requirements
+
+`codex-advisor` and `architecture-advisor` depend on tools df does not ship. The plugin deliberately declares no MCP server of its own, so a `codex` server that is not installed would otherwise break every session:
+
+- **Both advisors require the `codex` MCP server** at user scope. Without it they cannot consult anything and are dead weight:
+
+  ```bash
+  claude mcp add codex -s user -- codex mcp-server
+  ```
+
+  Registered this way, the model and reasoning effort come from your `~/.codex/config.toml` rather than from the server arguments.
+
+- **`architecture-advisor` also uses deepwiki** (`mcp__deepwiki__ask_question`, `mcp__deepwiki__read_wiki_contents`) to check library and framework claims. This one is optional — without it the agent skips external validation and says so instead of guessing.
+
+The other seven subagents have no external dependencies beyond `web_search` for `web-search-researcher`.
 
 ## Customize paths (optional)
 
