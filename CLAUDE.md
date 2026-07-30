@@ -10,12 +10,16 @@ This repository contains reusable Claude Code plugins that can be installed in o
 
 ```
 ai-foo/
-├── .claude/                    # Project-level agents and commands
+├── .agents/                    # Codex marketplace catalog (canonical install path)
 ├── .claude-plugin/             # Plugin marketplace registry
+├── .claude/                    # Local Claude Code settings + skills (gitignored)
 ├── plugins/                    # Distributable Claude Code plugins
 │   └── df/                     # Development flow plugin
-└── thoughts/                   # Research, plans, and docs
+├── scripts/                    # Drift checks and the Codex subagent installer
+└── thoughts/                   # Research, plans, and docs (local-only)
 ```
+
+`AGENTS.md` is a symlink to `CLAUDE.md` — Codex CLI reads the same instructions. Don't replace it with a real file.
 
 ## Plugins
 
@@ -95,7 +99,7 @@ No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins the `git-su
 
 ## Codex Distribution
 
-There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so the 7 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — there is no way to deliver them via `codex plugin add`.
+There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 9 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — the 7 the skills spawn plus the two advisors you invoke yourself. There is no way to deliver them via `codex plugin add`.
 
 `scripts/sync-to-codex-plugin.sh` publishes `plugins/df/` to the official `openai/plugins` catalog. It is an **internal/parked maintainer tool**, not a user install channel — it is not advertised in the user docs, and it cannot carry subagents either.
 
@@ -145,15 +149,15 @@ plugin-name/
 
 ## Adding Commands/Agents
 
-**New command:** Create `plugins/<plugin-name>/commands/<command-name>.md`
+**New workflow surface:** Create a skill at `plugins/df/skills/<name>/SKILL.md`. df ships no slash commands — `commands/` is empty and stays that way.
 
-**New agent:** Create `plugins/<plugin-name>/agents/<agent-name>.md`
+**New agent:** Create _both_ `plugins/df/agents/<name>.md` and its mirror `plugins/df/codex/agents/<name>.toml`. The drift check compares the name sets first, so an `.md` without its `.toml` fails immediately. Add it to the agent table above, and — if a skill spawns it — to the `<agent_selection>` table in all three of `research`, `planning`, `iterate`.
 
 After adding, bump the plugin version (MINOR for new features).
 
 ## Authoring Style
 
-Applies to `plugins/*/skills/`, `plugins/*/agents/`, and `.claude/`. Bring a file up to this style when you edit it for another reason — don't reformat for style alone.
+Applies to `plugins/*/skills/`, `plugins/*/agents/`, and `.claude/` (local-only — gitignored, absent from a fresh clone). Bring a file up to this style when you edit it for another reason — don't reformat for style alone.
 
 **Voice.** Skills are imperative and verb-first ("Read the plan", "Wait for all sub-agents") — Anthropic's `skill-creator`: "Prefer using the imperative form in instructions." Agent bodies are system prompts, so they address the agent as "you".
 
@@ -196,6 +200,14 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 - `feat(df): add validate command`
 - `fix(df): correct path resolution in plan command`
 - `docs(df): update installation instructions`
+
+## Verify Before Finishing
+
+```bash
+prettier --check .                     # Prettier 3.x, global install — there is no package.json
+scripts/check-codex-agent-drift.sh     # after editing any plugins/df/agents/*.md
+scripts/check-agent-selection-drift.sh # after editing an <agent_selection> table
+```
 
 ## Gotchas
 
