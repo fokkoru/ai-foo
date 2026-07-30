@@ -2,8 +2,11 @@
 # Drift check for the <agent_selection> table, duplicated verbatim in:
 #   plugins/df/skills/{research,planning,iterate}/SKILL.md
 #
-# The three copies must be identical after de-indentation (iterate nests its
-# copy inside a numbered list). Anything else is drift -> exit 1.
+# The three copies must be identical after de-indentation and blank-line
+# removal (iterate nests its copy inside a numbered list). Both are normalized
+# because Prettier renders the same block differently depending on nesting: at
+# top level it puts a blank line after '**Guidelines:**', nested in a numbered
+# list it does not. Content drift is what matters. Anything else -> exit 1.
 set -euo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
@@ -14,7 +17,7 @@ plugins/df/skills/iterate/SKILL.md"
 
 extract() {
   awk '/^[[:space:]]*\| Agent /{inb=1}
-       inb {sub(/^[[:space:]]+/, ""); print}
+       inb {sub(/^[[:space:]]+/, ""); if (NF) print}
        /cross-check against the actual codebase/{if (inb) exit}' "$1"
 }
 
