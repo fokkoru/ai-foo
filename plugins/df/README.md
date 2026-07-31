@@ -10,7 +10,7 @@ This plugin provides a structured workflow for feature development:
 research → planning → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
 ```
 
-Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
+Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (`commit` is the only workflow step that auto-triggers on intent; the rest are manual-only):
 
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
@@ -19,18 +19,19 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (on
 
 ## Skills
 
-All workflow surfaces are skills (no slash commands). Only `commit` auto-triggers on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
+All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto-trigger on description matches in both runtimes; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly.
 
-| Skill            | Description                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------ |
-| `df:research`    | Comprehensive codebase research with parallel sub-agents                                               |
-| `df:planning`    | Create detailed implementation plans with thorough research                                            |
-| `df:iterate`     | Update existing plans based on feedback                                                                |
-| `df:implement`   | Execute plans with verification and phase-by-phase progress (continuous or phased mode)                |
-| `df:validate`    | Verify implementation against plan, identify issues                                                    |
-| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                    |
-| `df:handoff`     | Create handoff document for session transfer                                                           |
-| `df:commit`      | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0) |
+| Skill            | Description                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents                                                                                                              |
+| `df:planning`    | Create detailed implementation plans with thorough research                                                                                                           |
+| `df:iterate`     | Update existing plans based on feedback                                                                                                                               |
+| `df:implement`   | Execute plans with verification and phase-by-phase progress (continuous or phased mode)                                                                               |
+| `df:validate`    | Verify implementation against plan, identify issues                                                                                                                   |
+| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                                                   |
+| `df:handoff`     | Create handoff document for session transfer                                                                                                                          |
+| `df:commit`      | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0)                                                                |
+| `df:deslop`      | Revise outbound prose — commit bodies, PR descriptions, review replies, comments — against a sample of your own writing. Not a workflow step; auto-triggers on intent |
 
 ## Subagents
 

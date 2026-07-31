@@ -12,21 +12,22 @@ Development workflow plugin providing a structured feature development cycle:
 research → planning → [iterate] → implement → [validate] → [peer-review] → commit → [handoff]
 ```
 
-Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (only `commit` auto-triggers on intent; the rest are manual-only):
+Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (`commit` is the only workflow step that auto-triggers on intent; the rest are manual-only):
 
 - **Claude Code**: `/df:<name>` (e.g. `/df:research`).
 - **Codex CLI**: `$df:<name>` or `$<name>` (e.g. `$df:research`). The Claude-style `/df:<name>` slash is **not** a valid Codex command.
 
-| Skill            | Purpose                                                                    |
-| ---------------- | -------------------------------------------------------------------------- |
-| `df:research`    | Comprehensive codebase research with parallel sub-agents                   |
-| `df:planning`    | Create detailed implementation plans                                       |
-| `df:iterate`     | Update existing plans based on feedback                                    |
-| `df:implement`   | Execute plans phase by phase with verification (continuous or phased mode) |
-| `df:validate`    | Verify implementation against plan, identify issues                        |
-| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality |
-| `df:handoff`     | Create handoff document for session transfer                               |
-| `df:commit`      | Commit changes in logical chunks (Conventional Commits)                    |
+| Skill            | Purpose                                                                                                   |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents                                                  |
+| `df:planning`    | Create detailed implementation plans                                                                      |
+| `df:iterate`     | Update existing plans based on feedback                                                                   |
+| `df:implement`   | Execute plans phase by phase with verification (continuous or phased mode)                                |
+| `df:validate`    | Verify implementation against plan, identify issues                                                       |
+| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality                                |
+| `df:handoff`     | Create handoff document for session transfer                                                              |
+| `df:commit`      | Commit changes in logical chunks (Conventional Commits)                                                   |
+| `df:deslop`      | Revise outbound prose against a sample of your own writing (not a workflow step; auto-triggers on intent) |
 
 ## Install
 
@@ -58,7 +59,7 @@ As a **dev-only** shortcut, opening the repo directly with `cd ai-foo && codex` 
 
 After install you have:
 
-- **Skills**: `commit`, `research`, `planning`, `implement`, `validate`, `peer-review`, `iterate`, `handoff`. Only `commit` auto-triggers on natural-language matches against its `description`; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
+- **Skills**: `commit`, `deslop`, `research`, `planning`, `implement`, `validate`, `peer-review`, `iterate`, `handoff`. `commit` and `deslop` auto-trigger on natural-language matches against their `description`; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
 - **Subagents**: 9 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`, `code-reviewer`, plus the two advisors `codex-advisor` and `architecture-advisor`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`; both advisors require the `codex` MCP server (see [Advisor requirements](plugins/df/README.md#advisor-requirements)).
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 

@@ -1,7 +1,7 @@
 ---
 name: commit
 description: Use when the user explicitly asks to create one or more git commits from current working tree changes. Creates focused, atomic commits by analyzing changes and grouping them logically using Conventional Commits format, with a required user-confirmation step before staging or committing.
-allowed-tools: Read, Skill, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git branch:*)
+allowed-tools: Read, Task, Skill, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git branch:*)
 shell: bash
 ---
 
@@ -266,9 +266,15 @@ Do not:
 - Use bold, emoji, or headings.
 - Hedge, or close with a summary sentence that adds nothing.
 
-Match the repository's voice. The `<context>` block shows recent full messages. Follow their register, sentence length, and punctuation habits, including whether they use em dashes.
+Match the repository's voice. The `<context>` block shows recent full messages — drop version bumps and anything that reads as generated, then follow the register, sentence length, and punctuation habits of what is left, including whether they use em dashes.
 
-If the `humanizer` skill is available, invoke it in embedded mode on any body before committing; it returns final text with no commentary. Its rule against diff-anchored writing does not apply here, since a commit message is version-scoped by definition and that rule exempts version-scoped documents. The tier cap still governs the result: if the returned body is longer than its tier allows, keep the shorter text. If humanizer is not installed, the rules above are the baseline, not a fallback.
+If the `humanizer` skill is available, invoke it in embedded mode on any body before committing; it returns final text with no commentary. Its rule against diff-anchored writing does not apply here, since a commit message is version-scoped by definition and that rule exempts version-scoped documents. If humanizer is not installed, the rules above are the baseline, not a fallback.
+
+Then dispatch the probe. Fill the template at `../deslop/references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and send it to a `general-purpose` subagent via `Task`. Pass the draft body, the curated `<context>` messages as the voice sample, and every identifier, path, number, and issue reference the body must reproduce verbatim. Pass nothing else: not this session's conversation, not your own reasoning. It returns one verdict per sentence and never replacement text, so rewrite from the verdicts yourself. If the runtime has no generic subagent, as on Codex CLI, skip the dispatch.
+
+Dispatch the template directly; do not invoke `df:deslop`. Its description matches a commit body, so the model may reach for it, and an invoked skill's body stays in this session for the rest of it — buying nothing `df:commit` is not already doing.
+
+The tier cap still governs the result: if the returned body is longer than its tier allows, keep the shorter text.
 
 </message_voice>
 

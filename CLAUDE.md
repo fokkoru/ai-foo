@@ -31,18 +31,19 @@ Development workflow plugin providing a structured feature development cycle:
 /df:research → /df:planning → [/df:iterate] → /df:implement → [/df:validate] → [/df:peer-review] → /df:commit → [/df:handoff]
 ```
 
-Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. Only `df:commit` auto-triggers on intent; the other seven are manual-only — the model cannot invoke them, so you run them yourself.
+Steps in brackets `[]` are optional. All workflow steps are skills, invoked explicitly as `/df:<name>` on Claude Code or `$df:<name>` on Codex CLI. `df:commit` is the only workflow step that auto-triggers on intent; the other seven are manual-only — the model cannot invoke them, so you run them yourself.
 
-| Skill            | Purpose                                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `df:research`    | Comprehensive codebase research with parallel sub-agents                                                                              |
-| `df:planning`    | Create detailed implementation plans                                                                                                  |
-| `df:iterate`     | Update existing plans based on feedback                                                                                               |
-| `df:implement`   | Execute plans phase by phase with verification (continuous or phased mode)                                                            |
-| `df:validate`    | Verify implementation against plan, identify issues                                                                                   |
-| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                   |
-| `df:handoff`     | Create handoff document for session transfer                                                                                          |
-| `df:commit`      | Commit changes in logical chunks, message length sized to the change (auto-triggers on commit intent; also invocable as `/df:commit`) |
+| Skill            | Purpose                                                                                                                                                           |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents                                                                                                          |
+| `df:planning`    | Create detailed implementation plans                                                                                                                              |
+| `df:iterate`     | Update existing plans based on feedback                                                                                                                           |
+| `df:implement`   | Execute plans phase by phase with verification (continuous or phased mode)                                                                                        |
+| `df:validate`    | Verify implementation against plan, identify issues                                                                                                               |
+| `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                                               |
+| `df:handoff`     | Create handoff document for session transfer                                                                                                                      |
+| `df:commit`      | Commit changes in logical chunks, message length sized to the change (auto-triggers on commit intent; also invocable as `/df:commit`)                             |
+| `df:deslop`      | Revise outbound prose against a sample of the author's own writing — not a workflow step (auto-triggers on outbound-prose intent; also invocable as `/df:deslop`) |
 
 | Agent                     | Purpose                                                  |
 | ------------------------- | -------------------------------------------------------- |
@@ -175,7 +176,7 @@ Don't bolt nuance onto a rule that works: "don't X unless it matters" reopens th
 
 **Emphasis.** Explain why a rule exists instead of shouting it — `skill-creator` calls all-caps ALWAYS/NEVER "a yellow flag". Bold marks the lead-in a scanning reader navigates by; bold inside running prose is noise. Reach for a table at three parallel dimensions (agent × purpose × when-to-use).
 
-**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters, a reference file over 100 lines gets a table of contents. Only `df:commit` auto-triggers, so it is the only description worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
+**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters, a reference file over 100 lines gets a table of contents. `df:commit` and `df:deslop` auto-trigger, so theirs are the only descriptions worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
 
 ## Commit Conventions
 
