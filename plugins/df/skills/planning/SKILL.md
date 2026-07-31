@@ -22,7 +22,7 @@ If you identify a beneficial code change, document it in the plan document and s
 </artifact_scope>
 
 <quick_start>
-If a file path or task description is provided, skip the prompt — immediately read any provided files fully and begin the research process.
+If a file path or task description is provided, skip the prompt — immediately read any provided files fully and begin at Step 1.
 
 If no task description is provided, ask the user for:
 
@@ -40,10 +40,12 @@ Before diving into detailed steps, ultrathink about how to shape the planning ap
 
 ### Define the Solution Envelope
 
-- **Core requirement**: What must work for success
-- **Boundaries**: Where to stop exploring/building
-- **Explicitly excluded**: What NOT to build (prevents scope creep)
-- **Quality bar**: Standards that must be met
+Each of these becomes a named section of the plan. Shape it here, write it there.
+
+- **What must be true when this is done** → `### End State`
+- **How it is proven to work, end to end** → `### Acceptance Criteria`
+- **Rules no phase may break** → `## Global Constraints`
+- **What NOT to build** → `## What We're NOT Doing`
 
 ### Leave Room for Implementation
 
@@ -85,8 +87,40 @@ Document complexity traps upfront:
    - Don't spawn sub-tasks before reading these files in the main context
    - Don't read files partially — if a file is mentioned, read it completely
 
-2. **Spawn initial research tasks to gather context**:
-   Before asking the user any questions, use specialized agents to research in parallel:
+2. **Check the task is plan-sized before planning it**:
+
+   A plan earns its cost when the approach is uncertain, when the change spans several files, or when the code being changed is unfamiliar. If you could describe the finished diff in one sentence and you already know which lines it touches, none of those hold and the plan is overhead.
+
+   Say so once, in one line, and let the user decide:
+
+   ```
+   This looks like a one-sentence diff: [the sentence]. A plan would cost more than the change it describes.
+   Reply "plan anyway" and I'll write one — otherwise make the change directly, since df:implement needs a plan to execute.
+   ```
+
+   Take the answer at face value and do not re-argue it. If the user takes the offer, stop and write nothing — this skill's only output is a plan document, so the change itself stays with the user. If no answer comes — a headless run, or a runtime that denies user prompts — write the plan: an unwanted plan wastes tokens, a missing one loses the work.
+
+3. **Settle `### End State` and `### Acceptance Criteria` before the research spawn**:
+
+   Try to write `### End State` and `### Acceptance Criteria` (see `references/plan-template.md`) from the source material alone — the ticket, the research document, the task description. This is a test of the material, not of your confidence: either the source says what must be true when this is done and how that is proven, or it does not.
+
+   If both are writable, continue to the next step and ask nothing.
+
+   If either is not, ask now, before any research — this is the one class of question the codebase provably cannot answer, and its value is spent once execution is under way. Put every gap in **one** message, one question per gap, recommended answer first:
+
+   ```
+   Before I load the codebase, [N] things the code can't tell me:
+
+   1. [Gap] — Recommended: [answer], because [reason]. Alternatives: [answer], [answer].
+   2. [Gap] — Recommended: [answer], because [reason]. Alternatives: [answer], [answer].
+   ```
+
+   Treat the reply as the answer to what you asked. A user answering a question is not correcting you and not rejecting the approach — change nothing you were not asked about. The settled lines are the plan's `### End State` and `### Acceptance Criteria` — carry them into Step 4 verbatim rather than logging the exchange.
+
+   If no answer comes — a headless run, a runtime that denies user prompts, or the user says to proceed — write both sections from your best reading of the source, mark each such line `(unverified)`, and carry those marks into the plan. Never drop the sections and never present a guess as settled.
+
+4. **Spawn initial research tasks to gather context**:
+   With the end state settled, use specialized agents to research in parallel:
    - Use the **codebase-locator** agent to find all files related to the task
    - Use the **codebase-analyzer** agent to understand how the current implementation works
    - If relevant, use the **thoughts-locator** agent to find any existing thoughts documents about this feature
@@ -96,18 +130,18 @@ Document complexity traps upfront:
    - Trace data flow and key functions
    - Return detailed explanations with file:line references
 
-3. **Read all files identified by research tasks**:
+5. **Read all files identified by research tasks**:
    - After research tasks complete, read all files they identified as relevant
    - Read them fully into the main context
    - This ensures complete understanding before proceeding
 
-4. **Analyze and verify understanding**:
+6. **Analyze and verify understanding**:
    - Cross-reference the task requirements with actual code
    - Identify any discrepancies or misunderstandings
-   - Note assumptions that need verification
+   - Record each assumption the plan will rest on together with the `file:line` that supports it — these become the phases' `### Assumptions` blocks
    - Determine true scope based on codebase reality
 
-5. **Present informed understanding and focused questions**:
+7. **Present informed understanding and focused questions**:
 
    ```
    Based on the task and my research of the codebase, I understand we need to [accurate summary].
@@ -123,7 +157,10 @@ Document complexity traps upfront:
    - [Design preference that affects implementation]
    ```
 
-   Only ask questions that genuinely cannot be answered through code investigation.
+   Facts are yours to find; decisions are the user's to make. Never ask what the codebase can tell you — look it up. Always put a decision to the user, however much context you have already loaded, when any of these holds:
+   - being wrong is not cheaply reversible
+   - a different answer changes what you would build, not just how you would word it
+   - the user can answer from what they already know, without going off to research it themselves
 
 ### Step 2: Research & Discovery
 
@@ -199,8 +236,8 @@ After structure approval:
 2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
 
 3. **Self-review the finished plan before presenting it.** Read it once, checking exactly three things:
-   - **Spec coverage** — every requirement in the source task maps to a phase. Name any that do not.
-   - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in any phase's Changes Required or Success Criteria. Every value is concrete.
+   - **Spec coverage** — every line of `### End State` maps to at least one phase, and every `### Acceptance Criteria` item is provable once the last phase is done. Name any that are not.
+   - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in `### End State`, `### Acceptance Criteria`, or any phase's `### Assumptions`, `### Changes Required`, or `### Success Criteria`. Every value is concrete. The one exception is an `### End State` or `### Acceptance Criteria` line the Step 1 input gate could not get answered: it ships carrying its `(unverified)` mark. Two field-specific forms count as placeholders: an `### Acceptance Criteria` list that restates phase steps rather than proving the finished feature works, and a phase whose `### Assumptions` reads `(none)` while its `### Changes Required` edits a file no earlier phase produced — editing a file this plan has not already characterized means holding assumptions about what is in it.
    - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
 
    Fix what the review finds, then present.
@@ -210,6 +247,8 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 ### Step 5: Sync and Review
 
 1. **Present the draft plan location**:
+
+   If any `### End State` or `### Acceptance Criteria` line still carries `(unverified)`, list those lines first and ask the user to confirm or correct them — `df:implement` does not read the mark, so this is the last point at which a guessed goal can be caught.
 
    ```
    I've created the initial implementation plan at:
@@ -234,8 +273,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
 <success_criteria>
 
-- Plan file created at `thoughts/plans/YYYY-MM-DD_HHMM_topic.md` with all sections populated
-- All research questions resolved (no "TBD" or open questions in final plan)
+- Unless the user accepted the skip offer, plan file created at `thoughts/plans/YYYY-MM-DD_HHMM_topic.md` with all sections populated
 - Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
 - User confirms plan structure, phasing, and technical approach
 
@@ -243,7 +281,14 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
 <success_criteria_guidelines>
 
-Always separate success criteria into two categories:
+Success criteria exist at two levels and answer different questions:
+
+- **Plan level** — `### Acceptance Criteria`, under `## Desired End State`. Does the finished feature work? An independent reviewer runs these without reading the phases.
+- **Phase level** — `### Success Criteria`, inside each phase. Did this phase's work happen correctly?
+
+A phase-level check that a file now contains a function is not evidence that the feature works. Never let the phase-level list stand in for the plan-level one.
+
+Within a phase, always separate success criteria into two categories:
 
 1. **Automated Verification** (can be run by execution agents):
    - Commands that can be run: `make test`, `npm run lint`, etc.
@@ -255,7 +300,7 @@ Always separate success criteria into two categories:
    - UI/UX functionality
    - Performance under real conditions
    - Edge cases that are hard to automate
-   - User acceptance criteria
+   - User-facing behaviour only a person can judge
 
 The presence or absence of manual verification items controls whether the implementer pauses after a phase. Only add manual checks where human judgment is genuinely needed.
 
@@ -334,8 +379,9 @@ When triggered: reframe more narrowly, ask the user for clarification, or docume
 <constraints>
 - Your only output artifact is a plan document in thoughts/plans — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
+- Settle `### End State` and `### Acceptance Criteria` before spawning any research agent — a goal question asked after the context load is asked too late to be worth answering
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
-- Don't write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+- Don't write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents. The one exception is an `### End State` or `### Acceptance Criteria` line the input gate could not get answered: it ships marked `(unverified)`, never dropped and never presented as settled
 
 </constraints>

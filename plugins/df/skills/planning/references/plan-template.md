@@ -15,7 +15,19 @@
 
 ## Desired End State
 
-[A Specification of the desired end state after this plan is complete, and how to verify it]
+### End State
+
+What is true when this plan is done. One checkable statement per line — not a paragraph. `df:validate` and `df:peer-review` read this list item by item.
+
+- [Checkable statement that is true once the plan is complete]
+- [Another checkable statement]
+
+### Acceptance Criteria
+
+The end-to-end checks that prove the feature works — not that a step happened. Each names a command, an observable behaviour, or a file state an independent reviewer could run without reading the phases.
+
+- [ ] [Command, observable behaviour, or file state that proves the whole feature works]
+- [ ] [Another end-to-end check]
 
 ### Key Discoveries:
 
@@ -66,6 +78,14 @@ Every phase's requirements implicitly include this section.
 
 A phase must be implementable from its own section plus the files it names. This block is how a resumed session learns what its neighbours did.
 
+### Assumptions
+
+What this phase takes to be true about the codebase. `df:implement` re-checks every one of these against the live code before it writes anything — an assumption with no `source:` is one it cannot check. Write "(none)" only when every file this phase edits was produced by an earlier phase of this plan; editing a file the plan has not already built means holding assumptions about what is in it.
+
+- **Assumption**: [What this phase takes to be true] — source: `path/to/file.ext:line`
+  - **If wrong**: [What breaks, concretely]
+  - **Confidence**: Confident | Likely | Unclear
+
 ### Changes Required:
 
 #### 1. [Component/File Group]
@@ -93,7 +113,7 @@ A phase must be implementable from its own section plus the files it names. This
 
 ## Phase 2: [Descriptive Name]
 
-[Similar structure with both automated and manual success criteria...]
+[Same structure: Overview, Interfaces, Assumptions, Changes Required, and Success Criteria with both automated and manual items]
 
 ---
 

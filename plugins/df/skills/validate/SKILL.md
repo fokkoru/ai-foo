@@ -29,7 +29,7 @@ Use goal-backward verification instead of task-checklist verification. Take time
 2. **Artifacts**: What must EXIST for those truths to hold?
 3. **Wiring**: What must be CONNECTED for those artifacts to function?
 
-Start from the desired end state (in the plan's overview/desired end state section), not from the task list.
+Start from the plan's `### End State` list, not from the task list.
 
 ### Three-Level Artifact Verification
 
@@ -113,9 +113,10 @@ For each phase in the plan:
    - Documentation updated if needed
 
 6. **Goal-backward check**:
-   - Re-read the plan's overview and desired end state
-   - For each stated goal, trace backward: is the truth satisfied? Does the artifact exist, have substance, and connect to the system?
-   - Report any Level 1/2/3 failures found
+   - Re-read `## Desired End State`
+   - Take `### End State` line by line: for each, trace backward — is the truth satisfied? Does the artifact exist, have substance, and connect to the system?
+   - Take every `### Acceptance Criteria` item: run the ones provable by reading or grepping, and list the rest with the exact command and a not-run status. These are the plan-level checks that prove the feature works; a phase's own criteria passing is not a substitute
+   - Report any Level 1/2/3 failures, and any `(unverified)` mark still standing in the plan
 
 ### Step 4: Generate Validation Report
 

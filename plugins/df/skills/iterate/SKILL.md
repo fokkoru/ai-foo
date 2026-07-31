@@ -132,6 +132,8 @@ Get user confirmation before proceeding.
    - If adding a new phase, ensure it follows the existing pattern
    - If modifying scope, update "What We're NOT Doing" section
    - If a constraint changes, copy the new wording verbatim from its source into "Global Constraints" — never paraphrase it, and never drop a constraint while editing around it
+   - If scope changes, update `### End State` and `### Acceptance Criteria` to match — a plan whose end state no longer describes what it builds cannot be validated or reviewed
+   - If a phase's files, symbols, or APIs change, update that phase's `### Assumptions` and their `source:` references — `df:implement` re-checks each one against the live codebase
    - If a phase's `Produces` changes, update every later phase whose `Consumes` names it
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
@@ -169,7 +171,6 @@ Get user confirmation before proceeding.
 - Updated sections are consistent with unchanged sections
 - File:line references are accurate for new content
 - Success criteria updated if scope changed
-- No placeholder values or unresolved questions in the plan
 - User confirms the changes match their intent
 
 </success_criteria>
@@ -207,6 +208,6 @@ When triggered: present the issue clearly, explain what was found, and ask how t
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete conclusions
 - Confirm understanding with the user before editing — prevent wasted effort on misinterpreted feedback
-- NEVER update the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents
+- NEVER update the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents. An existing `(unverified)` mark is not a placeholder: leave it in place, or clear it when the edit resolves what it flagged
 
 </constraints>
