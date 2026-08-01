@@ -83,6 +83,10 @@ Example verification tasks:
 - **Test coverage**: Check if tests were added/modified as specified
 - **Pattern compliance**: Verify new code follows existing codebase conventions
 
+Size the fan-out to the diff: a single-phase plan, or a diff under about five files, verifies with 1 agent; a multi-phase plan, 2-3, each verifying an aspect the others do not.
+
+Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
+
 Wait for all verification tasks to complete before proceeding.
 
 ### Step 3: Systematic Phase Validation
@@ -196,7 +200,7 @@ Stop and ask the user for guidance if:
 - More than half the plan phases appear unimplemented
 - Verification reveals the implementation contradicts the plan's approach
 - Sub-agents return contradictory findings about the implementation
-- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
+- No meaningful findings after 3 parallel agent attempts
 
 When triggered: present the issue clearly, explain what was found, and ask how to proceed.
 

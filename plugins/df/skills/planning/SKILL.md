@@ -333,6 +333,8 @@ Select the right agent for each type of investigation:
 
 **Guidelines:**
 
+- Size the fan-out to the question before choosing agents: a single file or symbol needs 1 agent; one subsystem, 2-3; a cross-cutting or whole-codebase question, 4-6. Add an agent only when it has a distinct question to answer — two agents given the same question return the same findings twice.
+- Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn
 - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
 - Run multiple agents in parallel when searching for different things
 - Each agent knows its job — provide what to find, not how to search
@@ -368,9 +370,7 @@ Stop and reframe the planning process if:
 - No meaningful findings after 3 parallel agent attempts
 - Core directories/files mentioned don't exist
 - Sub-agents return contradictory information
-- More than 10 sub-agents needed (scope too broad)
 - Planning expanding beyond the original task
-- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be resolved and why.
 

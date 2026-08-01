@@ -224,6 +224,7 @@ Stop and request clarification if:
 - Codex returns contradictory recommendations
 - More than 5 critical issues found (solution may need redesign)
 - The request bundles multiple unrelated decisions that should be reviewed separately
+- Context gathering has stopped changing your understanding of the design — open the Codex thread with what you have rather than reading further; the thread can ask for more.
 
 <!-- codex-only -->
 

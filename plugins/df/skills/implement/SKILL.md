@@ -222,7 +222,7 @@ When something isn't working as expected:
 - Consider if the codebase has evolved since the plan was written
 - Present the mismatch clearly and ask for guidance
 
-Use sub-tasks sparingly — mainly for targeted debugging or exploring unfamiliar territory. When spawning agents:
+Spawn a sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe. Do not delegate work you can finish in a handful of tool calls, and do not use a sub-task to double-check your own edits. When spawning agents:
 
 | Agent                     | Purpose                            | When to Use                                        |
 | ------------------------- | ---------------------------------- | -------------------------------------------------- |
@@ -336,7 +336,6 @@ Stop and ask the user for guidance if:
 - The plan references files or APIs that no longer exist
 - Implementation reveals the plan's approach is fundamentally flawed
 - Scope of changes exceeds what the phase describes
-- If agent spawning fails with "agent not found" (Codex CLI), the required subagents may not be installed — see the plugin README for the manual `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code, this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly, explain what was attempted, and ask how to proceed.
 

@@ -162,7 +162,6 @@ Stop and ask the user if:
 - The spec verdict is still FAIL after the third round (the approach may be wrong — escalate)
 - The reviewer's two verdicts contradict each other (e.g. Spec Compliance PASS alongside a Critical spec gap)
 - The reviewer reports it cannot read the diff file. Do not paste the diff as a workaround — stop and tell the user the path was unreachable, since this is a sandbox/runtime problem, not a review problem.
-- If agent spawning fails with "agent not found" (Codex CLI), the code-reviewer subagent may not be installed — see the plugin README for the `cp codex/agents/*.toml ~/.codex/agents/` step. On Claude Code this should not happen; if it does, reinstall the plugin.
 
 When triggered: present the issue clearly and ask how to proceed.
 

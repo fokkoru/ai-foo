@@ -18,6 +18,15 @@ Code that is already written goes to `/codex:adversarial-review`, not here — t
 
 Use `df:architecture-advisor` instead when the request spans multiple coupled decisions, migration planning, or broader system design.
 
+## Circuit Breakers
+
+Stop and report what you have if:
+
+- Answering needs files beyond the ones the request names and their direct dependencies — the question is not narrow, which is a fact about the request rather than about your progress. Say so and recommend `df:architecture-advisor` instead of widening the read.
+- The request contains more than one decision.
+- Codex returns contradictory recommendations across a thread.
+- Three exchanges on one thread without converging.
+
 ## Workflow
 
 1. **Gather local context first** — Read relevant files to understand the code and capture file:line references for the current implementation
