@@ -80,6 +80,7 @@ If the user's feedback requires understanding new code patterns or validating as
    **Guidelines:**
    - Size the fan-out to the question before choosing agents: a single file or symbol needs 1 agent; one subsystem, 2-3; a cross-cutting or whole-codebase question, 4-6. Add an agent only when it has a distinct question to answer — two agents given the same question return the same findings twice.
    - Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn
+   - Stop after 3 parallel agent attempts that return no meaningful findings — reframe the question more narrowly, ask the user, or write down what could not be resolved and why
    - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
    - Run multiple agents in parallel when searching for different things
    - Each agent knows its job — provide what to find, not how to search
@@ -189,19 +190,6 @@ Get user confirmation before proceeding.
 Stay focused on making the specific changes requested.
 
 </anti_patterns>
-
-<circuit_breakers>
-Stop and ask the user for guidance if:
-
-- Requested changes conflict with other plan phases
-- Research reveals the plan's assumptions are fundamentally wrong
-- Changes would require rewriting more than half the plan
-- Sub-agents return contradictory information about the codebase
-- No meaningful findings after 3 parallel agent attempts
-
-When triggered: present the issue clearly, explain what was found, and ask how to proceed.
-
-</circuit_breakers>
 
 <constraints>
 - You ONLY edit or write files in thoughts/plans — NEVER modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.

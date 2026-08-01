@@ -57,6 +57,8 @@ Spawn the `code-reviewer` subagent via Task. Construct its prompt from artifacts
 
 Do NOT include this session's conversation, your own reasoning, or what the author intended. Do NOT include the diff text. Wait for the subagent to finish.
 
+If the reviewer reports it cannot read the diff file, do NOT paste the diff as a workaround. Stop and tell the user the path was unreachable — that is a sandbox or runtime problem, not a review problem.
+
 ### Step 3: Act on the verdicts (bounded fix loop)
 
 A round is one fix pass plus one re-review scoped to the changed surface. **Three rounds maximum.**
@@ -153,19 +155,6 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 - Marking nits as Critical, or issuing no clear verdict
 
 </anti_patterns>
-
-<circuit_breakers>
-Stop and ask the user if:
-
-- The plan/spec cannot be found or has no acceptance criteria to review against
-- The diff is empty (nothing to review) or spans unrelated work
-- The spec verdict is still FAIL after the third round (the approach may be wrong — escalate)
-- The reviewer's two verdicts contradict each other (e.g. Spec Compliance PASS alongside a Critical spec gap)
-- The reviewer reports it cannot read the diff file. Do not paste the diff as a workaround — stop and tell the user the path was unreachable, since this is a sandbox/runtime problem, not a review problem.
-
-When triggered: present the issue clearly and ask how to proceed.
-
-</circuit_breakers>
 
 <constraints>
 - The reviewer subagent MUST receive only artifacts (spec + diff + criteria). NEVER pass this session's conversation or your reasoning — isolation is the whole point.

@@ -185,6 +185,7 @@ Select the right agent for each type of investigation:
 
 - Size the fan-out to the question before choosing agents: a single file or symbol needs 1 agent; one subsystem, 2-3; a cross-cutting or whole-codebase question, 4-6. Add an agent only when it has a distinct question to answer — two agents given the same question return the same findings twice.
 - Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn
+- Stop after 3 parallel agent attempts that return no meaningful findings — reframe the question more narrowly, ask the user, or write down what could not be resolved and why
 - Start with locator agents to find what exists, then use analyzer agents on the most promising findings
 - Run multiple agents in parallel when searching for different things
 - Each agent knows its job — provide what to find, not how to search
@@ -207,18 +208,6 @@ Select the right agent for each type of investigation:
 Stay focused on answering the user's actual question.
 
 </anti_patterns>
-
-<circuit_breakers>
-Stop and reframe the research if:
-
-- No meaningful findings after 3 parallel agent attempts
-- Core directories/files mentioned don't exist
-- Sub-agents return contradictory information
-- Research expanding beyond original question
-
-When triggered: reframe more narrowly, ask the user for clarification, or document what couldn't be researched and why.
-
-</circuit_breakers>
 
 <constraints>
 - Your only output artifact is a research document in thoughts/research — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.

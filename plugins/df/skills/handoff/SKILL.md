@@ -151,17 +151,6 @@ Stay focused on creating a useful transfer document, not a comprehensive report.
 
 </anti_patterns>
 
-<circuit_breakers>
-Stop and ask the user for guidance if:
-
-- No meaningful work has been done in this session (nothing to hand off)
-- Unable to determine what was being worked on (no plan, no recent changes, no context)
-- The handoffs directory doesn't exist and can't be created
-
-When triggered: explain what's missing and ask the user what they want captured.
-
-</circuit_breakers>
-
 <constraints>
 - Your ONLY output artifact is a handoff document in thoughts/handoffs — NEVER write or modify files anywhere else.
 - NEVER fabricate work that wasn't done — only document actual session activity

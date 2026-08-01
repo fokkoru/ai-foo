@@ -236,7 +236,7 @@ Moderate covers a bug fix whose root cause is not visible in the patch, a refact
 
 Complex is a split signal before it is a writing signal. Break the change into commits that each land at Trivial or Moderate. Only when the change is genuinely atomic, meaning a split would leave the tree broken or the halves meaningless, does it earn a body: at most two short paragraphs covering the reason and the one decision a reader would otherwise question.
 
-Split along independent concerns only. The groupings from Step 2 take precedence: a feature layer (interface, implementation, wiring, tests) and a functional unit (migration plus schema) stay in one commit even when their rationale is compound, because splitting them leaves intermediate commits that do not build. A compound rationale is not by itself a reason to split. Two independent concerns is. If splitting would push the count past five groups, `<circuit_breakers>` applies: stop and ask.
+Split along independent concerns only. The groupings from Step 2 take precedence: a feature layer (interface, implementation, wiring, tests) and a functional unit (migration plus schema) stay in one commit even when their rationale is compound, because splitting them leaves intermediate commits that do not build. A compound rationale is not by itself a reason to split. Two independent concerns is. If splitting would push the count past five groups, the scope is too large for one pass: stop and ask the user.
 
 ### The cap is a split signal
 
@@ -303,6 +303,7 @@ The tier cap still governs the result: if the returned body is longer than its t
 - **NEVER stage without user confirmation** — always present the plan first and wait for explicit approval. Read-only commands (`git status`, `git diff`, `git log`) may run as needed to build the plan.
 - **NEVER stage all files** — use specific file names only. Never `git add .`, never `git add -A`, never `git add *`.
 - **NEVER modify code** — this skill only stages and commits existing changes. No reformatting, no linting, no "while I'm here" fixes.
+- **NEVER stage a sensitive file** — if the diff touches `.env`, credentials, or keys, stop and ask the user before staging anything.
 - Verify file coupling by reading diffs, not just file names. A shared filename does not imply shared concern.
 
 </staging_rules>
@@ -329,16 +330,3 @@ Stay focused on creating clean, well-grouped commits.
 **Pairs with:**
 
 - `/df:handoff` — for session transfers after committing
-
-<circuit_breakers>
-Stop and ask the user for guidance if:
-
-- Working tree has no changes to commit
-- Changes appear to include sensitive files (.env, credentials, keys)
-- Staged changes conflict with unstaged changes in the same files
-- More than 5 logical commit groups identified (scope may be too large)
-- Unsure whether changes should be one commit or multiple
-
-When triggered: present the issue clearly, explain what was found, and ask how to proceed.
-
-</circuit_breakers>

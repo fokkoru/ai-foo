@@ -26,7 +26,7 @@ When another skill dispatches `references/voice-prober.md` directly, none of thi
 
 ### Gate
 
-Skip anything under 15 words, and skip one-line replies. Terse stays terse; nothing below runs.
+Skip anything under 15 words, and skip one-line replies. Terse stays terse; nothing below runs. If the text is under the gate and the caller still asked for `recast`, stop and ask the user.
 
 Fifteen is where authored prose starts in the measured corpus: everything below it is template text such as `This reverts commit <sha>`, entirely preserve-list tokens. It sits no higher because an 18-word message there carried three tells. Judge a borderline draft against those, not the number.
 
@@ -44,7 +44,7 @@ Read the mode from the invocation; default to `tune`. Modes are permitted-operat
 
 Read `.claude/voice-sample.md` if it exists. Otherwise run `git log --no-merges --author="$(git config user.name)" --format=%B -n 30`.
 
-Curate to 5–10 messages: drop version bumps, one-word subjects, subject-only commits, and anything that reads as generated. Curation is the mechanism, not tidying — corpus size tracks stylistic fidelity at r < 0.1, and a raw log holds messages the author is not proud of. If fewer than five survive, say so and work from the baseline.
+Curate to 5–10 messages: drop version bumps, one-word subjects, subject-only commits, and anything that reads as generated. Curation is the mechanism, not tidying — corpus size tracks stylistic fidelity at r < 0.1, and a raw log holds messages the author is not proud of. If fewer than five survive, say so and work from the baseline. If no sample resolves at all and the caller expects one, stop and ask the user.
 
 ### Catalog
 
@@ -65,7 +65,9 @@ Split the draft into numbered sentences. Fill `references/voice-prober.md` — a
 
 Pass the draft, the curated sample, the preserve list, and the mode. Pass nothing else. Wait for the verdicts.
 
-No generic subagent (Codex CLI today): run the ladder inline and say so.
+Isolation is unavailable in two cases: the runtime has no generic subagent (Codex CLI today), or you are yourself a subagent — `df:deslop` fires on intent, so it loads inside dispatched agents too, where a skill's own dispatches have been reported to silently no-op and the probe would run in the very context that wrote the draft. Both take the same action: run the ladder inline, dispatch nothing, say so in the output.
+
+If the subagent returns rewritten text instead of verdicts, stop and ask the user.
 
 ### Rewrite and ground
 
@@ -95,21 +97,6 @@ Two rounds is the cap. If a sentence still fails on the second, the thought is w
 - Do not rename, reorder, or refactor code inside a fenced block; format only.
 
 </constraints>
-
-<circuit_breakers>
-
-Isolation is unavailable in two cases. Both take the same action: run the ladder inline, dispatch nothing, say so in the output:
-
-- **You are yourself a subagent.** `df:deslop` fires on intent, so it loads inside dispatched agents too. A skill invoked there has been reported to have its own dispatches silently no-op, so the probe would run in the context that wrote the draft while the output claimed isolation.
-- **The runtime has no generic subagent.** Codex CLI today.
-
-Stop and ask the user if:
-
-- The text is under the gate and the caller still asked for `recast`.
-- No voice sample resolved and the caller expects one.
-- The subagent returns rewritten text instead of verdicts.
-
-</circuit_breakers>
 
 <anti_patterns>
 

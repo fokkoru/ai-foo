@@ -328,19 +328,6 @@ Stay focused on implementing what was actually planned.
 
 </anti_patterns>
 
-<circuit_breakers>
-Stop and ask the user for guidance if:
-
-- A phase's changes conflict with current codebase state
-- Verification still fails after the third fix round — present the dispositions from Step 3 and ask
-- The plan references files or APIs that no longer exist
-- Implementation reveals the plan's approach is fundamentally flawed
-- Scope of changes exceeds what the phase describes
-
-When triggered: present the issue clearly, explain what was attempted, and ask how to proceed.
-
-</circuit_breakers>
-
 <constraints>
 - Read the plan and all mentioned files fully before starting implementation — partial understanding leads to incorrect changes
 - Implement one phase at a time — complete verification before moving to the next

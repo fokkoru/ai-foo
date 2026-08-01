@@ -87,6 +87,8 @@ Size the fan-out to the diff: a single-phase plan, or a diff under about five fi
 
 Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
 
+Stop after 3 parallel agent attempts that return no meaningful findings — say so in the report and ask the user, rather than dispatching a fourth round.
+
 Wait for all verification tasks to complete before proceeding.
 
 ### Step 3: Systematic Phase Validation
@@ -191,20 +193,6 @@ If you were part of the implementation session:
 Stay focused on verifying what the plan actually specified.
 
 </anti_patterns>
-
-<circuit_breakers>
-Stop and ask the user for guidance if:
-
-- The plan file cannot be found or is incomplete
-- Git history shows no implementation commits related to the plan
-- More than half the plan phases appear unimplemented
-- Verification reveals the implementation contradicts the plan's approach
-- Sub-agents return contradictory findings about the implementation
-- No meaningful findings after 3 parallel agent attempts
-
-When triggered: present the issue clearly, explain what was found, and ask how to proceed.
-
-</circuit_breakers>
 
 <constraints>
 - Read the plan completely before starting any verification — partial understanding leads to incorrect assessments
