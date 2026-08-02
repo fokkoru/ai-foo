@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Use when the user explicitly asks to create one or more git commits from current working tree changes. Creates focused, atomic commits by analyzing changes and grouping them logically using Conventional Commits format, with a required user-confirmation step before staging or committing.
+description: Create git commits from working tree changes. Use whenever the user wants work committed, saved, or checked in — including a plan's commit step — even without the word "commit". Groups atomically, Conventional Commits, confirms before staging.
 allowed-tools: Read, Task, Skill, Bash(git status:*), Bash(git diff:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git branch:*)
 shell: bash
 ---
@@ -23,18 +23,6 @@ Current repository state, captured at skill-load time:
 - recent commits: !`git log -5 --pretty=format:'%h %s%n%b'`
 
 </context>
-
-<quick_start>
-
-1. Review the `<context>` block above (status, shortstat, branch, recent commits)
-2. Run `git diff HEAD -- <file>` for files whose content you need to read for grouping decisions
-3. Determine logical grouping strategy (single vs multiple commits)
-4. Size each message — pick a tier, add a body only against a stated reason
-5. Present commit plan and wait for user confirmation
-6. Execute staged commits with conventional messages
-7. Verify with `git status` and `git log`
-
-</quick_start>
 
 <workflow>
 
@@ -73,6 +61,10 @@ If you cannot fill in the "because" clause, the answer is none. Write the subjec
 
 Most commits are trivial and need no body.
 
+If any group takes a body or a footer, read `references/message-craft.md` — a path relative to
+the base directory the harness announces for this skill, not to the working directory — before
+drafting it. A subject-only commit does not read it.
+
 If a group lands at Complex, try to split it into groups that each land at Trivial or Moderate before moving on. Splitting is the first response to complexity; a longer message is the fallback when splitting is not possible. Step 2's groupings win: never break apart files that must land together to keep the tree buildable.
 
 ### Step 4: Present Plan
@@ -93,7 +85,7 @@ I plan to create N commit(s):
 Proceed?
 ```
 
-Subject lines must follow the rules in `<message_rules>` below: imperative mood, ≤50 characters, no trailing period. Message length follows the tiers in `<commit_scale>`.
+Subject lines must follow the rules in `<commit_format>` below: imperative mood, ≤50 characters, no trailing period. Message length follows the tiers in `<commit_scale>`.
 
 Do not stage or commit until the user confirms. Read-only inspection commands (`git diff <file>`, `git status`) may still run if needed to answer follow-up questions.
 
@@ -134,7 +126,7 @@ Use the single-quoted HEREDOC (`<<'EOF'`) to prevent shell expansion of `$`, bac
 
 ### Step 6: Verify
 
-Run `git status` to confirm no uncommitted changes remain.
+Run `git status` to confirm no uncommitted changes remain. Files the user chose to defer are expected to remain.
 Show `git log --oneline -N` with the created commits.
 
 </workflow>
@@ -165,50 +157,22 @@ type(scope): description
 | `style`    | Formatting, whitespace (no logic change)   |
 | `revert`   | Reverts a previous commit                  |
 
+Only `feat` and `fix` are in the Conventional Commits spec. The rest are the Angular /
+`@commitlint/config-conventional` convention layered on top — when a repository's own history
+uses different types, follow the repository.
+
 ### Subject Discipline
 
 - Imperative mood ("add", not "added" or "adds")
 - ≤50 characters
 - No trailing period
 - Lowercase after the colon unless referencing a proper noun
+- `!` before the colon marks a breaking change: `feat(api)!: remove deprecated /v1/login endpoint` — pair it with a `BREAKING CHANGE:` footer, see `references/message-craft.md`
 
-### Breaking Changes
+### Attribution
 
-Two equivalent mechanisms — use both together for maximum clarity:
-
-1. `!` before the colon on the subject: `feat(api)!: remove deprecated /v1/login endpoint`
-2. `BREAKING CHANGE:` footer (uppercase required):
-
-   ```
-   feat(api)!: remove deprecated /v1/login endpoint
-
-   BREAKING CHANGE: /v1/login has been removed. Use /v2/auth/login.
-   Existing clients must migrate before the next release.
-   ```
-
-### Footer Format
-
-One blank line after body, then `token: value` or `token #value`. Tokens use hyphens, not spaces.
-
-| Footer                  | Purpose                                            |
-| ----------------------- | -------------------------------------------------- |
-| `Fixes #N`              | Closes issue N on merge (bug fixes)                |
-| `Closes #N`             | Closes issue N on merge (features)                 |
-| `Refs #N`               | References issue N without closing                 |
-| `BREAKING CHANGE: <x>`  | Describes the breaking change (uppercase required) |
-| `Co-authored-by: N <e>` | Credit co-authors (only if user asks)              |
-| `Refs: <sha>`           | For `revert` commits, reference reverted SHA(s)    |
-
-### Revert Example
-
-```
-revert: feat(auth): add JWT validation
-
-This reverts commit abc123def. JWT validation broke session renewal
-for mobile clients; reverting while we fix the renewal path.
-
-Refs: abc123def
-```
+**NEVER add AI signatures** — no `Co-authored-by: Claude`, no "Generated with Claude Code", no
+"🤖" markers. The user adds co-authors manually if they want them.
 
 </commit_format>
 
@@ -238,65 +202,11 @@ Complex is a split signal before it is a writing signal. Break the change into c
 
 Split along independent concerns only. The groupings from Step 2 take precedence: a feature layer (interface, implementation, wiring, tests) and a functional unit (migration plus schema) stay in one commit even when their rationale is compound, because splitting them leaves intermediate commits that do not build. A compound rationale is not by itself a reason to split. Two independent concerns is. If splitting would push the count past five groups, the scope is too large for one pass: stop and ask the user.
 
-### The cap is a split signal
-
-If a body is outgrowing its tier, the commit is too big. Split it. Do not extend the message. This is the rule the kernel and Git submitting-patches docs both state: a description that keeps growing means the patch covers more than one problem.
-
-If a change genuinely cannot be split and still needs more than two paragraphs, stop and tell the user, naming the split you considered and why it does not work.
-
 ### Report the tier
 
 Mark each commit with its tier in the Step 4 plan so the user can push back before anything is staged.
 
 </commit_scale>
-
-<message_voice>
-
-Bodies are prose. Never a bullet list of what changed. The diff is already that list.
-
-Do not:
-
-- Restate the diff. Type, scope, and subject carry WHAT. A body carries WHY.
-- Narrate the session. No "initially tried X, then switched to Y", no "as requested", no "per review feedback". The commit records the change, not how it was arrived at.
-- Open with "This commit", "This change", or "This PR".
-- Guess at rationale you do not have. If you cannot state why from the diff and this session, write the shorter message.
-- Reach for inflated words: robust, comprehensive, seamless, powerful, significantly, enhance, leverage, streamline.
-- Tack on -ing clauses: "ensuring correctness", "allowing future growth", "improving performance".
-- Group items into threes for rhythm.
-- Use bold, emoji, or headings.
-- Hedge, or close with a summary sentence that adds nothing.
-
-Match the repository's voice. The `<context>` block shows recent full messages — drop version bumps and anything that reads as generated, then follow the register, sentence length, and punctuation habits of what is left, including whether they use em dashes.
-
-If the `humanizer` skill is available, invoke it in embedded mode on any body before committing; it returns final text with no commentary. Its rule against diff-anchored writing does not apply here, since a commit message is version-scoped by definition and that rule exempts version-scoped documents. If humanizer is not installed, the rules above are the baseline, not a fallback.
-
-Then dispatch the probe. Fill the template at `../deslop/references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and send it to a `general-purpose` subagent via `Task`. Pass the draft body, the curated `<context>` messages as the voice sample, and every identifier, path, number, and issue reference the body must reproduce verbatim. Pass nothing else: not this session's conversation, not your own reasoning. It returns one verdict per sentence and never replacement text, so rewrite from the verdicts yourself. If the runtime has no generic subagent, as on Codex CLI, skip the dispatch.
-
-Dispatch the template directly; do not invoke `df:deslop`. Its description matches a commit body, so the model may reach for it, and an invoked skill's body stays in this session for the rest of it — buying nothing `df:commit` is not already doing.
-
-The tier cap still governs the result: if the returned body is longer than its tier allows, keep the shorter text.
-
-</message_voice>
-
-<message_rules>
-
-- **NEVER add AI signatures** — no `Co-authored-by: Claude`, no "Generated with Claude Code", no "🤖" markers. The user adds co-authors manually if they want them.
-- **Message length**: sized by `<commit_scale>`, written per `<message_voice>`. Most commits are subject-only.
-- **Subject line**: imperative mood, ≤50 chars, no trailing period. Lowercase after the colon unless proper noun.
-- **Body** (when present): wrap at ~72 chars per line. One blank line between subject and body.
-- **Footer** (when present): one blank line after body. Use the tokens in `<commit_format>`.
-- **Breaking changes**: use both `!` on subject and `BREAKING CHANGE:` footer for clarity.
-
-</message_rules>
-
-<success_criteria>
-
-- All logical change groups committed with appropriate conventional messages
-- No uncommitted changes remain (unless user chose to defer some)
-- Each commit is atomic and self-contained
-- Commit messages accurately describe the changes based on diff content
-
-</success_criteria>
 
 <staging_rules>
 
