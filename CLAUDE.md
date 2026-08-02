@@ -84,7 +84,7 @@ Don't bolt nuance onto a rule that works: "don't X unless it matters" reopens th
 
 **Emphasis.** Explain why a rule exists instead of shouting it — `skill-creator` calls all-caps ALWAYS/NEVER "a yellow flag". Bold marks the lead-in a scanning reader navigates by; bold inside running prose is noise. Reach for a table at three parallel dimensions (agent × purpose × when-to-use).
 
-**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters, a reference file over 100 lines gets a table of contents. `df:commit` and `df:deslop` auto-trigger, so theirs are the only descriptions worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
+**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit` and `df:deslop` auto-trigger, so theirs are the only descriptions worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
 
 ## Commit Conventions
 
@@ -99,9 +99,10 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 ## Verify Before Finishing
 
 ```bash
-prettier --check .                     # Prettier 3.x, global install — there is no package.json
-scripts/check-codex-agent-drift.sh     # after editing any plugins/df/agents/*.md
-scripts/check-agent-selection-drift.sh # after editing an <agent_selection> table
+prettier --check .                        # Prettier 3.x, global install — there is no package.json
+scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/*.md
+scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
+scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
 ```
 
 ## Gotchas
