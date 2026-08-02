@@ -1,6 +1,6 @@
 ---
 name: deslop
-description: Use when writing or revising outbound prose that another person will read — a commit body, a PR description, a reply to a code review, a code comment — or when a draft reads as machine-generated: inflated adjectives, -ing clause tails, hedging, rule-of-three padding, generic praise, or prose that sounds like ChatGPT rather than like the author.
+description: Revise outbound prose to read as the author's own — commit bodies, PR descriptions, code-review replies, code comments. Use whenever a draft sounds machine-generated — inflated adjectives, -ing clause tails, hedging, rule-of-three padding.
 allowed-tools: Read, Task, Skill, Grep, Glob, Bash(git log:*), Bash(git config:*)
 ---
 
@@ -50,11 +50,14 @@ Curate to 5–10 messages: drop version bumps, one-word subjects, subject-only c
 
 `tune` and `recast` only. If `humanizer` is available, invoke it in embedded mode: final text, no commentary. If not, the baseline below is the spec, not a fallback. Every line is a failure unaided agents committed on real commit bodies:
 
-- Never introduce a fact the source did not carry. All five baseline agents did; 45.4% of AI-authored messages contradict their code (arXiv `2601.04886`).
+- Never introduce a fact the source did not carry. All five baseline agents did; AI-authored pull
+  requests whose description contradicts the diff are accepted at 28.3%, against 80.0% for those
+  that do not (arXiv `2601.04886`).
 - Never drop a load-bearing word. "Writing a tier down" became "Choosing a tier", which loses the mechanism.
 - Do not inflate the register: "on disk" became "sit on disk", "consumed" became "burned", "since" became "because".
 - Do not lengthen. The baseline runs came in at +16%, −2%, +8%, +32%, +267%.
-- Carry WHY. The source already carries WHAT; restating it is lossy compression (arXiv `2603.15566`).
+- Carry WHY. The source already carries WHAT, and a diff that keeps the change while discarding
+  the reasoning leaves a decision shadow (arXiv `2603.15566`).
 - No present-participial clause tails — "allowing a Codex-only suffix", "ensuring correctness". The strongest of 67 measured discriminators, at 527% of the human rate (PNAS `10.1073/pnas.2422455122`).
 - Do not hedge behaviour into capability: "distinguishes", not "can tell apart".
 - Do not open by restating the subject line or title.
