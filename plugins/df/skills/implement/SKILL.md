@@ -62,19 +62,34 @@ Once the user approves the phase, commit it:
 
 1. Run `git status` and `git diff HEAD` to review changes
 2. Identify the specific files that belong to this phase
-3. Present the commit plan and wait for confirmation:
+3. Write the message per `<commit_format>` — a subject line unless the phase's rationale is
+   invisible in its diff
+4. Present the commit plan and wait for confirmation:
 
    ```
    Committing Phase [N]:
      type(scope): description
+     body: one paragraph on why ... (omit when subject-only)
      Files: file1.ts, file2.ts
 
    Proceed?
    ```
 
-4. Stage specific files for this phase: `git add <files>`
-5. Commit with a conventional message: `git commit -m "type(scope): description"`
-6. Verify with `git status`
+5. Stage specific files for this phase: `git add <files>`
+6. Commit. Subject only:
+
+   ```bash
+   git commit -m "type(scope): description"
+   ```
+
+   With a body, a second `-m` becomes the body paragraph — git keeps the line breaks you type:
+
+   ```bash
+   git commit -m "type(scope): description" -m "One paragraph on why, wrapped
+   at 72 columns."
+   ```
+
+7. Verify with `git status`
 
 Do not stage files unrelated to the current phase. If unrelated changes exist, note them and leave them unstaged.
 
@@ -320,9 +335,14 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 type(scope): description
 ```
 
-Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `style`
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `style`, `revert`
 
-Write commit messages that explain WHY, not just WHAT. The type and scope convey what changed — the message body should convey why it matters.
+A phase commit is a subject line. It earns a body only when the phase's rationale is invisible in
+its diff — then read `../commit/references/message-craft.md`, a path relative to the base
+directory the harness announces for this skill, before drafting it, supplying the two inputs
+`message-craft.md` asks its caller for: the tier, which is Moderate — one paragraph — and the
+voice sample, from `git log -5 --pretty=format:'%h %s%n%b'`. A phase commit cannot be split, so if
+the body outgrows one paragraph, stop and tell the user.
 
 </commit_format>
 
