@@ -2,7 +2,7 @@
 name: implement
 description: Use when implementing a technical plan from the plans directory with verification — continuous by default, or phase-by-phase with human review and a commit per phase when the user asks for phased execution
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(make:*), Bash(npm run:*)
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*), Bash(make:*), Bash(npm run:*)
 ---
 
 <objective>
@@ -126,7 +126,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
    How should I proceed?
    ```
 
-   Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; the per-phase revalidation in Step 2 is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
+   Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; the implementer's re-validation at the start of each phase is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
 
 3. Read the original ticket if the plan cites one
 4. Take time to ultrathink about how the pieces fit together
@@ -135,26 +135,28 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
 Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
-### Step 2: Implementation
+### Step 2: Delegate the phase
 
-**Start every phase by reading.** At the start of each phase, read every file that phase names in full, re-check that phase's `### Assumptions` and `### Interfaces` plus the plan's Global Constraints against the live code, and read any additional dependency the live code shows is necessary before editing. **Read files fully** — never use limit/offset parameters; an edit to a file read only in part is an edit made blind.
+Write no source code yourself. Every phase is implemented by a dispatched `phase-implementer`; the controller's job is the brief, the dispatch, and the branch on what comes back.
 
-Do not read files only a later phase names. The plan template guarantees each phase is implementable from its own section plus the files it names, so pulling a later phase's reads forward keeps them resident for the whole run and buys the current phase nothing.
+**Run directory, once.** At the first phase, create one scratch directory with `mktemp -d` and keep its path for the whole run. Every brief, report, and diff lives there — `phase-<N>-brief.md`, `phase-<N>-report.md`, `phase-<N>-round-<R>.diff`. Do not delete it: a later fix round reads the report file, and `rm` is deliberately absent from `allowed-tools`.
 
-Use `### Interfaces` as an index rather than authority: verify every consumed name, signature, and type against its live declaration, and read the implementation when correctness depends on behaviour the block does not state.
+**Build the brief.** Write the phase's own section verbatim, then the plan's `## Global Constraints` section verbatim, to `<run-dir>/phase-<N>-brief.md`. Nothing else — not the whole plan, not earlier phases.
 
-Plans are carefully designed, but reality can be messy:
+**Dispatch.** Spawn `phase-implementer` via `Task`. The prompt carries exactly five things: one line on where this phase sits in the plan; the brief path, introduced as the requirements, with exact values to use verbatim; the `### Produces` blocks of earlier phases in this run that this phase `Consumes`; your resolution of any ambiguity you already noticed; and the report path. Never specify `model` — the implementer inherits this session's. Never dispatch two implementers at once.
 
-- Follow the plan's intent while adapting to what is found
-- Implement each phase fully before moving to the next
-- Verify work makes sense in the broader codebase context
-- Update checkboxes in the plan as sections are completed
+**Do not paste.** The brief's contents, the report's contents, and prior phases' summaries never appear in a dispatch prompt — everything travels as a path.
 
-When things don't match the plan exactly, think about why and communicate clearly. The plan is a guide, but judgment matters too.
+**Branch on the returned status:**
 
-**Handling Mismatches:**
+| Status               | What you do                                                                                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DONE`               | Go to Step 3.                                                                                                                                                                                        |
+| `DONE_WITH_CONCERNS` | Read the concerns in the returned message. If they bear on correctness or scope, treat them as findings and open a fix round. If they are observations, note them in the plan file and go to Step 3. |
+| `NEEDS_CONTEXT`      | Supply what was missing and re-dispatch. Do not re-dispatch unchanged.                                                                                                                               |
+| `BLOCKED`            | Classify the blocker with `<deviation_handling>`. Rule 4 — stop and ask the user, using the format below. Rules 1–3 — supply the missing context or narrow the phase, then re-dispatch.              |
 
-Classify every mismatch with the `<deviation_handling>` table before acting — that table decides whether to fix it or to stop. When it classifies as Rule 4, stop and present:
+When a blocker classifies as Rule 4, stop and present:
 
 ```
 Issue in Phase [N]:
@@ -164,6 +166,8 @@ Why this matters: [explanation]
 
 How should I proceed?
 ```
+
+Never re-dispatch the same agent on the same input. If the implementer said it is stuck, something has to change before the next dispatch.
 
 ### Step 3: Verification
 
@@ -180,7 +184,32 @@ After implementing a phase:
    - If the check **fails**: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
    - If the check **requires manual testing**: leave `[ ]` unchanged
 
-2. Fix any failures before proceeding. **Three fix rounds maximum per phase.** At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
+2. Route any failure back to the implementer. **Three fix rounds maximum per phase.** A round is one fix dispatch plus one re-run of the phase's automated criteria. Send the implementer the failing criteria and the check output verbatim; it appends a fix report to the same report file. Never fix a failure yourself — a controller fix pollutes the context you are keeping clean and skips the phase's verification path. At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
+
+   **Rounds 1 and 2 — resume the same implementer.** Its context is intact: it knows the phase, the code, and its own choices. Send it the open findings verbatim.
+
+   **Round 3 — dispatch a fresh `phase-implementer`** carrying the brief path, the report path, the open findings, and this framing: "A prior implementer attempted this phase twice; you own it now. Read the report file for what was tried." A loop that survives two resumes usually means the implementer cannot see its own problem, and it is looking straight at the attempt that anchors it.
+
+### Step 3.5: Review the phase
+
+Every phase's diff gets one independent `code-reviewer` pass before the phase is marked complete.
+
+**Build the diff as a file.** `git add -N` the phase's new files so they appear in the diff, then `git diff HEAD -- <the files the phase names> > <run-dir>/phase-<N>-round-<R>.diff`. Do not `cat`, read, or echo it — the path is what you pass on.
+
+**Check for unexpected files.** Run `git status --porcelain`: any changed file the phase did not name is a finding in its own right, carried into the dispatch as part of the changed surface.
+
+**Dispatch `code-reviewer`** via `Task`, with exactly four things: a one-paragraph factual description of what the phase was meant to build, taken from the phase's `### Overview` and not from this session's reasoning; the phase section plus its `### Success Criteria`; the commit range; and the diff file path. Never the report file, never the implementer's concerns, never this conversation.
+
+**Never pre-judge.** Do not tell the reviewer what to ignore. If the dispatch you wrote contains "do not flag", "at most Minor", or "the plan chose", rewrite it.
+
+**Act on the verdicts.** Spec `FAIL` or any Critical or Important finding opens a fix round. Minor findings are recorded in the plan file under the phase and do not open a round. `⚠️ CANNOT VERIFY` is yours to resolve — you hold the cross-phase context the reviewer lacks; supply the evidence in the next dispatch, or rule on it and write the ruling into the plan file.
+
+**A finding that contradicts the plan's own text is the user's call.** Present the finding beside the plan text and ask which governs. Do not dismiss the finding because the plan mandates it, and do not dispatch a fix that contradicts the plan without asking.
+
+**Re-review is scoped.** Each round writes a fresh diff over the fix range and names the changed surface. New Critical or Important breakage in the fix diff joins the open findings; observations outside the surface go to the plan file, never into the round count.
+
+Then close out the phase:
+
 3. Update progress in both the plan file and todos
 4. Check off completed items in the plan file itself using Edit
 5. **Determine whether to continue or stop** (in phased mode, always stop — see `<mode_selection>`):
@@ -230,13 +259,15 @@ When something isn't working as expected:
 - Consider if the codebase has evolved since the plan was written
 - Classify it with `<deviation_handling>` — that table decides whether to fix it or stop and ask
 
-Spawn a sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe. Do not delegate work you can finish in a handful of tool calls, and do not use a sub-task to double-check your own edits. When spawning agents:
+Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` is exempt from that judgment call: dispatching it is how every phase's code gets written (Step 2). When spawning agents:
 
-| Agent                     | Purpose                            | When to Use                                        |
-| ------------------------- | ---------------------------------- | -------------------------------------------------- |
-| `codebase-analyzer`       | Understand implementation details  | Debugging unexpected behavior or tracing data flow |
-| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples of APIs being modified  |
-| `codebase-locator`        | Find files by topic/feature        | Locating related files not mentioned in the plan   |
+| Agent                     | Purpose                            | When to Use                                                 |
+| ------------------------- | ---------------------------------- | ----------------------------------------------------------- |
+| `phase-implementer`       | Implement one phase from its brief | Every phase — this is the default path, not an escape hatch |
+| `code-reviewer`           | Independent review of a phase diff | Every phase, before it is marked complete                   |
+| `codebase-analyzer`       | Understand implementation details  | Debugging unexpected behavior or tracing data flow          |
+| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples of APIs being modified           |
+| `codebase-locator`        | Find files by topic/feature        | Locating related files not mentioned in the plan            |
 
 ### Resuming Work
 
@@ -333,13 +364,19 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 | "The user will obviously approve this phase."              | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                    |
 | "I'll read the later phases' files now while I'm in here." | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.           |
 | "One more full-suite run, just to be sure."                | Sure of what? Nothing changed since the last one. The run costs its entire output in context and proves what you already proved.    |
+| "It's a one-line fix, dispatching is overhead."            | A controller fix lands in the context you are keeping clean and never passes the phase's verification path. Dispatch it.            |
+| "I'll read the phase's files so I can check the work."     | Then you hold the phase's whole read set and the delegation bought nothing. The report says what changed; the diff proves it.       |
+| "The phase was small, skip the review."                    | Then nothing independent saw the diff, and checking it yourself is the read you delegated to avoid. Every phase gets one pass.      |
+| "One more round and it converges."                         | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                    |
 
 Stay focused on implementing what was actually planned.
 
 </anti_patterns>
 
 <constraints>
-- Read the plan fully before starting; read each phase's files fully at the start of that phase — an edit to a partially-read file is an edit made blind
+- Read the plan fully before starting — the pre-flight scan and the brief both come from it
+- Write no source file yourself: every change to a file a phase names is made by a dispatched `phase-implementer`, including every fix round
+- Dispatch `code-reviewer` on every phase's diff before marking that phase complete — the review is what lets you not read the diff yourself
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria
