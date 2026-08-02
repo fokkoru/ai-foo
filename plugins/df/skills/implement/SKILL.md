@@ -2,7 +2,7 @@
 name: implement
 description: Use when implementing a technical plan from the plans directory with verification — continuous by default, or phase-by-phase with human review and a commit per phase when the user asks for phased execution
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*), Bash(make:*), Bash(npm run:*)
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
 ---
 
 <objective>
@@ -52,9 +52,8 @@ Wait for the user to:
 
 If the user reports issues:
 
-- Fix the reported problems
-- Re-run verification
-- Present updated results
+- Route them to the implementer as a fix round (Step 3, item 2) — you fix nothing yourself
+- Present the updated results from what it returns
 - Wait again for confirmation
 
 Repeat until the user is satisfied with the phase.
@@ -102,7 +101,7 @@ Next: run /df:validate or create a PR.
 </mode_selection>
 
 <quick_start>
-If a plan file path is provided, skip the prompt — immediately read the plan fully and begin implementation.
+If a plan file path is provided, skip the prompt — go straight to Step 1 and map the plan.
 
 If no plan path is provided, ask the user for the path to the plan file, then wait for input before proceeding.
 
@@ -112,7 +111,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
 ### Step 1: Getting Started
 
-1. Read the plan completely and check for any existing checkmarks (`- [x]`)
+1. Map the plan before reading it. Grep it for `^#{1,3} ` to get a section map, then read the preamble through `## Global Constraints` plus every phase's `### Assumptions` block — that is everything the pre-flight scan below needs. Do not read the phase bodies yet: Step 2 reads each phase when it writes that phase's brief, and a phase section read now is re-sent on every turn until it is used. Check for any existing checkmarks (`- [x]`).
 2. **Pre-flight conflict scan** — before writing any code, check every phase's `### Assumptions` against the current codebase at its `source:` citation, and the plan's Global Constraints against theirs. This is a targeted existence-and-signature check with Grep and Glob, not a read of every file the plan names: do the cited files, symbols, and APIs exist as the plan describes? Collect every conflict and raise them as **one** batched question:
 
    ```
@@ -173,18 +172,16 @@ Never re-dispatch the same agent on the same input. If the implementer said it i
 
 After implementing a phase:
 
-1. Run the phase's automated success criteria checks.
-
-   **Cadence.** While the phase is in progress, run only the focused check that can falsify the change just made. After the last code change in a phase, run every automated success criterion — including the full suite when the plan or repository requires it — before marking the phase complete, proceeding, or requesting a commit. Replaying the full suite after every edit adds resident output, not proof.
-
-   A criterion whose check did not run — unregistered, filtered out, skipped, or disabled — counts as failed, not passed. Never edit an expectation to match the code; fix the code.
+1. Record the phase's verification from what the implementer returned. It ran every automated criterion and its report names each command and its output. Do not re-run them — a re-run costs its entire output in the context you are keeping clean and proves what the report already proves. Independent verification is the reviewer's pass on the diff, in Step 3.5.
 
    For each automated success criterion in the plan:
-   - If the check **passes**: mark `[x]` in the plan file
-   - If the check **fails**: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
-   - If the check **requires manual testing**: leave `[ ]` unchanged
+   - Reported **passing**: mark `[x]` in the plan file
+   - Reported **failing**, or not mentioned at all: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
+   - **Requires manual testing**: leave `[ ]` unchanged
 
-2. Route any failure back to the implementer. **Three fix rounds maximum per phase.** A round is one fix dispatch plus one re-run of the phase's automated criteria. Send the implementer the failing criteria and the check output verbatim; it appends a fix report to the same report file. Never fix a failure yourself — a controller fix pollutes the context you are keeping clean and skips the phase's verification path. At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
+   A criterion the returned summary does not mention is not passing. Treat it as not-run and open a fix round.
+
+2. Route any failure back to the implementer. **Three fix rounds maximum per phase.** A round is one fix dispatch plus the implementer's own re-run of the phase's automated criteria. Send it the failing criteria as it reported them; it appends a fix report to the same report file, carrying the re-run results in the same per-criterion form. Never fix a failure yourself — a controller fix pollutes the context you are keeping clean and skips the phase's verification path. At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
 
    **Rounds 1 and 2 — resume the same implementer.** Its context is intact: it knows the phase, the code, and its own choices. Send it the open findings verbatim.
 
@@ -255,19 +252,17 @@ Do not check off manual verification items until confirmed by the user.
 
 When something isn't working as expected:
 
-- First, make sure all relevant code has been read and understood
+- First, check what the implementer's report and the reviewer's findings already say — reading the phase's code yourself is the read you delegated to avoid
 - Consider if the codebase has evolved since the plan was written
 - Classify it with `<deviation_handling>` — that table decides whether to fix it or stop and ask
 
-Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` is exempt from that judgment call: dispatching it is how every phase's code gets written (Step 2). When spawning agents:
+Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` and `code-reviewer` are exempt from that judgment call: dispatching them is how every phase gets written (Step 2) and reviewed (Step 3.5). When spawning a research sub-task:
 
-| Agent                     | Purpose                            | When to Use                                                 |
-| ------------------------- | ---------------------------------- | ----------------------------------------------------------- |
-| `phase-implementer`       | Implement one phase from its brief | Every phase — this is the default path, not an escape hatch |
-| `code-reviewer`           | Independent review of a phase diff | Every phase, before it is marked complete                   |
-| `codebase-analyzer`       | Understand implementation details  | Debugging unexpected behavior or tracing data flow          |
-| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples of APIs being modified           |
-| `codebase-locator`        | Find files by topic/feature        | Locating related files not mentioned in the plan            |
+| Agent                     | Purpose                            | When to Use                                        |
+| ------------------------- | ---------------------------------- | -------------------------------------------------- |
+| `codebase-analyzer`       | Understand implementation details  | Debugging unexpected behavior or tracing data flow |
+| `codebase-pattern-finder` | Find similar patterns and examples | Looking for usage examples of APIs being modified  |
+| `codebase-locator`        | Find files by topic/feature        | Locating related files not mentioned in the plan   |
 
 ### Resuming Work
 
@@ -277,8 +272,6 @@ If the plan has existing checkmarks:
 - Check git log to see which phases were already committed
 - Pick up from the first unchecked item
 - Verify previous work only if something seems off
-
-The goal is implementing a solution, not just checking boxes. Keep the end goal in mind and maintain forward momentum.
 
 </workflow>
 
@@ -353,29 +346,26 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 
 <anti_patterns>
 
-| Excuse                                                     | Reality                                                                                                                             |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| "It's a one-line fix while I'm here."                      | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it.                      |
-| "The plan clearly forgot this — I'll just add it."         | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.         |
-| "This working code next to my change is obviously bad."    | The plan doesn't touch it, so nothing verifies your rewrite. Rewriting it puts untested change in a diff that claims to be a phase. |
-| "Optimizing now saves a pass later."                       | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance.                 |
-| "This test was already failing, let me look."              | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session.                                |
-| "I'll commit both phases together, they're related."       | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                           |
-| "The user will obviously approve this phase."              | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                    |
-| "I'll read the later phases' files now while I'm in here." | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.           |
-| "One more full-suite run, just to be sure."                | Sure of what? Nothing changed since the last one. The run costs its entire output in context and proves what you already proved.    |
-| "It's a one-line fix, dispatching is overhead."            | A controller fix lands in the context you are keeping clean and never passes the phase's verification path. Dispatch it.            |
-| "I'll read the phase's files so I can check the work."     | Then you hold the phase's whole read set and the delegation bought nothing. The report says what changed; the diff proves it.       |
-| "The phase was small, skip the review."                    | Then nothing independent saw the diff, and checking it yourself is the read you delegated to avoid. Every phase gets one pass.      |
-| "One more round and it converges."                         | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                    |
+| Excuse                                                     | Reality                                                                                                                                                                         |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The plan clearly forgot this — I'll just add it."         | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                                                     |
+| "I'll commit both phases together, they're related."       | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                                                       |
+| "The user will obviously approve this phase."              | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                                                                |
+| "I'll read the later phases' files now while I'm in here." | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                                                       |
+| "I'll re-run the criteria myself, to be sure."             | The implementer ran them and its report names each command and result. Your re-run adds its whole output to the context you delegated to keep clean, and proves the same thing. |
+| "It's a one-line fix, dispatching is overhead."            | A controller fix lands in the context you are keeping clean and never passes the phase's verification path. Dispatch it.                                                        |
+| "I'll read the phase's files so I can check the work."     | Then you hold the phase's whole read set and the delegation bought nothing. The report says what changed; the diff proves it.                                                   |
+| "The phase was small, skip the review."                    | Then nothing independent saw the diff, and checking it yourself is the read you delegated to avoid. Every phase gets one pass.                                                  |
+| "One more round and it converges."                         | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                                |
 
 Stay focused on implementing what was actually planned.
 
 </anti_patterns>
 
 <constraints>
-- Read the plan fully before starting — the pre-flight scan and the brief both come from it
+- Read the plan's preamble, its Global Constraints, and every phase's `### Assumptions` before starting — read a phase's body only when writing its brief
 - Write no source file yourself: every change to a file a phase names is made by a dispatched `phase-implementer`, including every fix round
+- Don't re-run an automated criterion the implementer reported passing — its report is the evidence, and your re-run lands in the context the delegation exists to protect
 - Dispatch `code-reviewer` on every phase's diff before marking that phase complete — the review is what lets you not read the diff yourself
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
@@ -386,8 +376,7 @@ Stay focused on implementing what was actually planned.
 Apply in phased mode:
 
 - Always stop after each phase — never auto-continue to the next phase
-- Wait for explicit user confirmation before committing — present the plan first
-- Don't commit without user approval — always present results and wait
+- Wait for explicit user confirmation before committing — present the commit plan and the phase results first, then wait
 - Don't stage all files — use specific file names for each phase's commit; never `git add .` or `git add -A`
 - Don't add AI signatures — no Co-Authored-By or "Generated with" lines in commit messages
 - Don't modify code during the commit step — only stage and commit existing changes
