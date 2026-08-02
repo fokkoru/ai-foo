@@ -113,9 +113,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 ### Step 1: Getting Started
 
 1. Read the plan completely and check for any existing checkmarks (`- [x]`)
-2. Read the original ticket and all files mentioned in the plan
-3. **Read files fully** — never use limit/offset parameters, complete context is needed
-4. **Pre-flight conflict scan** — before writing any code, check every phase's stated assumptions against the current codebase: do the referenced files, symbols, and APIs exist as the plan describes? Do the plan's Global Constraints still hold? Collect every conflict and raise them as **one** batched question:
+2. **Pre-flight conflict scan** — before writing any code, check every phase's `### Assumptions` against the current codebase at its `source:` citation, and the plan's Global Constraints against theirs. This is a targeted existence-and-signature check with Grep and Glob, not a read of every file the plan names: do the cited files, symbols, and APIs exist as the plan describes? Collect every conflict and raise them as **one** batched question:
 
    ```
    Pre-flight: [N] conflicts between the plan and the current codebase
@@ -128,15 +126,22 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
    How should I proceed?
    ```
 
-   Ask once, then implement. If the scan finds nothing, say so in one line and start. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
+   Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; the per-phase revalidation in Step 2 is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
 
-5. Take time to ultrathink about how the pieces fit together
-6. Create a todo list to track progress
-7. Start implementing once the requirements are confirmed understood
+3. Read the original ticket if the plan cites one
+4. Take time to ultrathink about how the pieces fit together
+5. Create a todo list to track progress
+6. Start implementing once the requirements are confirmed understood
 
 Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
 ### Step 2: Implementation
+
+**Start every phase by reading.** At the start of each phase, read every file that phase names in full, re-check that phase's `### Assumptions` and `### Interfaces` plus the plan's Global Constraints against the live code, and read any additional dependency the live code shows is necessary before editing. **Read files fully** — never use limit/offset parameters; an edit to a file read only in part is an edit made blind.
+
+Do not read files only a later phase names. The plan template guarantees each phase is implementable from its own section plus the files it names, so pulling a later phase's reads forward keeps them resident for the whole run and buys the current phase nothing.
+
+Use `### Interfaces` as an index rather than authority: verify every consumed name, signature, and type against its live declaration, and read the implementation when correctness depends on behaviour the block does not state.
 
 Plans are carefully designed, but reality can be messy:
 
@@ -149,29 +154,32 @@ When things don't match the plan exactly, think about why and communicate clearl
 
 **Handling Mismatches:**
 
-If a mismatch is encountered:
+Classify every mismatch with the `<deviation_handling>` table before acting — that table decides whether to fix it or to stop. When it classifies as Rule 4, stop and present:
 
-- STOP and work through why the plan can't be followed before proceeding
-- Present the issue clearly:
+```
+Issue in Phase [N]:
+Expected: [what the plan says]
+Found: [actual situation]
+Why this matters: [explanation]
 
-  ```
-  Issue in Phase [N]:
-  Expected: [what the plan says]
-  Found: [actual situation]
-  Why this matters: [explanation]
-
-  How should I proceed?
-  ```
+How should I proceed?
+```
 
 ### Step 3: Verification
 
 After implementing a phase:
 
-1. Run the automated success criteria checks
+1. Run the phase's automated success criteria checks.
+
+   **Cadence.** While the phase is in progress, run only the focused check that can falsify the change just made. After the last code change in a phase, run every automated success criterion — including the full suite when the plan or repository requires it — before marking the phase complete, proceeding, or requesting a commit. Replaying the full suite after every edit adds resident output, not proof.
+
+   A criterion whose check did not run — unregistered, filtered out, skipped, or disabled — counts as failed, not passed. Never edit an expectation to match the code; fix the code.
+
    For each automated success criterion in the plan:
    - If the check **passes**: mark `[x]` in the plan file
    - If the check **fails**: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
    - If the check **requires manual testing**: leave `[ ]` unchanged
+
 2. Fix any failures before proceeding. **Three fix rounds maximum per phase.** At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
 3. Update progress in both the plan file and todos
 4. Check off completed items in the plan file itself using Edit
@@ -220,7 +228,7 @@ When something isn't working as expected:
 
 - First, make sure all relevant code has been read and understood
 - Consider if the codebase has evolved since the plan was written
-- Present the mismatch clearly and ask for guidance
+- Classify it with `<deviation_handling>` — that table decides whether to fix it or stop and ask
 
 Spawn a sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe. Do not delegate work you can finish in a handful of tool calls, and do not use a sub-task to double-check your own edits. When spawning agents:
 
@@ -298,7 +306,7 @@ Write commit messages that explain WHY, not just WHAT. The type and scope convey
 
 More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Aim for the smallest high-signal token set per phase: the relevant plan section, the directly-affected files, and the references actually needed. Don't carry forward full history, prior-phase output, or unused tool results.
 
-Before starting a new phase, re-read the plan's checkbox state and run `git log --oneline`. The plan file and git history are the source of truth — not conversation memory or a compaction summary. If context is growing large, run `/compact` or start a fresh session with the plan as the entry point. Persistent phase constraints belong in the plan file (and CLAUDE.md), since compaction can drop them from history.
+Before starting a new phase, re-read the plan's checkbox state and run `git log --oneline`. The plan file and git history are the source of truth — not conversation memory or a compaction summary. If context is growing large, say so at the next phase boundary and offer the user a fresh session with the plan path as the entry point — a skill cannot run `/compact` itself. Persistent phase constraints belong in the plan file (and CLAUDE.md), since compaction can drop them from history.
 
 </context_budget>
 
@@ -314,22 +322,24 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 
 <anti_patterns>
 
-| Excuse                                                  | Reality                                                                                                                             |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| "It's a one-line fix while I'm here."                   | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it.                      |
-| "The plan clearly forgot this — I'll just add it."      | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.         |
-| "This working code next to my change is obviously bad." | The plan doesn't touch it, so nothing verifies your rewrite. Rewriting it puts untested change in a diff that claims to be a phase. |
-| "Optimizing now saves a pass later."                    | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance.                 |
-| "This test was already failing, let me look."           | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session.                                |
-| "I'll commit both phases together, they're related."    | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                           |
-| "The user will obviously approve this phase."           | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                    |
+| Excuse                                                     | Reality                                                                                                                             |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| "It's a one-line fix while I'm here."                      | The phase diff is what gets reviewed. An unplanned line in it is an unreviewed line. Surface it, don't fix it.                      |
+| "The plan clearly forgot this — I'll just add it."         | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.         |
+| "This working code next to my change is obviously bad."    | The plan doesn't touch it, so nothing verifies your rewrite. Rewriting it puts untested change in a diff that claims to be a phase. |
+| "Optimizing now saves a pass later."                       | It doesn't — it makes the phase unverifiable against its own success criteria, which say nothing about performance.                 |
+| "This test was already failing, let me look."              | Not this phase's failure. Note it and move on; investigating it is how a phase turns into a session.                                |
+| "I'll commit both phases together, they're related."       | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                           |
+| "The user will obviously approve this phase."              | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                    |
+| "I'll read the later phases' files now while I'm in here." | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.           |
+| "One more full-suite run, just to be sure."                | Sure of what? Nothing changed since the last one. The run costs its entire output in context and proves what you already proved.    |
 
 Stay focused on implementing what was actually planned.
 
 </anti_patterns>
 
 <constraints>
-- Read the plan and all mentioned files fully before starting implementation — partial understanding leads to incorrect changes
+- Read the plan fully before starting; read each phase's files fully at the start of that phase — an edit to a partially-read file is an edit made blind
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria
