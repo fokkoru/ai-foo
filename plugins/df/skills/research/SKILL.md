@@ -198,6 +198,7 @@ Select the right agent for each type of investigation:
 **Guidelines:**
 
 - Size the fan-out to the question before choosing agents: a single file or symbol needs 1 agent; one subsystem, 2-3; a cross-cutting or whole-codebase question, 4-6. Add an agent only when it has a distinct question to answer — two agents given the same question return the same findings twice.
+- Prefer a named agent over `general-purpose` wherever one covers the job: the catch-all inherits every tool and carries the highest mean context per turn of any agent type, 90.3k, while a named agent's declared tool list bounds where it can wander. The catch-all's 23k first-turn system-prompt floor, against 9.3k for a locator, is the smaller half of the gap.
 - Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn
 - Stop after 3 parallel agent attempts that return no meaningful findings — reframe the question more narrowly, ask the user, or write down what could not be resolved and why
 - Start with locator agents to find what exists, then use analyzer agents on the most promising findings

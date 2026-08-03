@@ -1,6 +1,6 @@
 # Probe prompt template
 
-Fill the four placeholders and dispatch a `general-purpose` subagent with the result. Nothing else goes into the prompt — no conversation, no reasoning about how the draft was produced.
+Fill the four placeholders and dispatch `voice-prober` with the result. Nothing else goes into the prompt — no conversation, no reasoning about how the draft was produced.
 
 ---
 

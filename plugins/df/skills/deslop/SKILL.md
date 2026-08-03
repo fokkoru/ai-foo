@@ -64,11 +64,11 @@ Curate to 5–10 messages: drop version bumps, one-word subjects, subject-only c
 
 ### Dispatch the probe
 
-Split the draft into numbered sentences. Fill `references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and dispatch `general-purpose` via `Task`.
+Split the draft into numbered sentences. Fill `references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and dispatch `voice-prober` via `Task`.
 
 Pass the draft, the curated sample, the preserve list, and the mode. Pass nothing else. Wait for the verdicts.
 
-Isolation is unavailable in two cases: the runtime has no generic subagent (Codex CLI today), or you are yourself a subagent — `df:deslop` fires on intent, so it loads inside dispatched agents too, where a skill's own dispatches have been reported to silently no-op and the probe would run in the very context that wrote the draft. Both take the same action: run the ladder inline, dispatch nothing, say so in the output.
+Isolation is unavailable in two cases. `voice-prober` is not installed: Codex CLI takes its subagents from `install-codex-agents.sh`, a manual step, so the agent can be absent on any runtime. Or you are yourself a subagent — `df:deslop` fires on intent, so it loads inside dispatched agents too, where a skill's own dispatches have been reported to silently no-op and the probe would run in the very context that wrote the draft. Both take the same action: run the ladder inline, dispatch nothing, say so in the output.
 
 If the subagent returns rewritten text instead of verdicts, stop and ask the user.
 

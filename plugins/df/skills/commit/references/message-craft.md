@@ -32,7 +32,7 @@ the preserve list, so the probe has nothing to grade and returns nothing. Fiftee
 authored prose starts in the measured corpus; judge a borderline body against that, not the
 number.
 
-Fill the template at `../deslop/references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and send it to a `general-purpose` subagent via `Task`. Pass the draft body, the curated recent-commit messages as the voice sample, and every identifier, path, number, and issue reference the body must reproduce verbatim. Pass nothing else: not this session's conversation, not your own reasoning. It returns one verdict per sentence and never replacement text, so rewrite from the verdicts yourself. If the runtime has no generic subagent, as on Codex CLI, skip the dispatch.
+Fill the template at `../deslop/references/voice-prober.md` — a path relative to the base directory the harness announces for this skill, not to the working directory — and send it to `voice-prober` via `Task`. Pass the draft body, the curated recent-commit messages as the voice sample, and every identifier, path, number, and issue reference the body must reproduce verbatim. Pass nothing else: not this session's conversation, not your own reasoning. It returns one verdict per sentence and never replacement text, so rewrite from the verdicts yourself. If `voice-prober` is not installed — Codex CLI takes its subagents from `install-codex-agents.sh`, a manual step — skip the dispatch.
 
 Dispatch the template directly; do not invoke `df:deslop`. Its description matches a commit body, so the model may reach for it, and an invoked skill's body stays in this session for the rest of it — buying nothing `df:commit` is not already doing.
 
