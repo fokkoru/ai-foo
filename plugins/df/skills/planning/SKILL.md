@@ -106,7 +106,7 @@ Document complexity traps upfront:
 
    If both are writable, continue to the next step and ask nothing.
 
-   If either is not, ask now, before any research — this is the one class of question the codebase provably cannot answer, and its value is spent once execution is under way. Put every gap in **one** message, one question per gap, recommended answer first:
+   If either is not, ask now, before any research — this is the one class of question the codebase provably cannot answer, and its value is spent once execution is under way. Recommended answer first, always. Batch the gaps into **one** message when their answers are independent. Ask one at a time when one answer determines what the next question is — a batch whose second question is void once the first is answered wastes the user's read. The batched form:
 
    ```
    Before I load the codebase, [N] things the code can't tell me:
@@ -235,10 +235,11 @@ After structure approval:
 
 2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
 
-3. **Self-review the finished plan before presenting it.** Read it once, checking exactly three things:
+3. **Self-review the finished plan before presenting it.** Read it once, checking exactly four things:
    - **Spec coverage** — every line of `### End State` maps to at least one phase, and every `### Acceptance Criteria` item is provable once the last phase is done. Name any that are not.
    - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in `### End State`, `### Acceptance Criteria`, or any phase's `### Assumptions`, `### Changes Required`, or `### Success Criteria`. Every value is concrete. The one exception is an `### End State` or `### Acceptance Criteria` line the Step 1 input gate could not get answered: it ships carrying its `(unverified)` mark. Two field-specific forms count as placeholders: an `### Acceptance Criteria` list that restates phase steps rather than proving the finished feature works, and a phase whose `### Assumptions` reads `(none)` while its `### Changes Required` edits a file no earlier phase produced — editing a file this plan has not already characterized means holding assumptions about what is in it.
    - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
+   - **Confidence rollup** — `### Decisions Most Likely to Change` names at most three lines, each pointing at a phase that exists. Every assumption marked `Confidence: Unclear` appears there unless the section is already at three.
 
    Fix what the review finds, then present.
 

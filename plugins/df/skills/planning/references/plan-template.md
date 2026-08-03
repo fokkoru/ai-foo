@@ -29,6 +29,13 @@ The end-to-end checks that prove the feature works — not that a step happened.
 - [ ] [Command, observable behaviour, or file state that proves the whole feature works]
 - [ ] [Another end-to-end check]
 
+### Decisions Most Likely to Change
+
+The two or three places this plan is least sure of, so a reviewer reads them first. Draw from the phases' `### Assumptions` marked `Confidence: Unclear`, plus any decision that is user-facing or shapes stored data. One line each, naming the phase that owns it — this is a pointer list, not a second copy of the assumption blocks. Cap it at three. Write "(none)" when no assumption is marked `Unclear` and no decision here is user-facing or shapes stored data.
+
+- Phase [N] — [the decision, in one line]
+- Phase [N] — [the decision, in one line]
+
 ### Key Discoveries:
 
 - [Important finding with file:line reference]

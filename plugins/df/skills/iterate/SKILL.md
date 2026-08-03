@@ -137,6 +137,7 @@ Get user confirmation before proceeding.
    - If a constraint changes, copy the new wording verbatim from its source into "Global Constraints" — never paraphrase it, and never drop a constraint while editing around it
    - If scope changes, update `### End State` and `### Acceptance Criteria` to match — a plan whose end state no longer describes what it builds cannot be validated or reviewed
    - If a phase's files, symbols, or APIs change, update that phase's `### Assumptions` and their `source:` references — `df:implement` re-checks each one against the live codebase
+   - If phases are added, removed, or renumbered, or a phase's `### Assumptions` gain or lose a `Confidence: Unclear`, update `### Decisions Most Likely to Change` to match — a stale rollup points the reviewer at the wrong decisions
    - If a phase's `Produces` changes, update every later phase whose `Consumes` names it
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
