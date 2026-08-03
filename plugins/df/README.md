@@ -23,11 +23,11 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 
 | Skill            | Description                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `df:research`    | Comprehensive codebase research with parallel sub-agents                                                                                                              |
+| `df:research`    | Comprehensive codebase research with parallel sub-agents, opening with a blind spot pass                                                                              |
 | `df:planning`    | Create detailed implementation plans with thorough research                                                                                                           |
 | `df:iterate`     | Update existing plans based on feedback                                                                                                                               |
 | `df:implement`   | Execute plans with verification and phase-by-phase progress (continuous or phased mode)                                                                               |
-| `df:validate`    | Verify implementation against plan, identify issues                                                                                                                   |
+| `df:validate`    | Verify implementation against plan, identify issues; saves a report with an explainer and comprehension check                                                         |
 | `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                                                   |
 | `df:handoff`     | Create handoff document for session transfer                                                                                                                          |
 | `df:commit`      | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0)                                                                |
@@ -82,6 +82,7 @@ Skills use these default paths:
 
 - Research documents: `thoughts/research`
 - Implementation plans: `thoughts/plans`
+- Validation reports: `thoughts/validation`
 - Handoffs: `thoughts/handoffs`
 
 To override, add a one-line note to your project's `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `df: write plans to docs/plans`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
