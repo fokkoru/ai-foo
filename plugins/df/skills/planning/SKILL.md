@@ -22,7 +22,7 @@ If you identify a beneficial code change, document it in the plan document and s
 </artifact_scope>
 
 <quick_start>
-If a file path or task description is provided, skip the prompt — immediately read any provided files fully and begin at Step 1.
+If a file path or task description is provided, skip the prompt and begin at Step 1.
 
 If no task description is provided, ask the user for:
 
@@ -79,13 +79,11 @@ Document complexity traps upfront:
 
 ### Step 1: Context Gathering & Initial Analysis
 
-1. **Read all mentioned files immediately and fully**:
+1. **Read the provided source documents completely**:
    - Research documents
    - Related implementation plans
-   - Any JSON/data files mentioned
-   - Use the Read tool without limit/offset parameters to read entire files
-   - Don't spawn sub-tasks before reading these files in the main context
-   - Don't read files partially — if a file is mentioned, read it completely
+   - Tickets or specifications supplied as files
+   - Treat them as the requirements source for planning
 
 2. **Check the task is plan-sized before planning it**:
 
@@ -130,18 +128,13 @@ Document complexity traps upfront:
    - Trace data flow and key functions
    - Return detailed explanations with file:line references
 
-5. **Read all files identified by research tasks**:
-   - After research tasks complete, read all files they identified as relevant
-   - Read them fully into the main context
-   - This ensures complete understanding before proceeding
-
-6. **Analyze and verify understanding**:
+5. **Analyze and verify understanding**:
    - Cross-reference the task requirements with actual code
    - Identify any discrepancies or misunderstandings
    - Record each assumption the plan will rest on together with the `file:line` that supports it — these become the phases' `### Assumptions` blocks
    - Determine true scope based on codebase reality
 
-7. **Present informed understanding and focused questions**:
+6. **Present informed understanding and focused questions**:
 
    ```
    Based on the task and my research of the codebase, I understand we need to [accurate summary].
@@ -369,7 +362,6 @@ More context isn't automatically better — accuracy and recall degrade as the t
 
 <constraints>
 - Your only output artifact is a plan document in thoughts/plans — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
-- Read mentioned files first in the main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
 - Settle `### End State` and `### Acceptance Criteria` before spawning any research agent — a goal question asked after the context load is asked too late to be worth answering
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at planning time, not after
