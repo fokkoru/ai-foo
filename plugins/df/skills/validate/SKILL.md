@@ -1,8 +1,8 @@
 ---
 name: validate
-description: Use when validating an implementation against its plan, verifying success criteria, and identifying issues
+description: Use when validating an implementation against its plan, verifying success criteria, and identifying issues — saves a report under thoughts/validation with an explainer and a short comprehension check
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(git log:*), Bash(git diff:*), Bash(git status:*)
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*)
 ---
 
 <objective>
@@ -13,6 +13,14 @@ Systematically verify that each phase was correctly implemented, run success cri
 `df:validate` is the developer's self-check against the plan; for an independent, isolated review of the diff, run `df:peer-review` next.
 
 </objective>
+
+<artifact_scope>
+Your only output artifact is a single report under thoughts/validation.
+Don't create, write, or modify files anywhere else — validation reports on the implementation, it doesn't repair it.
+Before any Write call, verify the target path is inside thoughts/validation — if it is not, stop and ask the user.
+If validation finds a defect, record it in the report and suggest the user run /df:implement. Do not fix it here.
+
+</artifact_scope>
 
 <quick_start>
 If a plan file path is provided, skip the prompt — immediately read the plan fully and begin the validation process.
@@ -124,42 +132,76 @@ For each phase in the plan:
    - Take every `### Acceptance Criteria` item: run the ones provable by reading or grepping, and list the rest with the exact command and a not-run status. These are the plan-level checks that prove the feature works; a phase's own criteria passing is not a substitute
    - Report any Level 1/2/3 failures, and any `(unverified)` mark still standing in the plan
 
-### Step 4: Generate Validation Report
+### Step 4: Write and Present the Report
 
-Present the validation report directly to the user. Do not save to a file unless explicitly requested.
+Gather metadata before writing:
+
+- Current date/time with timezone: `date +"%Y-%m-%d %H:%M:%S %Z"`
+- Author name: `git config user.name`
+- Current commit hash: `git rev-parse HEAD`
+- Filename: `thoughts/validation/YYYY-MM-DD_HHMM_topic.md`
+
+Write the report to that path, then present it. `df:implement` delegates every edit to a subagent, so this document is often the first place the human sees what changed and why — it outlives the session, and chat text does not.
 
 Structure the report as:
 
-```
+```markdown
 ## Validation Report: [Plan Name]
 
+**Date**: [date]
+**Validator**: [git user name]
+**Plan**: `thoughts/plans/[plan].md`
+**Commit**: [commit hash]
+
+### What Changed and Why
+
+Written for someone who did not watch the edits happen. Per phase: what it changed in plain terms, and which `### End State` line it serves. Name files, not diffs — a reader who wants the diff has git.
+
 ### Implementation Status
+
 [Per-phase status: fully implemented, partially implemented, not started]
 
 ### Automated Verification
+
 [List automated criteria with pass/fail/not-run status]
 
 ### Code Review Findings
 
 #### Matches Plan:
+
 - [What was implemented correctly with file:line references]
 
 #### Deviations from Plan:
+
 - [Differences between plan and actual implementation]
 
 #### Potential Issues:
+
 - [Problems discovered during validation]
 
 #### Artifact Verification:
+
 - [Level 1/2/3 results for key artifacts — existence, substance, wiring status]
 - [Any stubs or unwired code detected]
 
 ### Manual Testing Required:
+
 [Checklist of manual verification steps from the plan]
 
 ### Recommendations:
+
 [Actionable items to address before considering implementation complete]
+
+### Comprehension Check
+
+Three questions at most, drawn from the deviations and the highest-risk changes above.
+
+1. [Question]
+2. [Question]
+3. [Question]
 ```
+
+Ask the comprehension questions in one chat message after presenting the report. If an answer is wrong, give the `file:line` that settles it and move on. Nothing is gated on the result and there is no score to record — the check exists so the human notices what they did not follow, not to grade them.
 
 </workflow>
 
@@ -169,7 +211,7 @@ Structure the report as:
 - Evidence gathered from git history and code analysis
 - Automated criteria listed with pass/fail/not-run status
 - Manual testing steps documented clearly
-- Validation report generated with specific file:line references
+- Validation report written to `thoughts/validation/` and presented, with specific file:line references
 
 </success_criteria>
 
@@ -200,6 +242,6 @@ Stay focused on verifying what the plan actually specified.
 - Wait for all verification agents to complete before writing the report — partial results lead to incomplete conclusions
 - Don't claim automated checks passed without actually verifying them — accuracy is the whole point of validation
 - Don't run build/test/lint commands without user permission — the user's CLAUDE.md explicitly requires this
-- Don't modify the plan, codebase, or any files during validation — validation is read-only
+- Your only output artifact is a report in thoughts/validation — don't modify the plan or the codebase. If validation finds a defect, record it and suggest /df:implement
 
 </constraints>
