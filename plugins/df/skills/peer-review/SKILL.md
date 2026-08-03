@@ -2,7 +2,7 @@
 name: peer-review
 description: Use when performing an independent, isolated code review of an implementation against its plan/spec before committing — one isolated reviewer reads the diff from a file and returns a spec-compliance verdict plus quality findings. Runs between df:validate and df:commit.
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
+allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git add -N:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
 ---
 
 <objective>
@@ -33,14 +33,31 @@ Spec compliance governs the **fix order**, not the dispatch order. If the spec v
 
 1. Read the plan/spec FULLY (no limit/offset). Extract the desired end state and acceptance criteria.
 2. Determine the review range:
-   - Default: everything implemented since the branch diverged — `git merge-base HEAD main` as base, comparing base → working tree (committed + uncommitted). Capture base and head SHAs.
-   - If only uncommitted work exists, use `git diff HEAD` (and `git status` for new files).
-   - Honor an explicit range if the user gave one.
-3. Write the diff to a file. Never into your own context:
+   - Default: everything implemented since the branch diverged — `git merge-base HEAD main` as the base, compared against the working tree. Capture that base SHA and the current `HEAD`, and compare them. When they differ, the package covers the commits since the base plus the uncommitted work. When they are equal — which is what `merge-base` returns whenever you are on `main` itself — the package is the uncommitted work only, and every commit already on `main` is outside it. Carry that fact into Step 2 rather than widening the base.
+   - Honor an explicit range if the user gave one. Capture both SHAs. An explicit `<base> <head>` covers committed work only.
+3. Write the review package to a file. Never into your own context:
    - `mktemp -d` to get a scratch directory
-   - `git diff <base> <head> > <dir>/review.diff`
+   - `git add -N .` so untracked files appear in the diff — intent-to-add records the path and stages no content
+   - Write the package with one simple command per line. For the default range, name **one** revision, not two: a one-revision diff compares that commit against the working tree, which is the range item 2 above describes. Two revisions would drop every uncommitted change, and whenever the base equals `HEAD` they would emit an empty package that reads as a legitimate empty change.
 
-   Do not `cat`, read, or echo the diff. The path is what you pass on. Everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
+     ```bash
+     echo "## Commits" > <dir>/review.diff
+     git log --oneline <base>..HEAD >> <dir>/review.diff
+     echo "" >> <dir>/review.diff
+     echo "## Files changed" >> <dir>/review.diff
+     git diff --stat=200 <base> >> <dir>/review.diff
+     echo "" >> <dir>/review.diff
+     echo "## Diff" >> <dir>/review.diff
+     git diff -U10 <base> >> <dir>/review.diff
+     ```
+
+     For a user-supplied explicit range, name both revisions instead — `git log --oneline <base>..<head>`, `git diff --stat=200 <base> <head>`, `git diff -U10 <base> <head>` — and skip both the `git add -N` and the `git restore --staged` below. An explicit range asks for committed work only.
+
+     Keep the lines separate: a `{ ...; }` group is an unsafe compound that always prompts, no matter what `allowed-tools` says, while each line above matches a prefix rule on its own. `--stat=200` because `--stat` off a tty wraps at 80 columns and elides long paths to `...`. The wide context is what lets the reviewer judge a hunk without opening the file it came from.
+
+   - `git restore --staged .` once the package is written, undoing the `git add -N .` — on the default path only. Leave those entries behind and they outlive the review: a later `git commit -a` captures them, and `df:commit`'s pre-staged check does not catch them because intent-to-add reports as unstaged.
+
+   Do not `cat`, read, or echo the package. The path is what you pass on. Everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
 
    The file is ephemeral and is left for the OS to reap. Do not delete it — `rm` is deliberately not in this skill's `allowed-tools`, and a re-review needs the previous diff to still exist.
 
@@ -52,8 +69,9 @@ Spawn the `code-reviewer` subagent via Task. Construct its prompt from artifacts
 
 - The factual task description
 - The plan/spec text and acceptance criteria
-- The commit range (base/head SHA)
+- The review range — the base SHA, plus the head SHA for an explicit range, or "base SHA → working tree" for the default, which is what the package covers. When base and `HEAD` are equal, say that the package is the uncommitted work only and that everything already committed is outside it — the reviewer judges what it was given, so it has to know where the edge is
 - The **path** to the diff file
+- The review scope, named as `branch-scoped`
 
 Do NOT include this session's conversation, your own reasoning, or what the author intended. Do NOT include the diff text. Wait for the subagent to finish.
 
@@ -91,7 +109,7 @@ A round is one fix pass plus one re-review scoped to the changed surface. **Thre
 
 Within a round, fix in this order: spec-compliance gaps, then Critical, then Important. `⚠️ CANNOT VERIFY` items are yours to resolve — you hold the cross-phase context the reviewer lacks. Either supply the missing evidence in the next dispatch, or rule on it and write the ruling down.
 
-Re-review by writing a fresh diff file and dispatching again with the changed surface named.
+Re-review by writing a fresh package file — Step 1's commands again, over the fix range and into a new path such as `<dir>/review-round-<R>.diff` so the previous package survives — and dispatching again with the changed surface named.
 
 At the cap, every still-open finding gets exactly one written disposition:
 
@@ -196,7 +214,7 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 - Spec-compliance findings are fixed before quality findings — a polished implementation of the wrong thing is still wrong.
 - NEVER paste the diff into a dispatch prompt — pass the file path.
 - Write the diff to a file and capture the SHAs before spawning the reviewer — the reviewer needs the exact work product.
-- NEVER modify code during review — review is read-only; fixes are a separate, explicit step.
+- NEVER modify code during review — review is read-only; fixes are a separate, explicit step. The one exception is the index, not any file: Step 1 runs `git add -N .` so untracked files reach the package, and `git restore --staged .` in that same step puts the index back.
 - NEVER run build/test/lint commands without user permission — the user's CLAUDE.md requires this.
 - Critical means the finding blocks the commit — reserve it for that, and don't inflate nits to reach it
 

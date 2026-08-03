@@ -2,7 +2,7 @@
 name: implement
 description: Use when implementing a technical plan from the plans directory with verification — continuous by default, or phase-by-phase with human review and a commit per phase when the user asks for phased execution
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
 ---
 
 <objective>
@@ -206,11 +206,24 @@ After implementing a phase:
 
 Every phase's diff gets one independent `code-reviewer` pass before the phase is marked complete.
 
-**Build the diff as a file.** `git add -N` the phase's new files so they appear in the diff, then `git diff HEAD -- <the files the phase names> > <run-dir>/phase-<N>-round-<R>.diff`. Do not `cat`, read, or echo it — the path is what you pass on.
+**Build the review package as a file.** `git add -N` the phase's new files so they appear in the diff, then write one file with one simple command per line and undo the `-N` on the last line:
+
+```bash
+echo "## Files changed" > <run-dir>/phase-<N>-round-<R>.diff
+git diff --stat=200 HEAD -- <the files the phase names> >> <run-dir>/phase-<N>-round-<R>.diff
+echo "" >> <run-dir>/phase-<N>-round-<R>.diff
+echo "## Diff" >> <run-dir>/phase-<N>-round-<R>.diff
+git diff -U10 HEAD -- <the files the phase names> >> <run-dir>/phase-<N>-round-<R>.diff
+git restore --staged <the files the phase names>
+```
+
+Keep them separate: a `{ ...; }` group is an unsafe compound that always prompts, no matter what `allowed-tools` says, while each line above matches a prefix rule on its own. `--stat=200` because `--stat` off a tty wraps at 80 columns and elides long paths to `...`.
+
+The wide context is what lets the reviewer judge a hunk without opening the file it came from. Do not `cat`, read, or echo the package — the path is what you pass on.
 
 **Check for unexpected files.** Run `git status --porcelain`: any changed file the phase did not name is a finding in its own right, carried into the dispatch as part of the changed surface.
 
-**Dispatch `code-reviewer`** via `Task`, with exactly four things: a one-paragraph factual description of what the phase was meant to build, taken from the phase's `### Overview` and not from this session's reasoning; the phase section plus its `### Success Criteria`; the commit range; and the diff file path. Never the report file, never the implementer's concerns, never this conversation.
+**Dispatch `code-reviewer`** via `Task`, with exactly five things: a one-paragraph factual description of what the phase was meant to build, taken from the phase's `### Overview` and not from this session's reasoning; the phase section plus its `### Success Criteria`; the commit range; the review package path; and the review scope, named as `task-scoped`. Never the report file, never the implementer's concerns, never this conversation.
 
 **Never pre-judge.** Do not tell the reviewer what to ignore, and do not tell the verifier below that a finding is real, important, or already agreed. If the dispatch you wrote contains "do not flag", "at most Minor", "the plan chose", or "this one is definitely real", rewrite it.
 
@@ -396,7 +409,7 @@ Stay focused on implementing what was actually planned.
 - Read the plan's preamble, its Global Constraints, and every phase's `### Assumptions` before starting — read a phase's body only when writing its brief
 - Write no source file yourself: every change to a file a phase names is made by a dispatched `phase-implementer`, including every fix round
 - Don't re-run an automated criterion the implementer reported passing — its report is the evidence, and your re-run lands in the context the delegation exists to protect
-- Dispatch `code-reviewer` on every phase's diff before marking that phase complete — the review is what lets you not read the diff yourself
+- Dispatch `code-reviewer` on every phase's review package before marking that phase complete, naming the scope as `task-scoped` — the review is what lets you not read the diff yourself
 - Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
