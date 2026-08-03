@@ -1,25 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Repository Purpose
 
 This repository contains reusable Claude Code plugins that can be installed in other projects.
 
-Procedures used occasionally — plugin structure, adding a plugin, the semver table, Codex distribution, commit types — are in `CONTRIBUTING.md`.
-
-## Architecture
-
-```
-ai-foo/
-├── .agents/                    # Codex marketplace catalog (canonical install path)
-├── .claude-plugin/             # Plugin marketplace registry
-├── .claude/                    # Local Claude Code settings + skills (gitignored)
-├── plugins/                    # Distributable Claude Code plugins
-│   └── df/                     # Development flow plugin
-├── scripts/                    # Drift checks and the Codex subagent installer
-└── thoughts/                   # Research, plans, and docs (local-only)
-```
+Procedures used occasionally — plugin structure, adding a plugin, adding a command or agent, the semver table, Codex distribution, commit types — are in `CONTRIBUTING.md`.
 
 `AGENTS.md` is a symlink to `CLAUDE.md` — Codex CLI reads the same instructions. Don't replace it with a real file.
 
@@ -56,14 +41,6 @@ No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins the `git-su
 
 **Version bumps are always separate commits:** `chore(<plugin>): bump version to X.Y.Z`
 
-## Adding Commands/Agents
-
-**New workflow surface:** Create a skill at `plugins/df/skills/<name>/SKILL.md`. df ships no slash commands — `commands/` is empty and stays that way.
-
-**New agent:** Create _both_ `plugins/df/agents/<name>.md` and its mirror `plugins/df/codex/agents/<name>.toml`. The drift check compares the name sets first, so an `.md` without its `.toml` fails immediately. Add it to the agent table in `plugins/df/README.md`, and — if a skill spawns it — to the `<agent_selection>` table in all three of `research`, `planning`, `iterate`.
-
-After adding, bump the plugin version (MINOR for new features).
-
 ## Authoring Style
 
 Applies to `plugins/*/skills/`, `plugins/*/agents/`, and `.claude/` (local-only — gitignored, absent from a fresh clone). Bring a file up to this style when you edit it for another reason — don't reformat for style alone.
@@ -86,21 +63,11 @@ Don't bolt nuance onto a rule that works: "don't X unless it matters" reopens th
 
 **Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit` and `df:deslop` auto-trigger, so theirs are the only descriptions worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
 
-## Commit Conventions
-
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<scope>): <description>
-```
-
-**Scope:** plugin name (e.g., `feat(df): add new research agent`)
-
 ## Verify Before Finishing
 
 ```bash
 prettier --check .                        # Prettier 3.x, global install — there is no package.json
-scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/*.md
+scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/*.md body or frontmatter
 scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
 scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
 ```
@@ -108,8 +75,8 @@ scripts/check-skill-description-length.sh # after editing any skill's frontmatte
 ## Gotchas
 
 - In command/skill `.md` files, `` !`command` `` is **preprocessing** — it runs at invocation time and injects output before Claude sees the prompt. Use plain `` `command` `` in workflow instructions for commands Claude should execute itself.
-- Run `scripts/check-codex-agent-drift.sh` after editing any agent — it verifies the `plugins/df/agents/*.md` ↔ `plugins/df/codex/agents/*.toml` mirror bodies haven't drifted.
+- Run `scripts/check-codex-agent-drift.sh` after editing any agent — it verifies the `plugins/df/agents/*.md` ↔ `plugins/df/codex/agents/*.toml` mirror bodies haven't drifted, and that each pair's `effort:` and `model_reasoning_effort` name the same value.
 - Formatting is Prettier's job — run `prettier --write .` and gate with `prettier --check .`. `.prettierignore` excludes `plugins/df/agents/` (mirrored byte-for-byte into `.toml`, which Prettier can't reformat) and `thoughts/`. One rule Prettier can't enforce: leave a blank line before a closing section tag. Without it Prettier pulls the tag into the list above and indents it, then treats that shape as correct forever, so no later run flags it.
 - Run `scripts/check-agent-selection-drift.sh` after editing the `<agent_selection>` table in any of `research`, `planning`, `iterate` — all three carry it verbatim, and they have drifted apart before (`cc3ef2c`). Three copies is the deliberate choice: only one skill loads at a time, so a shared reference file would trade inline tokens for a `Read` at equal cost.
-- Never lower `code-reviewer`'s model tier (`model: opus` / `model_reasoning_effort = "high"`). A cheap reviewer doesn't merely miss defects — it argues for them: in a measured comparison, a haiku-tier reviewer flagged **0 of 10** planted defects at correct severity, praising a DRY violation as YAGNI and calling an assert-nothing test plan-compliant.
+- Never lower the model or effort on `code-reviewer` or `finding-verifier`. Both pin `model: opus` with `effort: high` on Claude Code and `model_reasoning_effort = "high"` on Codex; the Codex mirrors pin no model, so that half comes from `~/.codex/config.toml`. Weak judges run measurably higher false-negative rates and collapse under suggestive framing, no surveyed framework routes code review to a cheap model without a compensating structure, and spec-kitty independently scores haiku at 0.35 task-fit for code review. A lenient refuter costs more than a lenient finder: a missed defect can still be caught downstream, but a wrongly refuted finding is gone and nothing else looks at it. df's own haiku-tier run flagged 0 of 10 planted defects at correct severity — corroboration only, since planted defects are the exact condition under which review F1 was measured to collapse 92% from synthetic samples to real PRs. Evidence: `thoughts/research/2026-08-02_1531_code-reviewer-dispatch-and-tiering.md`.
 - **One rule, one place.** A behavioural rule in a skill or agent file belongs at its **point of use** — the workflow step or section where it fires — plus `<constraints>` when it is a hard gate. Restating it in a catch-all Guidelines or Key Principles section, in `<success_criteria>`, or in an agent's `## Important Guidelines` tail does not reinforce it; it creates copies that drift apart. Before removing a restatement, classify it: **duplicate** (the rule survives at an equal-or-stronger slot → delete), **orphan** (no other copy → move it to its strongest slot verbatim, never delete), **conflict** (two copies disagree → resolve, don't cut). Classify against the _post-edit_ file: two blocks being deleted together cannot cover for each other. Slot strength, strongest first: `<constraints>` and the workflow step that fires the rule > `<anti_patterns>` > `<success_criteria>` and `<quick_start>` > any catch-all guidelines section.

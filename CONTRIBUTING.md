@@ -46,6 +46,14 @@ plugin-name/
    }
    ```
 
+## Adding a Command or Agent
+
+**New workflow surface:** Create a skill at `plugins/df/skills/<name>/SKILL.md`. df ships no slash commands — `commands/` is empty and stays that way.
+
+**New agent:** Create _both_ `plugins/df/agents/<name>.md` and its mirror `plugins/df/codex/agents/<name>.toml`. The drift check compares the name sets first, so an `.md` without its `.toml` fails immediately. Add it to the agent table in `plugins/df/README.md`, and — if a skill spawns it — to the `<agent_selection>` table in all three of `research`, `planning`, `iterate`.
+
+After adding, bump the plugin version (MINOR for new features).
+
 ## Versioning (semver reference)
 
 When committing changes to a plugin, update its version in `.claude-plugin/marketplace.json` using [Semantic Versioning](https://semver.org/):
@@ -65,11 +73,15 @@ When committing changes to a plugin, update its version in `.claude-plugin/marke
 
 ## Codex Distribution
 
-There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 9 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — the 7 the skills spawn plus the two advisors you invoke yourself. There is no way to deliver them via `codex plugin add`.
+There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 11 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — the 9 the skills spawn plus the two advisors you invoke yourself. There is no way to deliver them via `codex plugin add`.
 
 `scripts/sync-to-codex-plugin.sh` publishes `plugins/df/` to the official `openai/plugins` catalog. It is an **internal/parked maintainer tool**, not a user install channel — it is not advertised in the user docs, and it cannot carry subagents either.
 
 ## Commit Conventions
+
+Use [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <description>`.
+
+**Scope:** plugin name (e.g., `feat(df): add new research agent`).
 
 | Type       | Usage              |
 | ---------- | ------------------ |
