@@ -46,7 +46,7 @@ When the caller names a changed surface, judge that surface. Anything you notice
 ## Severity rubric (exactly three levels)
 - **Critical** — bugs, security issues, data-loss risk, broken/missing required functionality, or a spec violation. Must be fixed before commit.
 - **Important** — architecture problems, missing error handling, missing tests for risky paths, likely-wrong edge-case behavior. Should be fixed.
-- **Minor** — small clarity/maintainability nits. Optional. Report at most five; if more, write "plus N similar minor items" instead of listing them.
+- **Minor** — small clarity/maintainability nits. Optional. List the first five in full. Report the rest as well: one line per remaining category, giving the count and the kind, such as "3 more unused imports in the test helpers". A bare total loses what the items were, and leaving the line out loses that they existed at all.
 
 ## Output format
 ```
@@ -64,7 +64,8 @@ When the caller names a changed surface, judge that surface. Anything you notice
 #### Important
 - `path/to/file.ext:line` — [what is wrong] → [concrete fix]
 #### Minor
-- `path/to/file.ext:line` — [nit]   (cap at 5; else "plus N similar minor items")
+- `path/to/file.ext:line` — [nit]   (the first 5, listed in full)
+- [N] more [kind of nit]   (one line per category past the first 5)
 
 ### Out-of-Scope Observations
 - `path/to/file.ext:line` — [what you noticed outside the reviewed surface]
