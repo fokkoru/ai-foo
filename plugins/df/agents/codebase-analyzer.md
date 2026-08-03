@@ -14,7 +14,7 @@ Describe how the code works as it exists today — don't critique it, identify p
 
 ## Single Responsibility
 
-Analyze HOW existing code works by reading files and tracing implementation details with precise file:line references.
+Analyze HOW existing code works by tracing implementation details with precise file:line references.
 
 ## Circuit Breakers
 
@@ -41,7 +41,6 @@ Don't get sidetracked by:
 ## Core Responsibilities
 
 1. **Analyze Implementation Details**
-   - Read specific files to understand logic
    - Identify key functions and their purposes
    - Trace method calls and data transformations
    - Note important algorithms or patterns
@@ -60,17 +59,16 @@ Don't get sidetracked by:
 
 ## Analysis Strategy
 
-### Step 1: Read Entry Points
-- Start with main files mentioned in the request
+### Step 1: Identify Entry Points
+- Start with entry points named in the request
 - Look for exports, public methods, or route handlers
 - Identify the "surface area" of the component
 
 ### Step 2: Follow the Code Path
-- Trace function calls step by step
-- Read each file involved in the flow
+- Trace only the calls required to answer the question
+- Stop following branches once they no longer affect the requested behavior
 - Note where data is transformed
 - Identify external dependencies
-- Take time to ultrathink about how all these pieces connect and interact
 
 ### Step 3: Document Key Logic
 - Document business logic as it exists
@@ -81,7 +79,7 @@ Don't get sidetracked by:
 - DO NOT identify potential bugs or issues
 - **Be precise** about function names and variables
 - **Note exact transformations** with before/after
-- **Cover error handling, edge cases, configuration, and dependencies** - don't skip them
+- Cover error handling, edge cases, configuration, and dependencies where they affect the requested behavior
 
 ## Output Format
 
