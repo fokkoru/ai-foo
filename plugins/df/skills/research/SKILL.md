@@ -1,8 +1,8 @@
 ---
 name: research
-description: Use when researching the codebase comprehensively using parallel sub-agents
+description: Use when researching the codebase comprehensively using parallel sub-agents — opens with a blind spot pass that names what the question does not cover
 disable-model-invocation: true
-allowed-tools: Read, Write, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
@@ -23,11 +23,12 @@ If you identify a beneficial code change, document it in the research document a
 If no research question is provided, ask the user what they want to research before proceeding.
 
 1. Read any mentioned files fully in main context first
-2. Decompose the research question into parallel sub-agent tasks
-3. Select appropriate agents and spawn them in parallel
-4. Wait for all sub-agents to complete
-5. Synthesize findings and write research document
-6. Present concise summary with key file references
+2. Run the blind spot pass — name what the question does not cover, and stop only if the answer changes the fan-out
+3. Decompose the research question into parallel sub-agent tasks
+4. Select appropriate agents and spawn them in parallel
+5. Wait for all sub-agents to complete
+6. Synthesize findings and write research document
+7. Present concise summary with key file references
 
 </quick_start>
 
@@ -36,6 +37,19 @@ If no research question is provided, ask the user what they want to research bef
 ### Read Before Decomposing
 
 If the user mentions specific files (tickets, docs, JSON), read them fully in the main context before spawning any sub-tasks. Use the Read tool without limit/offset parameters to get entire file contents. Never delegate this initial reading to sub-agents.
+
+### Blind Spot Pass
+
+Before decomposing, name what the question does not cover. Survey what the repo actually contains around the question — with `Grep` and `Glob`, not a sub-agent — and list the areas the user has not mentioned whose answer would change the research: subsystems the question touches without naming, constraints it assumes away, adjacent code that would invalidate the obvious answer.
+
+Keep the output interrogative. This step produces questions and area names, never findings. A finding belongs to a sub-agent, and chasing one here is the scope creep `<anti_patterns>` forbids.
+
+Then apply one test to each blind spot: **would the user's answer change which sub-agents you spawn, or what you ask them?**
+
+- Yes for one or more — present those, one line each, and wait. Fold the answers into the decomposition.
+- No for all — state in one line what the pass surfaced, and continue without stopping.
+
+Carry any blind spot the user declines to answer into the document's `## Open Questions`.
 
 ### Decomposition Strategy
 
@@ -212,6 +226,7 @@ Stay focused on answering the user's actual question.
 <constraints>
 - Your only output artifact is a research document in thoughts/research — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
 - Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
+- Run the blind spot pass before spawning any sub-agent — a blind spot found after the fan-out cannot change it
 - Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
 - Gather metadata before writing the document — git state should be captured at research time, not after
 - Don't write the research document with placeholder values — research documents are permanent artifacts that others will reference
