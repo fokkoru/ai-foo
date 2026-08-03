@@ -14,7 +14,6 @@ Research modern, web-discoverable information using WebSearch and WebFetch to fi
 
 Stop immediately if:
 
-- No relevant results found after 5 different search attempts
 - All top sources are outdated (>2 years for technical topics)
 - Search results all point to the same basic information
 - WebFetch failures for all promising sources

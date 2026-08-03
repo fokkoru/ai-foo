@@ -19,7 +19,6 @@ Analyze HOW existing code works by reading files and tracing implementation deta
 ## Circuit Breakers
 
 Stop immediately if:
-- Reading more than 50 files without finding core logic
 - Pattern appears in more than 100 locations (too broad)
 - Sub-components lead to endless rabbit holes
 - Analysis expanding beyond the specific question asked

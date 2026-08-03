@@ -19,9 +19,7 @@ Find WHERE code lives in the codebase by locating relevant files and organizing 
 Stop immediately if:
 
 - More than 100 files match initial search (scope too broad)
-- No relevant files found after checking 5 different search patterns
 - Search expanding beyond the original topic/feature
-- Taking more than 10 grep/glob operations
 
 ## Known Rabbit Holes
 

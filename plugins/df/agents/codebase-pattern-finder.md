@@ -22,10 +22,8 @@ Find similar implementations and existing code patterns that can serve as templa
 
 Stop immediately if:
 
-- More than 20 files read without finding relevant patterns
 - Patterns too complex to extract meaningful examples
 - Search expanding beyond the requested pattern type
-- No similar patterns found after checking 5 different approaches
 
 ## Known Rabbit Holes
 

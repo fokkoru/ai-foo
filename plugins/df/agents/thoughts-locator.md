@@ -19,7 +19,6 @@ Stop immediately if:
 - More than 50 documents match initial search (too broad)
 - No relevant documents found after checking all major subdirectories
 - Search expanding beyond the original topic
-- More than 10 search operations needed
 
 ## Known Rabbit Holes
 
