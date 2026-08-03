@@ -3,6 +3,7 @@ name: architecture-advisor
 description: Reviews a proposed solution design before it becomes code — several coupled decisions, migration planning, or system-level choices — using Codex, deepwiki, and codebase evidence. Requires the user-scope `codex` MCP server; deepwiki is optional. Use df:codex-advisor for one narrow question, and /codex:adversarial-review for code already written.
 tools: Read, Grep, Glob, LS, mcp__codex__codex, mcp__codex__codex-reply, mcp__deepwiki__ask_question, mcp__deepwiki__read_wiki_contents
 model: sonnet
+effort: high
 ---
 
 # Architecture & Solution Advisor

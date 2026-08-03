@@ -3,13 +3,29 @@
 #   plugins/df/agents/<name>.md         — Claude Code (body after frontmatter)
 #   plugins/df/codex/agents/<name>.toml — Codex CLI (developer_instructions body)
 #
-# Rule: the .toml body must equal the .md body byte-for-byte, OR equal the
-# .md body followed by a literal '<!-- codex-only -->' marker line and a
-# Codex-only suffix. Anything else is drift -> exit 1.
+# Pairing rule: the two directories name the same set of agents — every .md
+# has a same-named .toml and every .toml a same-named .md. A name on one side
+# only is drift -> exit 1.
 #
-# Extraction is anchored on the exact line 'developer_instructions = """'
+# Body rule: the .toml body must equal the .md body byte-for-byte, OR equal
+# the .md body followed by a literal '<!-- codex-only -->' marker line and a
+# Codex-only suffix. Anything else is drift -> exit 1, as is a .toml whose
+# developer_instructions body cannot be extracted or comes out empty.
+#
+# Effort rule: every agent declares an effort level on both sides, the .md
+# frontmatter's 'effort:' equals the .toml's 'model_reasoning_effort', and the
+# value is one of low|medium|high. Differing values, a value on exactly one
+# side, neither side declaring one, and an out-of-set value are each drift ->
+# exit 1. The valid set is the intersection of what both runtimes honour:
+# Claude Code also accepts 'max' and integers, Codex also accepts 'none',
+# 'minimal' and 'xhigh', and a value outside the set is dropped with only a
+# debug log.
+#
+# Body extraction is anchored on the exact line 'developer_instructions = """'
 # (NOT the first triple quote in the file — several .toml files carry a
-# multi-line description = """...""" field above it).
+# multi-line description = """...""" field above it). Effort extraction is
+# anchored at column 0 and stops at the body, because two agents quote
+# 'model_reasoning_effort' again inside their prose as a Codex call example.
 set -euo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
@@ -37,6 +53,17 @@ toml_body() {
        inb' "$1" | trim_blank_edges
 }
 
+md_effort() {
+  awk 'NR==1 && $0=="---" {infm=1; next}
+       infm && $0=="---" {exit}
+       infm && sub(/^effort:[[:space:]]*/, "") {gsub(/^"|"$/, ""); print; exit}' "$1"
+}
+
+toml_effort() {
+  awk '$0=="developer_instructions = \"\"\"" {exit}
+       sub(/^model_reasoning_effort[[:space:]]*=[[:space:]]*/, "") {gsub(/^"|"$/, ""); print; exit}' "$1"
+}
+
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -52,6 +79,26 @@ fi
 while IFS= read -r name; do
   toml="$TOML_DIR/$name.toml"
   [ -f "$toml" ] || continue # missing pair already reported above
+
+  md_effort_val=$(md_effort "$MD_DIR/$name.md")
+  toml_effort_val=$(toml_effort "$toml")
+  # One message per pair: an unequal pair is already reported, so the value is
+  # validated only once both sides agree on it.
+  if [ -z "$md_effort_val" ] && [ -z "$toml_effort_val" ]; then
+    echo "DRIFT($name): neither side declares an effort level"
+    fail=1
+  elif [ "$md_effort_val" != "$toml_effort_val" ]; then
+    echo "DRIFT($name): effort '${md_effort_val:-<none>}' in $MD_DIR/$name.md != model_reasoning_effort '${toml_effort_val:-<none>}' in $toml"
+    fail=1
+  else
+    case "$md_effort_val" in
+      low | medium | high) ;;
+      *)
+        echo "DRIFT($name): '$md_effort_val' is not a valid effort level (expected low, medium, or high)"
+        fail=1
+        ;;
+    esac
+  fi
 
   md_body "$MD_DIR/$name.md" >"$tmpdir/md"
   toml_body "$toml" >"$tmpdir/toml"

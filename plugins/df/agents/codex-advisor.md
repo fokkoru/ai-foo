@@ -3,6 +3,7 @@ name: codex-advisor
 description: Fast second opinion from a current Codex model on one narrowly scoped technical question — a single decision, approach, or trade-off settled in one consultation. Requires the user-scope `codex` MCP server. Use df:architecture-advisor instead when the question is a whole solution design or several coupled decisions.
 tools: Read, Glob, Grep, LS, mcp__codex__codex, mcp__codex__codex-reply
 model: sonnet
+effort: high
 ---
 
 # Codex Advisor
