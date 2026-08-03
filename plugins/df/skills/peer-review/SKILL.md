@@ -2,7 +2,7 @@
 name: peer-review
 description: Use when performing an independent, isolated code review of an implementation against its plan/spec before committing — one isolated reviewer reads the diff from a file and returns a spec-compliance verdict plus quality findings. Runs between df:validate and df:commit.
 disable-model-invocation: true
-allowed-tools: Read, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git add -N:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git add -N:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
 ---
 
 <objective>
@@ -62,20 +62,20 @@ Spec compliance governs the **fix order**, not the dispatch order. If the spec v
    The file is ephemeral and is left for the OS to reap. Do not delete it — `rm` is deliberately not in this skill's `allowed-tools`, and a re-review needs the previous diff to still exist.
 
 4. Write a one-paragraph factual description of what was built, taken from the plan — not from this session's reasoning.
+5. Write the spec extract to `<dir>/spec.md`, beside the package in the same scratch directory. Three parts, in this order: the factual description from item 4, the desired end state, and the acceptance criteria — the last two taken from the plan verbatim. Nothing else: not the whole plan, not your reasoning, not what the author intended. Write an extract rather than pointing at the plan file itself, because a reviewer given a whole plan reads the whole plan and the sections that matter are a small fraction of it. Do not read the file back — the path is what you pass on.
 
 ### Step 2: Dispatch the reviewer (isolated)
 
 Spawn the `code-reviewer` subagent via Task. Construct its prompt from artifacts ONLY:
 
-- The factual task description
-- The plan/spec text and acceptance criteria
+- The **path** to the spec extract from Step 1 — `<dir>/spec.md`, which already carries the factual task description, the end state, and the acceptance criteria
 - The review range — the base SHA, plus the head SHA for an explicit range, or "base SHA → working tree" for the default, which is what the package covers. When base and `HEAD` are equal, say that the package is the uncommitted work only and that everything already committed is outside it — the reviewer judges what it was given, so it has to know where the edge is
 - The **path** to the diff file
 - The review scope, named as `branch-scoped`
 
-Do NOT include this session's conversation, your own reasoning, or what the author intended. Do NOT include the diff text. Wait for the subagent to finish.
+Do NOT include this session's conversation, your own reasoning, or what the author intended. Do NOT include the diff text or the spec text — both travel as paths. Wait for the subagent to finish.
 
-If the reviewer reports it cannot read the diff file, do NOT paste the diff as a workaround. Stop and tell the user the path was unreachable — that is a sandbox or runtime problem, not a review problem.
+If the reviewer reports it cannot read either file, do NOT paste that file's contents as a workaround. Stop and tell the user which path was unreachable — that is a sandbox or runtime problem, not a review problem. An unreadable `<dir>/spec.md` surfaces as a `⚠️ CANNOT VERIFY` spec verdict rather than as a complaint about the path, so treat that verdict as a signal to check the path before you treat it as a judgment about the code.
 
 ### Step 3: Verify each blocking finding (isolated, parallel)
 
@@ -84,7 +84,7 @@ A finding is a claim about the code, not a fact about it. Test every claim that 
 Dispatch one `finding-verifier` per spec-compliance gap and per Critical or Important finding. Issue every Task call in a single message so they run in parallel. Each dispatch carries exactly three things:
 
 - The **path** to the diff file from Step 1 — never its text
-- The plan/spec text the finding is judged against
+- The **path** to `<dir>/spec.md` from Step 1 — the spec the finding is judged against, never its text
 - Exactly one finding verbatim: its `file:line`, what it claims is wrong, and its claimed severity
 
 Send nothing else — not the reviewer's other findings, not its verdicts, not this session's conversation. Minor findings are never verified: the dispatch costs more than the nit.
@@ -146,13 +146,14 @@ A verifier dispatch pre-judges in its own form: asserting that the finding is re
 
 Scoping is not suppression. To narrow a re-review, name the surface that changed — never name findings the reviewer should not report. Anything the reviewer notices outside that surface comes back under `Out-of-Scope Observations`, where you classify it. Those do not block.
 
-| Excuse                                                        | Reality                                                                                                                                                                           |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "The diff is small — pasting it is simpler than a temp file." | Everything pasted into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn. Size is why it feels safe, not why it is. |
-| "The reviewer will waste a turn asking what this was for."    | That is the task description in Step 1, written from the plan. Explaining your reasoning is the thing isolation exists to prevent.                                                |
-| "This finding really was deliberate — I'll say so up front."  | Then say it after the verdict, not before. A reviewer told the answer grades your explanation, not the code.                                                                      |
-| "Re-review only needs to look at what I changed."             | Correct — name the changed surface. Naming findings it should skip is a different act, and it destroys information you never see.                                                 |
-| "I'll tell the verifier this one is definitely real."         | Then it grades your certainty, not the code. If it is definitely real, the verification costs one dispatch and says so.                                                           |
+| Excuse                                                         | Reality                                                                                                                                                                           |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The diff is small — pasting it is simpler than a temp file."  | Everything pasted into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn. Size is why it feels safe, not why it is. |
+| "The spec section is short — pasting it beats writing a file." | Short text pasted into a dispatch is re-read on every later turn just the same. `<dir>/spec.md` is written once and read only by the agents you hand the path to.                 |
+| "The reviewer will waste a turn asking what this was for."     | That is the task description in Step 1, written from the plan. Explaining your reasoning is the thing isolation exists to prevent.                                                |
+| "This finding really was deliberate — I'll say so up front."   | Then say it after the verdict, not before. A reviewer told the answer grades your explanation, not the code.                                                                      |
+| "Re-review only needs to look at what I changed."              | Correct — name the changed surface. Naming findings it should skip is a different act, and it destroys information you never see.                                                 |
+| "I'll tell the verifier this one is definitely real."          | Then it grades your certainty, not the code. If it is definitely real, the verification costs one dispatch and says so.                                                           |
 
 </no_pre_judging>
 
@@ -199,7 +200,7 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 <anti_patterns>
 
 - Forwarding the development conversation or your own intent to the reviewer (defeats isolation)
-- Pasting the diff into a dispatch prompt instead of passing its file path
+- Pasting the diff or the spec into a dispatch prompt instead of passing its file path
 - Nitpicking style, formatting, or anything CI already checks
 - Reviewing generated, vendored, or lock files
 - Letting a finding disappear without a written disposition
@@ -212,7 +213,7 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 - The reviewer subagent MUST receive only artifacts (spec + diff + criteria). NEVER pass this session's conversation or your reasoning — isolation is the whole point.
 - Every spec-compliance gap and every Critical or Important finding goes to a `finding-verifier` before the fix loop opens — `CANNOT DETERMINE` blocks exactly as `CONFIRMED` does, and only `REFUTED` clears a finding.
 - Spec-compliance findings are fixed before quality findings — a polished implementation of the wrong thing is still wrong.
-- NEVER paste the diff into a dispatch prompt — pass the file path.
+- NEVER paste the diff or the spec into a dispatch prompt — pass the file path to each.
 - Write the diff to a file and capture the SHAs before spawning the reviewer — the reviewer needs the exact work product.
 - NEVER modify code during review — review is read-only; fixes are a separate, explicit step. The one exception is the index, not any file: Step 1 runs `git add -N .` so untracked files reach the package, and `git restore --staged .` in that same step puts the index back.
 - NEVER run build/test/lint commands without user permission — the user's CLAUDE.md requires this.
