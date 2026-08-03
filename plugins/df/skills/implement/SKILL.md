@@ -212,9 +212,17 @@ Every phase's diff gets one independent `code-reviewer` pass before the phase is
 
 **Dispatch `code-reviewer`** via `Task`, with exactly four things: a one-paragraph factual description of what the phase was meant to build, taken from the phase's `### Overview` and not from this session's reasoning; the phase section plus its `### Success Criteria`; the commit range; and the diff file path. Never the report file, never the implementer's concerns, never this conversation.
 
-**Never pre-judge.** Do not tell the reviewer what to ignore. If the dispatch you wrote contains "do not flag", "at most Minor", or "the plan chose", rewrite it.
+**Never pre-judge.** Do not tell the reviewer what to ignore, and do not tell the verifier below that a finding is real, important, or already agreed. If the dispatch you wrote contains "do not flag", "at most Minor", "the plan chose", or "this one is definitely real", rewrite it.
 
-**Act on the verdicts.** Spec `FAIL` or any Critical or Important finding opens a fix round. Minor findings are recorded in the plan file under the phase and do not open a round. `⚠️ CANNOT VERIFY` is yours to resolve — you hold the cross-phase context the reviewer lacks; supply the evidence in the next dispatch, or rule on it and write the ruling into the plan file.
+**Verify before acting.** Dispatch one `finding-verifier` per spec-compliance gap and per Critical or Important finding, all in parallel, before any fix round opens. Each dispatch carries exactly three things — the diff file path, the spec or plan text the finding is judged against, and that one finding verbatim with its `file:line`, its claim, and its claimed severity — and nothing else: not the reviewer's other findings, not its verdicts, not this conversation. One finding per dispatch, because an agent handed several at once applies one method to all of them, and that shared method is the agreement the fan-out exists to break.
+
+- Leave Minor findings unverified — they open no round, so a verdict changes nothing.
+- Dispatch one verifier per finding per round. A finding already verified this round is not re-dispatched; a second attempt is shopping for a refutation.
+- `REFUTED` clears the finding. `CONFIRMED` and `CANNOT DETERMINE` both leave it blocking, because a wrongly-refuted finding leaves nothing behind to catch it.
+- Act on the severity the verifier ruled, not the one claimed. A confirmed finding the verifier puts lower moves to that level — a downgrade to Minor means it no longer opens a round.
+- Record every refuted finding in the plan file under the phase, with the refutation that killed it. A refuted finding that vanishes is indistinguishable from one that was dropped.
+
+**Act on the verdicts.** A spec gap or a Critical or Important finding still blocking after verification opens a fix round. Minor findings are recorded in the plan file under the phase and do not open a round. `⚠️ CANNOT VERIFY` is yours to resolve — you hold the cross-phase context the reviewer lacks; supply the evidence in the next dispatch, or rule on it and write the ruling into the plan file.
 
 **A finding that contradicts the plan's own text is the user's call.** Present the finding beside the plan text and ask which governs. Do not dismiss the finding because the plan mandates it, and do not dispatch a fix that contradicts the plan without asking.
 
@@ -376,6 +384,8 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 | "It's a one-line fix, dispatching is overhead."            | A controller fix lands in the context you are keeping clean and never passes the phase's verification path. Dispatch it.                                                        |
 | "I'll read the phase's files so I can check the work."     | Then you hold the phase's whole read set and the delegation bought nothing. The report says what changed; the diff proves it.                                                   |
 | "The phase was small, skip the review."                    | Then nothing independent saw the diff, and checking it yourself is the read you delegated to avoid. Every phase gets one pass.                                                  |
+| "This finding is obviously real — verifying it is waste."  | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.                                                |
+| "It was refuted, so there's nothing to record."            | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job.                                     |
 | "One more round and it converges."                         | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                                |
 
 Stay focused on implementing what was actually planned.
@@ -387,6 +397,7 @@ Stay focused on implementing what was actually planned.
 - Write no source file yourself: every change to a file a phase names is made by a dispatched `phase-implementer`, including every fix round
 - Don't re-run an automated criterion the implementer reported passing — its report is the evidence, and your re-run lands in the context the delegation exists to protect
 - Dispatch `code-reviewer` on every phase's diff before marking that phase complete — the review is what lets you not read the diff yourself
+- Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
 - Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria

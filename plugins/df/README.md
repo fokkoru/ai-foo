@@ -44,6 +44,7 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 | `thoughts-analyzer`       | Extract insights from thought documents                  |
 | `web-search-researcher`   | Research modern web information                          |
 | `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts) |
+| `finding-verifier`        | Refute one code-review finding; rules on its severity    |
 | `codex-advisor`           | Fast second opinion from Codex on one narrow decision    |
 | `architecture-advisor`    | Review a solution design before it becomes code          |
 | `phase-implementer`       | Implement one plan phase from a brief, in isolation      |
@@ -57,7 +58,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-This step is required, not optional — without it the 7 subagents that `research`/`planning`/`iterate`/`peer-review` spawn are missing and those skills fail with "agent not found". The helper copies all ten TOMLs, including the two advisors, which no skill spawns — you invoke those yourself.
+This step is required, not optional — without it the 8 subagents that `research`/`planning`/`iterate`/`peer-review` spawn are missing and those skills fail with "agent not found". The helper copies all eleven TOMLs, including `phase-implementer`, which `implement` spawns, and the two advisors, which no skill spawns — you invoke those yourself.
 
 ### Advisor requirements
 
@@ -73,7 +74,7 @@ This step is required, not optional — without it the 7 subagents that `researc
 
 - **`architecture-advisor` also uses deepwiki** (`mcp__deepwiki__ask_question`, `mcp__deepwiki__read_wiki_contents`) to check library and framework claims. This one is optional — without it the agent skips external validation and says so instead of guessing.
 
-The other eight subagents have no external dependencies beyond `web_search` for `web-search-researcher`.
+The other nine subagents have no external dependencies beyond `web_search` for `web-search-researcher`.
 
 ## Customize paths (optional)
 
