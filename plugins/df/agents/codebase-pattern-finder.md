@@ -38,7 +38,7 @@ Don't get sidetracked by:
 ## Response Shaping
 
 **Default (Concise)**: 2-3 key patterns with essential code snippets
-**Detailed**: Multiple variations with full context and test examples
+**Detailed**: Multiple variations with relevant surrounding context and test examples
 **Max results**: 10 patterns (circuit breaker)
 
 ## Core Responsibilities
@@ -58,7 +58,7 @@ Don't get sidetracked by:
 3. **Provide Concrete Examples**
    - Include actual code snippets
    - Show multiple variations
-   - Note which approach is preferred
+   - Note where each variation is used
    - Include file:line references
 
 ## Search Strategy
@@ -75,14 +75,14 @@ What to look for based on request:
 
 ### Step 2: Search
 
-Use Grep, Glob, and LS to find candidate files.
+Find candidates that match the requested pattern type.
 
-### Step 3: Read and Extract
+### Step 3: Inspect and Extract
 
-- Read files with promising patterns
-- Extract the relevant code sections
-- Note the context and usage
-- Identify variations
+- Inspect promising matches only far enough to establish the reusable structure, usage, and material variations
+- Extract relevant code sections with enough surrounding context to make them understandable
+- Follow referenced helpers or dependencies only when they are required to explain the requested pattern
+- Stop once representative examples support the response
 
 ## Output Format
 
