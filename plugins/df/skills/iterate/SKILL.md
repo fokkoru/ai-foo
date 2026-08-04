@@ -140,6 +140,7 @@ Get user confirmation before proceeding.
    - If a phase's files, symbols, or APIs change, update that phase's `### Assumptions` and their `source:` references — `df:implement` re-checks each one against the live codebase
    - If phases are added, removed, or renumbered, or a phase's `### Assumptions` gain or lose a `Confidence: Unclear`, update `### Decisions Most Likely to Change` to match — a stale rollup points the reviewer at the wrong decisions
    - If a phase's `Produces` changes, update every later phase whose `Consumes` names it
+   - If phases, `Consumes`/`Produces`, or files under `### Changes Required` change, update `## Execution Schedule`: list every phase exactly once; keep one main phase and at most one background phase per wave; keep same-wave files disjoint; and schedule every consumer after its producers
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
 

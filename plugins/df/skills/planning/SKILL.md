@@ -210,7 +210,11 @@ Once aligned on approach:
    2. [Phase name] - [what it accomplishes]
    3. [Phase name] - [what it accomplishes]
 
-   Does this phasing make sense? Should I adjust the order or granularity?
+   ## Execution Waves:
+   1. Main: Phase [N] | Background: Phase [N] or (none)
+   2. Main: Phase [N] | Background: Phase [N] or (none)
+
+   Does this phasing and execution schedule make sense? Should I adjust the order or granularity?
    ```
 
 2. **Get feedback on structure** before writing details
@@ -228,10 +232,11 @@ After structure approval:
 
 2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
 
-3. **Self-review the finished plan before presenting it.** Read it once, checking exactly four things:
+3. **Self-review the finished plan before presenting it.** Read it once, checking exactly five things:
    - **Spec coverage** — every line of `### End State` maps to at least one phase, and every `### Acceptance Criteria` item is provable once the last phase is done. Name any that are not.
    - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in `### End State`, `### Acceptance Criteria`, or any phase's `### Assumptions`, `### Changes Required`, or `### Success Criteria`. Every value is concrete. The one exception is an `### End State` or `### Acceptance Criteria` line the Step 1 input gate could not get answered: it ships carrying its `(unverified)` mark. Two field-specific forms count as placeholders: an `### Acceptance Criteria` list that restates phase steps rather than proving the finished feature works, and a phase whose `### Assumptions` reads `(none)` while its `### Changes Required` edits a file no earlier phase produced — editing a file this plan has not already characterized means holding assumptions about what is in it.
    - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
+   - **Execution schedule** — every phase appears exactly once; every wave has one main phase and at most one background phase; same-wave phases name disjoint files and do not consume each other's outputs; every consumed output is produced in an earlier wave.
    - **Confidence rollup** — `### Decisions Most Likely to Change` names at most three lines, each pointing at a phase that exists. Every assumption marked `Confidence: Unclear` appears there unless the section is already at three.
 
    Fix what the review finds, then present.
@@ -269,6 +274,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
 - Unless the user accepted the skip offer, plan file created at `thoughts/plans/YYYY-MM-DD_HHMM_topic.md` with all sections populated
 - Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
+- `## Execution Schedule` assigns every phase to one valid main or background slot
 - User confirms plan structure, phasing, and technical approach
 
 </success_criteria>

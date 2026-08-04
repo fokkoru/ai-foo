@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Use when implementing a technical plan from the plans directory with verification — continuous by default, or phase-by-phase with human review and a commit per phase when the user asks for phased execution
+description: Use when implementing a technical plan from the plans directory with main-thread execution, bounded background work, joined verification, and optional phase-by-phase commits
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
 ---
@@ -20,7 +20,7 @@ This skill runs in one of two modes:
 
 **Phased**: enabled ONLY when the user explicitly asks for it ("phased", "phase by phase", "commit per phase"). If the plan itself calls for a commit per phase but the user did not specify a mode, ask one question before starting — "The plan calls for per-phase commits — run in phased mode?" — never enable phased mode silently.
 
-In phased mode, each phase is a discrete unit: implement → verify → review → commit → next. Always stop after each phase and present a summary:
+In phased mode, each phase is a discrete unit: implement → verify → commit → next. Always stop after each phase and present a summary:
 
 ```
 ## Phase [N] Complete
@@ -52,8 +52,8 @@ Wait for the user to:
 
 If the user reports issues:
 
-- Route them to the implementer as a fix round (Step 3, item 2) — you fix nothing yourself
-- Present the updated results from what it returns
+- Fix them in the main thread, then re-run the affected checks
+- Present the updated results
 - Wait again for confirmation
 
 Repeat until the user is satisfied with the phase.
@@ -126,7 +126,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
 ### Step 1: Getting Started
 
-1. Map the plan before reading it. Grep it for `^#{1,3} ` to get a section map, then read the preamble through `## Global Constraints` plus every phase's `### Assumptions` block — that is everything the pre-flight scan below needs. Do not read the phase bodies yet: Step 2 reads each phase when it writes that phase's brief, and a phase section read now is re-sent on every turn until it is used. Check for any existing checkmarks (`- [x]`).
+1. Map the plan before reading it. Grep it for `^#{1,3} ` to get a section map, then read the preamble through `## Global Constraints`, `## Execution Schedule` when present, and every phase's `### Assumptions` block — that is everything the pre-flight scan and wave selection need. Do not read the phase bodies yet: Step 2 reads them when their wave starts, and a phase section read now is re-sent on every turn until it is used. Check for any existing checkmarks (`- [x]`).
 2. **Pre-flight conflict scan** — before writing any code, check every phase's `### Assumptions` against the current codebase at its `source:` citation, and the plan's Global Constraints against theirs. This is a targeted existence-and-signature check with Grep and Glob, not a read of every file the plan names: do the cited files, symbols, and APIs exist as the plan describes? Collect every conflict and raise them as **one** batched question:
 
    ```
@@ -140,7 +140,7 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
    How should I proceed?
    ```
 
-   Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; the implementer's re-validation at the start of each phase is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
+   Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; re-validation when each phase starts is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
 
 3. Read the original ticket if the plan cites one
 4. Take time to ultrathink about how the pieces fit together
@@ -149,30 +149,22 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
 Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
-### Step 2: Delegate the phase
+### Step 2: Execute the next wave
 
-Write no source code yourself. Every phase is implemented by a dispatched `phase-implementer`; the controller's job is the brief, the dispatch, and the branch on what comes back.
+**Select the execution shape.** In continuous mode, use `## Execution Schedule` only after checking that every phase appears once, each wave has one main phase and at most one background phase, same-wave files are disjoint, and no same-wave phase consumes the other's output. If the section is absent or invalid, say that parallel execution was downgraded and run every remaining phase as a single-phase main-thread wave. In phased mode, always use single-phase main-thread waves.
 
-**Run directory, once.** At the first phase, create one scratch directory with `mktemp -d` and keep its path for the whole run. Every brief, report, and diff lives there — `phase-<N>-brief.md`, `phase-<N>-report.md`, `phase-<N>-round-<R>.diff`. Do not delete it: a later fix round reads the report file, and `rm` is deliberately absent from `allowed-tools`.
+**Start the background lane only when it creates overlap.** At the first delegated wave, create one scratch directory with `mktemp -d` and keep it for the run. Write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
 
-**Build the brief.** Write the phase's own section verbatim, then the plan's `## Global Constraints` section verbatim, to `<run-dir>/phase-<N>-brief.md`. Nothing else — not the whole plan, not earlier phases.
+**Work the main lane immediately.** Validate the main phase's assumptions and consumed interfaces against live code, then implement it. Do not launch a worker and wait for it before making progress. Respect the phase's named files; classify any necessary change outside them with `<deviation_handling>`.
 
-**Dispatch.** Spawn `phase-implementer` via `Task`. The prompt carries exactly five things: one line on where this phase sits in the plan; the brief path, introduced as the requirements, with exact values to use verbatim; the `### Produces` blocks of earlier phases in this run that this phase `Consumes`; your resolution of any ambiguity you already noticed; and the report path. Never dispatch two implementers at once.
+**Join the wave.** Finish the main phase before starting another wave, then collect the background result. A failed dispatch before any worker edit becomes a later main-thread phase. A worker that edited files but returned no usable report becomes `DONE_WITH_CONCERNS`; inspect that changed surface after the join and finish it in the main thread.
 
-**Size the model to the phase.** A dispatch that names no `model` runs the implementer at this session's tier — that is the baseline, and most phases keep it. Name a `model` only to deviate from it, and only in the direction the phase earns: a phase that is transcription from a complete brief goes down; a phase carrying an architectural decision, or one whose brief leaves shape to be worked out, goes up. `sonnet` is the floor — never below it, never `haiku` — because `sonnet` is the tier superpowers names for implementers working from prose descriptions.
-
-**Do not paste.** The brief's contents, the report's contents, and prior phases' summaries never appear in a dispatch prompt — everything travels as a path.
-
-**Branch on the returned status:**
-
-| Status               | What you do                                                                                                                                                                                          |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DONE`               | Go to Step 3.                                                                                                                                                                                        |
-| `DONE_WITH_CONCERNS` | Read the concerns in the returned message. If they bear on correctness or scope, treat them as findings and open a fix round. If they are observations, note them in the plan file and go to Step 3. |
-| `NEEDS_CONTEXT`      | Supply what was missing and re-dispatch. Do not re-dispatch unchanged.                                                                                                                               |
-| `BLOCKED`            | Classify the blocker with `<deviation_handling>`. Rule 4 — stop and ask the user, using the format below. Rules 1–3 — supply the missing context or narrow the phase, then re-dispatch.              |
-
-When a blocker classifies as Rule 4, stop and present:
+| Worker status        | Action                                                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DONE`               | Continue to joined verification.                                                                                                                        |
+| `DONE_WITH_CONCERNS` | Turn correctness or scope concerns into findings; record observations.                                                                                  |
+| `NEEDS_CONTEXT`      | Supply the missing context and resume the worker; never resend unchanged input.                                                                         |
+| `BLOCKED`            | Classify with `<deviation_handling>`. For Rules 1–3, supply context or finish after the join. For Rule 4, stop and ask the user using the format below. |
 
 ```
 Issue in Phase [N]:
@@ -183,77 +175,39 @@ Why this matters: [explanation]
 How should I proceed?
 ```
 
-Never re-dispatch the same agent on the same input. If the implementer said it is stuck, something has to change before the next dispatch.
+### Step 3: Verify the joined wave
 
-### Step 3: Verification
+After every lane has stopped writing, run every automated success criterion for every phase in the wave. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree.
 
-After implementing a phase:
+For each criterion:
 
-1. Record the phase's verification from what the implementer returned. It ran every automated criterion and its report names each command and its output. Do not re-run them — a re-run costs its entire output in the context you are keeping clean and proves what the report already proves. Independent verification is the reviewer's pass on the diff, in Step 3.5.
+- **Passes**: mark `[x]` in the plan file
+- **Fails or does not run**: keep `[ ]`, add `<!-- FAILED: [brief explanation] -->`, and open a fix round
+- **Requires manual testing**: leave `[ ]` unchanged
 
-   For each automated success criterion in the plan:
-   - Reported **passing**: mark `[x]` in the plan file
-   - Reported **failing**, or not mentioned at all: keep `[ ]` and add a note: `<!-- FAILED: [brief explanation] -->`
-   - **Requires manual testing**: leave `[ ]` unchanged
+**Three fix rounds maximum per phase.** Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. Re-run the affected criteria after each fix. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
 
-   A criterion the returned summary does not mention is not passing. Treat it as not-run and open a fix round.
+### Step 3.5: Review delegated waves
 
-2. Route any failure back to the implementer. **Three fix rounds maximum per phase.** A round is one fix dispatch plus the implementer's own re-run of the phase's automated criteria. Send it the failing criteria as it reported them; it appends a fix report to the same report file, carrying the re-run results in the same per-criterion form. Never fix a failure yourself — a controller fix pollutes the context you are keeping clean and skips the phase's verification path. At the cap, stop and give every still-failing criterion exactly one written disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user. A criterion you stop working on and do not list is a discarded criterion.
+Skip this step when the wave had no background phase. Otherwise run one integrated `code-reviewer` pass over the whole wave, not one pass per phase.
 
-   **Rounds 1 and 2 — resume the same implementer.** Its context is intact: it knows the phase, the code, and its own choices. Send it the open findings verbatim.
+Write `<run-dir>/wave-<N>-spec.md` with both phase sections plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of both phases' named files, including new files with `git add -N`, then undo the intent-to-add state. Run `git status --porcelain`; any changed file outside the union is a scope finding.
 
-   **Round 3 — dispatch a fresh `phase-implementer`** carrying the brief path, the report path, the open findings, and this framing: "A prior implementer attempted this phase twice; you own it now. Read the report file for what was tried." A loop that survives two resumes usually means the implementer cannot see its own problem, and it is looking straight at the attempt that anchors it.
+Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`; name `model: sonnet`. Never send the worker report or this conversation. Do not pre-judge the result.
 
-### Step 3.5: Review the phase
+Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-run affected criteria and re-review only the fix diff.
 
-Every phase's diff gets one independent `code-reviewer` pass before the phase is marked complete.
+A finding that contradicts the plan is the user's call: present both texts and ask which governs.
 
-**Build the review package as a file.** `git add -N` the phase's new files so they appear in the diff, then write one file with one simple command per line and undo the `-N` on the last line:
+Then close out every phase in the wave:
 
-```bash
-echo "## Files changed" > <run-dir>/phase-<N>-round-<R>.diff
-git diff --stat=200 HEAD -- <the files the phase names> >> <run-dir>/phase-<N>-round-<R>.diff
-echo "" >> <run-dir>/phase-<N>-round-<R>.diff
-echo "## Diff" >> <run-dir>/phase-<N>-round-<R>.diff
-git diff -U10 HEAD -- <the files the phase names> >> <run-dir>/phase-<N>-round-<R>.diff
-git restore --staged <the files the phase names>
-```
+1. Update progress in both the plan file and todos
+2. Check off completed items in the plan file itself using Edit
+3. **Determine whether to continue or stop** (in phased mode, always stop — see `<mode_selection>`):
 
-Keep them separate: a `{ ...; }` group is an unsafe compound that always prompts, no matter what `allowed-tools` says, while each line above matches a prefix rule on its own. `--stat=200` because `--stat` off a tty wraps at 80 columns and elides long paths to `...`.
-
-The wide context is what lets the reviewer judge a hunk without opening the file it came from. Do not `cat`, read, or echo the package — the path is what you pass on.
-
-**Check for unexpected files.** Run `git status --porcelain`: any changed file the phase did not name is a finding in its own right, carried into the dispatch as part of the changed surface.
-
-**Dispatch `code-reviewer`** via `Task`, with exactly five things: a one-paragraph factual description of what the phase was meant to build, taken from the phase's `### Overview` and not from this session's reasoning; the **path** to `<run-dir>/phase-<N>-brief.md`, which already holds the phase section and its `### Success Criteria` verbatim — the reviewer judges against the same artifact the implementer built from; the commit range; the review package path; and the review scope, named as `task-scoped`. Never the report file, never the implementer's concerns, never this conversation.
-
-Name `model: sonnet` on this dispatch. It is a deviation from the agent's `opus` frontmatter default, and the scope you just named is what earns it: one phase's diff, judged against one brief, is the narrow task-scoped review `sonnet` is ruled safe for — the scoping is the compensating structure, so a dispatch that widens the surface loses the justification along with it.
-
-**Never pre-judge.** Do not tell the reviewer what to ignore, and do not tell the verifier below that a finding is real, important, or already agreed. If the dispatch you wrote contains "do not flag", "at most Minor", "the plan chose", or "this one is definitely real", rewrite it.
-
-**Verify before acting.** Dispatch one `finding-verifier` per spec-compliance gap and per Critical or Important finding, all in parallel, before any fix round opens. Each dispatch carries exactly three things — the diff file path, the **path** to `<run-dir>/phase-<N>-brief.md`, which is what the finding is judged against and never travels as text, and that one finding verbatim with its `file:line`, its claim, and its claimed severity — and nothing else: not the reviewer's other findings, not its verdicts, not this conversation. One finding per dispatch, because an agent handed several at once applies one method to all of them, and that shared method is the agreement the fan-out exists to break.
-
-- Leave Minor findings unverified — they open no round, so a verdict changes nothing.
-- Dispatch one verifier per finding per round. A finding already verified this round is not re-dispatched; a second attempt is shopping for a refutation.
-- `REFUTED` clears the finding. `CONFIRMED` and `CANNOT DETERMINE` both leave it blocking, because a wrongly-refuted finding leaves nothing behind to catch it.
-- Act on the severity the verifier ruled, not the one claimed. A confirmed finding the verifier puts lower moves to that level — a downgrade to Minor means it no longer opens a round.
-- Record every refuted finding in the plan file under the phase, with the refutation that killed it. A refuted finding that vanishes is indistinguishable from one that was dropped.
-
-**Act on the verdicts.** A spec gap or a Critical or Important finding still blocking after verification opens a fix round. Minor findings are recorded in the plan file under the phase and do not open a round. `⚠️ CANNOT VERIFY` is yours to resolve — you hold the cross-phase context the reviewer lacks; supply the evidence in the next dispatch, or rule on it and write the ruling into the plan file.
-
-**A finding that contradicts the plan's own text is the user's call.** Present the finding beside the plan text and ask which governs. Do not dismiss the finding because the plan mandates it, and do not dispatch a fix that contradicts the plan without asking.
-
-**Re-review is scoped.** Each round writes a fresh diff over the fix range and names the changed surface. New Critical or Important breakage in the fix diff joins the open findings; observations outside the surface go to the plan file, never into the round count.
-
-Then close out the phase:
-
-3. Update progress in both the plan file and todos
-4. Check off completed items in the plan file itself using Edit
-5. **Determine whether to continue or stop** (in phased mode, always stop — see `<mode_selection>`):
-
-   Read the phase's success criteria in the plan:
-   - If `#### Manual Verification` is **empty, absent, or says "(none)"** → **continue to next phase**
-   - If `#### Manual Verification` has items that **block the next phase** → **stop and present**:
+   Read every phase's success criteria in the wave:
+   - If every `#### Manual Verification` is **empty, absent, or says "(none)"** → **continue to the next wave**
+   - If any `#### Manual Verification` item **blocks the next wave** → **stop and present**:
 
      ```
      Phase [N] Complete - Manual Verification Required
@@ -264,10 +218,10 @@ Then close out the phase:
      Manual verification needed before continuing:
      - [List blocking manual items from the plan]
 
-     Let me know when verified so I can proceed to Phase [N+1].
+     Let me know when verified so I can proceed to the next wave.
      ```
 
-   - If `#### Manual Verification` has items that **do NOT block the next phase** (e.g., visual checks, UX polish) → **defer them, continue to next phase**
+   - If manual items do **not** block the next wave (e.g., visual checks, UX polish) → **defer them and continue**
 
    At the end of the final phase (or when a blocking manual check is reached), present all deferred manual checks grouped by phase:
 
@@ -284,7 +238,7 @@ Then close out the phase:
    - [Skipped edge cases, deferred work, unverified paths — or "(none)"]
    ```
 
-6. **For plans without auto/manual split** (older format): Treat all success criteria as automated. Continue without stopping.
+4. **For plans without auto/manual split**: Treat all success criteria as automated. Continue without stopping.
 
 Do not check off manual verification items until confirmed by the user.
 
@@ -292,11 +246,11 @@ Do not check off manual verification items until confirmed by the user.
 
 When something isn't working as expected:
 
-- First, check what the implementer's report and the reviewer's findings already say — reading the phase's code yourself is the read you delegated to avoid
+- Inspect the relevant live code together with any implementer report and reviewer findings
 - Consider if the codebase has evolved since the plan was written
 - Classify it with `<deviation_handling>` — that table decides whether to fix it or stop and ask
 
-Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` and `code-reviewer` are exempt from that judgment call: dispatching them is how every phase gets written (Step 2) and reviewed (Step 3.5). When spawning a research sub-task:
+Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` is reserved for the scheduled background lane; `code-reviewer` runs only for a delegated wave. When spawning a research sub-task:
 
 | Agent                     | Purpose                            | When to Use                                        |
 | ------------------------- | ---------------------------------- | -------------------------------------------------- |
@@ -375,7 +329,7 @@ the body outgrows one paragraph, stop and tell the user.
 
 More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Aim for the smallest high-signal token set per phase: the relevant plan section, the directly-affected files, and the references actually needed. Don't carry forward full history, prior-phase output, or unused tool results.
 
-Before starting a new phase, re-read the plan's checkbox state and run `git log --oneline`. The plan file and git history are the source of truth — not conversation memory or a compaction summary. If context is growing large, say so at the next phase boundary and offer the user a fresh session with the plan path as the entry point — a skill cannot run `/compact` itself. Persistent phase constraints belong in the plan file (and CLAUDE.md), since compaction can drop them from history.
+Before starting a new wave, re-read the plan's checkbox state and run `git log --oneline`. The plan file and git history are the source of truth — not conversation memory or a compaction summary. If context is growing large, say so at the next wave boundary and offer the user a fresh session with the plan path as the entry point — a skill cannot run `/compact` itself. Persistent phase constraints belong in the plan file (and CLAUDE.md), since compaction can drop them from history.
 
 </context_budget>
 
@@ -391,38 +345,39 @@ Before starting a new phase, re-read the plan's checkbox state and run `git log 
 
 <anti_patterns>
 
-| Excuse                                                     | Reality                                                                                                                                                                         |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "The plan clearly forgot this — I'll just add it."         | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                                                     |
-| "I'll commit both phases together, they're related."       | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                                                       |
-| "The user will obviously approve this phase."              | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                                                                |
-| "I'll read the later phases' files now while I'm in here." | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                                                       |
-| "I'll re-run the criteria myself, to be sure."             | The implementer ran them and its report names each command and result. Your re-run adds its whole output to the context you delegated to keep clean, and proves the same thing. |
-| "It's a one-line fix, dispatching is overhead."            | A controller fix lands in the context you are keeping clean and never passes the phase's verification path. Dispatch it.                                                        |
-| "I'll read the phase's files so I can check the work."     | Then you hold the phase's whole read set and the delegation bought nothing. The report says what changed; the diff proves it.                                                   |
-| "The phase was small, skip the review."                    | Then nothing independent saw the diff, and checking it yourself is the read you delegated to avoid. Every phase gets one pass.                                                  |
-| "This finding is obviously real — verifying it is waste."  | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.                                                |
-| "It was refuted, so there's nothing to record."            | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job.                                     |
-| "One more round and it converges."                         | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                                |
+| Excuse                                                          | Reality                                                                                                                                     |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The plan clearly forgot this — I'll just add it."              | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                 |
+| "I'll commit both phases together, they're related."            | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                   |
+| "The user will obviously approve this phase."                   | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                            |
+| "I'll read the later phases' files now while I'm in here."      | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                   |
+| "The plan has no schedule, but these phases look independent."  | Parallel writes need an explicit reviewed claim. Run them in the main thread instead of inferring ownership during execution.               |
+| "I'll launch the worker now and wait."                          | A background lane exists only to overlap useful main-thread work. If there is no main phase to execute, do not dispatch it.                 |
+| "The files are disjoint, so both lanes can run the full suite." | Both lanes still share one worktree. Run broad and acceptance checks only after the join.                                                   |
+| "The schedule says parallel, so I don't need to validate it."   | Plans drift. A stale file or interface list turns safe overlap into a collision; downgrade the wave instead.                                |
+| "This finding is obviously real — verifying it is waste."       | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.            |
+| "It was refuted, so there's nothing to record."                 | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job. |
+| "One more round and it converges."                              | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                            |
 
 Stay focused on implementing what was actually planned.
 
 </anti_patterns>
 
 <constraints>
-- Read the plan's preamble, its Global Constraints, and every phase's `### Assumptions` before starting — read a phase's body only when writing its brief
-- Write no source file yourself: every change to a file a phase names is made by a dispatched `phase-implementer`, including every fix round
-- Don't re-run an automated criterion the implementer reported passing — its report is the evidence, and your re-run lands in the context the delegation exists to protect
-- Dispatch `code-reviewer` on every phase's review package before marking that phase complete, naming the scope as `task-scoped` — the review is what lets you not read the diff yourself
+- Read the plan's preamble, Global Constraints, Execution Schedule when present, and every phase's `### Assumptions` before starting — read a phase body when its wave starts
+- Keep one main-thread phase in every wave; dispatch at most one background implementer, and only from a valid explicit schedule
+- If asynchronous dispatch is unavailable, or the schedule is absent or invalid, execute the affected phases in the main thread
+- Join every lane before acceptance checks, integration fixes, review, progress updates, or the next wave
+- Dispatch one task-scoped `code-reviewer` for a delegated wave and none for a main-only wave
 - Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
-- Implement one phase at a time — complete verification before moving to the next
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria
-- Continue to the next phase automatically when manual verification is empty or absent — stopping is the exception, not the rule
-- When manual verification exists but doesn't block the next phase, defer it — present all deferred checks at the end grouped by phase
+- Continue to the next wave automatically when manual verification is empty or absent — stopping is the exception, not the rule
+- When manual verification exists but doesn't block the next wave, defer it — present all deferred checks at the end grouped by phase
 
 Apply in phased mode:
 
+- Execute every phase in the main thread — do not dispatch `phase-implementer`
 - Always stop after each phase — never auto-continue to the next phase
 - Wait for explicit user confirmation before committing — present the commit plan and the phase results first, then wait
 - Don't stage all files — use specific file names for each phase's commit; never `git add .` or `git add -A`

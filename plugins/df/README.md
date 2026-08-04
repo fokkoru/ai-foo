@@ -24,9 +24,9 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 | Skill            | Description                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `df:research`    | Comprehensive codebase research with parallel sub-agents, opening with a blind spot pass                                                                              |
-| `df:planning`    | Create detailed implementation plans with thorough research                                                                                                           |
+| `df:planning`    | Create detailed implementation plans with thorough research and explicit execution waves                                                                              |
 | `df:iterate`     | Update existing plans based on feedback                                                                                                                               |
-| `df:implement`   | Execute plans with verification and phase-by-phase progress (continuous or phased mode)                                                                               |
+| `df:implement`   | Execute plans in the main thread with one bounded background phase when the plan declares safe overlap                                                                |
 | `df:validate`    | Verify implementation against plan, identify issues; saves a report with an explainer and comprehension check                                                         |
 | `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                                                   |
 | `df:handoff`     | Create handoff document for session transfer                                                                                                                          |
@@ -47,7 +47,7 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 | `finding-verifier`        | Refute one code-review finding; rules on its severity     |
 | `codex-advisor`           | Fast second opinion from Codex on one narrow decision     |
 | `architecture-advisor`    | Review a solution design before it becomes code           |
-| `phase-implementer`       | Implement one plan phase from a brief, in isolation       |
+| `phase-implementer`       | Implement one scheduled background phase from a brief     |
 | `voice-prober`            | Grade a draft sentence by sentence against a voice sample |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.

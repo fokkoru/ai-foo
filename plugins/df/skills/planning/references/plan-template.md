@@ -70,6 +70,15 @@ Every phase's requirements implicitly include this section.
 
 [High-level strategy and reasoning]
 
+## Execution Schedule
+
+Fill the table from the approved plan outline. Put `(none)` in the background column when no safe overlap exists.
+
+| Wave | Main-thread phase | Background phase |
+| ---- | ----------------- | ---------------- |
+| 1    | Phase [N]         | Phase [N]        |
+| 2    | Phase [N]         | (none)           |
+
 ---
 
 ## Phase 1: [Descriptive Name]
