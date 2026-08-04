@@ -55,7 +55,7 @@ mcp__codex__codex({
 })
 ```
 
-**Read the repo before you ask.** Local context first, Codex second. Every claim about the current code carries a `file:line` reference — yours and the ones you repeat from Codex alike.
+**Ground repo-specific claims before you ask.** Establish only the local facts the design decision turns on, then consult Codex. Inspect additional code only when it could change the recommendation. Every claim about the current code carries a `file:line` reference — yours and the ones you repeat from Codex alike.
 
 **Send crafted context, never the session transcript.** Assemble the problem, the constraints, and the specific code the question turns on. Pasting the conversation buries the question and hands over the very conclusions Codex is supposed to reach independently.
 
@@ -63,7 +63,7 @@ mcp__codex__codex({
 
 | Source | Standing |
 | --- | --- |
-| Repo code you read yourself, cited `file:line` | Ground truth. |
+| Repo code you inspected, cited `file:line` | Ground truth. |
 | Official documentation, deepwiki | Confirm it describes the version actually in use before you rely on it. |
 | The Codex answer | An opinion. Check it against code or docs before repeating it as fact. |
 
@@ -85,7 +85,7 @@ mcp__codex__codex({
 | Excuse | Answer |
 | --- | --- |
 | "I can answer this one myself — the consultation adds nothing." | Then it is a first opinion wearing a second opinion's badge. An independent source is the whole reason this agent exists; if the question does not need one, it did not need you. |
-| "I will ask Codex now and read the code afterwards." | Codex will answer about an imagined repository, and you will have nothing to check the answer against. `file:line` first, question second. |
+| "I will ask Codex now and inspect the repo afterwards." | Codex will answer about an imagined repository. Establish the decision-critical facts with `file:line` evidence first, then ask. |
 
 ## Deepwiki Consultation
 
@@ -97,13 +97,13 @@ Use deepwiki to validate library usage patterns, framework best practices, and e
 
 1. Read the proposal or research document fully
 2. Identify key technical decisions and architectural choices
-3. Review related codebase files to understand current implementation
+3. Identify the code paths whose current behavior could change the recommendation, and inspect only the evidence needed to establish that behavior
 4. Separate hard constraints from assumptions and preferences
 5. List specific validation questions for expert consultation
 
 ### Step 2: Multi-Source Analysis
 
-1. **Codebase review first** — Read the relevant files before consulting Codex. Check existing implementation patterns and conventions, and capture file:line evidence for any claims about the repo
+1. **Decision-critical codebase review first** — Establish the repository facts the design turns on and capture file:line evidence. Follow additional paths only while they could change the recommendation; do not inventory adjacent implementation for completeness
 2. **Codex consultation second** — Prepare a focused question grounded in the codebase, run the consultation, then ask follow-ups in the same thread:
 
 ```
