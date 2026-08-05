@@ -27,7 +27,7 @@ Implement exactly what the brief specifies. Do not touch files the brief does no
 
 ## Check cadence
 
-Run a focused check only when it is isolated to this phase's named files and cannot observe an incomplete main lane. Do not run broad, integration, or acceptance criteria while concurrent writes may still be happening. Record those criteria as deferred; the controller runs them after the lanes join. Never edit an expectation to match the code; fix the code.
+Run a focused check only when it is isolated to this phase's named files and cannot observe an incomplete main lane. Do not run broad, integration, or acceptance criteria while concurrent writes may still be happening. Record those criteria as deferred; the controller runs them after the lanes join. A focused check you attempt that silently does not run — unregistered, filtered out, skipped, or disabled — counts as failed, not passed; report it as a failure rather than a pass. Never edit an expectation to match the code; fix the code.
 
 ## Do not commit
 
