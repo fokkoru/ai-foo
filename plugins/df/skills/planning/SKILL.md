@@ -1,14 +1,14 @@
 ---
 name: planning
-description: Use when creating an implementation plan for the df workflow — runs between df:research and df:implement. Produces a phased plan with parallel research agents and phased success criteria.
+description: Use when creating a decision-complete implementation plan between df:research and df:implement, with main-thread analysis and adaptive delegation for independent gaps.
 disable-model-invocation: true
 allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
-Create a detailed implementation plan through interactive research and collaborative design.
+Create a decision-complete implementation plan grounded in authoritative task artifacts and targeted live-code evidence.
 
-Work through an iterative process — be skeptical, thorough, and collaborate with the user to produce high-quality technical specifications.
+Keep requirements, consequential decisions, the central technical analysis, and the final document in the main thread. Use background agents only for independent gaps whose parallel investigation improves the plan.
 
 </objective>
 
@@ -22,289 +22,133 @@ If you identify a beneficial code change, document it in the plan document and s
 </artifact_scope>
 
 <quick_start>
-If a file path or task description is provided, skip the prompt and begin at Step 1.
+If a file path or task description is provided, begin at Step 1. An explicit invocation of this skill is already the user's decision to create a plan.
 
-If no task description is provided, ask the user for:
+If no task description is provided, ask the user for the task or ticket, relevant constraints, and links to related research or previous plans. Then wait for input.
 
-1. The task/ticket description (or reference to a ticket file)
-2. Any relevant context, constraints, or specific requirements
-3. Links to related research or previous implementations
-
-Then wait for input before proceeding.
+1. Read authoritative task artifacts fully
+2. Settle the end state and acceptance criteria
+3. Inspect the central implementation path in the main thread
+4. Delegate only independent technical gaps, then continue main-thread analysis
+5. Resolve consequential decisions and shape the phases
+6. Write and fully self-review the plan document
 
 </quick_start>
 
-<plan_shaping>
-
-Before diving into detailed steps, ultrathink about how to shape the planning approach:
-
-### Define the Solution Envelope
-
-Each of these becomes a named section of the plan. Shape it here, write it there.
-
-- **What must be true when this is done** → `### End State`
-- **How it is proven to work, end to end** → `### Acceptance Criteria`
-- **Rules no phase may break** → `## Global Constraints`
-- **What NOT to build** → `## What We're NOT Doing`
-
-### Leave Room for Implementation
-
-- Specify **outcomes**, not exact steps
-- Define **interfaces**, not internals
-- Set **quality standards**, not specific patterns
-- Provide **guardrails**, not detailed instructions
-
-### Right-Size the Phases
-
-A phase is the smallest unit that carries its own verification and is worth an independent reviewer's gate.
-
-- Fold setup, configuration, scaffolding, and documentation steps into the phase whose deliverable needs them.
-- Split only where a reviewer could meaningfully reject one phase while approving its neighbour.
-- Each phase ends with an independently verifiable deliverable.
-
-This is a gate test, not a size limit. Phase count is an outcome of the test.
-
-### Known Rabbit Holes
-
-Document complexity traps upfront:
-
-- Premature optimization areas
-- Over-engineering temptations
-- Scope creep risks
-- Technical tangents to avoid
-
-</plan_shaping>
-
 <workflow>
 
-### Step 1: Context Gathering & Initial Analysis
+### Step 1: Read Task Context and Set the Goal
 
-1. **Read the provided source documents completely**:
-   - Research documents
-   - Related implementation plans
-   - Tickets or specifications supplied as files
-   - Treat them as the requirements source for planning
+Read every explicitly referenced ticket, specification, research document, and previous implementation plan completely in the main context. Treat these artifacts as the requirements and decision record for planning.
 
-2. **Check the task is plan-sized before planning it**:
+For every other repository file — including source, tests, logs, JSON, and generated data — retrieve only the evidence needed for the planning question. A mentioned path does not by itself require a complete read.
 
-   A plan earns its cost when the approach is uncertain, when the change spans several files, or when the code being changed is unfamiliar. If you could describe the finished diff in one sentence and you already know which lines it touches, none of those hold and the plan is overhead.
+Draft `### End State` and `### Acceptance Criteria` from the task artifacts before investigating the codebase. Ask the user only when all of these are true:
 
-   Say so once, in one line, and let the user decide:
+- the artifacts and repository cannot answer the question
+- different answers materially change what will be built or how completion is observed
+- choosing a default without the user would create a meaningful product, compatibility, or architecture risk
 
-   ```
-   This looks like a one-sentence diff: [the sentence]. A plan would cost more than the change it describes.
-   Reply "plan anyway" and I'll write one — otherwise make the change directly, since df:implement needs a plan to execute.
-   ```
+Put the recommended answer first and batch independent questions into one message. Do not ask for confirmation of facts that the repository can establish.
 
-   Take the answer at face value and do not re-argue it. If the user takes the offer, stop and write nothing — this skill's only output is a plan document, so the change itself stays with the user. If no answer comes — a headless run, or a runtime that denies user prompts — write the plan: an unwanted plan wastes tokens, a missing one loses the work.
+If the runtime cannot ask, the user declines to decide, or no answer arrives, choose the safest recommended default. Mark affected End State or Acceptance Criteria lines `(unverified)` and carry those exact marks into the plan.
 
-3. **Settle `### End State` and `### Acceptance Criteria` before the research spawn**:
+### Step 2: Establish the Main Analysis Lane
 
-   Try to write `### End State` and `### Acceptance Criteria` (see `references/plan-template.md`) from the source material alone — the ticket, the research document, the task description. This is a test of the material, not of your confidence: either the source says what must be true when this is done and how that is proven, or it does not.
+Run a lightweight `Grep` and `Glob` scope pass only far enough to identify the central implementation path, affected boundaries, and independent unknowns. Findings from this pass are main-thread evidence; do not reserve codebase understanding for sub-agents.
 
-   If both are writable, continue to the next step and ask nothing.
+Use an existing research document as a high-signal map rather than repeating its exploration. Cross-check claims that are high-impact, surprising, contradicted by the current code, or plausibly stale. Prefer targeted symbol, interface, and configuration checks over reading every referenced source file.
 
-   If either is not, ask now, before any research — this is the one class of question the codebase provably cannot answer, and its value is spent once execution is under way. Recommended answer first, always. Batch the gaps into **one** message when their answers are independent. Ask one at a time when one answer determines what the next question is — a batch whose second question is void once the first is answered wastes the user's read. The batched form:
+Investigate the central path in the main thread. Establish:
 
-   ```
-   Before I load the codebase, [N] things the code can't tell me:
+- the relevant current behavior and constraints
+- the smallest implementation shape that reaches the End State
+- affected files and observable interfaces
+- material assumptions with `file:line` evidence
+- verification that proves the finished behavior
 
-   1. [Gap] — Recommended: [answer], because [reason]. Alternatives: [answer], [answer].
-   2. [Gap] — Recommended: [answer], because [reason]. Alternatives: [answer], [answer].
-   ```
+### Step 3: Delegate Independent Gaps Adaptively
 
-   Treat the reply as the answer to what you asked. A user answering a question is not correcting you and not rejecting the approach — change nothing you were not asked about. The settled lines are the plan's `### End State` and `### Acceptance Criteria` — carry them into Step 4 verbatim rather than logging the exchange.
+Choose the smallest research shape after the main-thread scope pass:
 
-   If no answer comes — a headless run, a runtime that denies user prompts, or the user says to proceed — write both sections from your best reading of the source, mark each such line `(unverified)`, and carry those marks into the plan. Never drop the sections and never present a guess as settled.
+- **Narrow task or sufficient research artifact**: use no sub-agent.
+- **Independent technical gaps remain**: dispatch up to two background agents with distinct, self-contained questions.
+- **A new blocking gap appears later**: dispatch another agent only when it could not have been part of the earlier lanes and cannot be settled with a few targeted main-thread tool calls.
 
-4. **Spawn initial research tasks to gather context**:
-   With the end state settled, use specialized agents to research in parallel:
-   - Use the **codebase-locator** agent to find all files related to the task
-   - Use the **codebase-analyzer** agent to understand how the current implementation works
-   - If relevant, use the **thoughts-locator** agent to find any existing thoughts documents about this feature
+Create a TodoWrite research plan only when there is more than one lane to track. Give one owner to each lane and do not duplicate questions.
 
-   These agents will:
-   - Find relevant source files, configs, and tests
-   - Trace data flow and key functions
-   - Return detailed explanations with file:line references
+Dispatch independent background lanes together, then continue the central analysis immediately. Do not launch agents and leave the main thread idle. If asynchronous dispatch is unavailable, complete the main lane first and then investigate only the remaining gaps.
 
-5. **Analyze and verify understanding**:
-   - Cross-reference the task requirements with actual code
-   - Identify any discrepancies or misunderstandings
-   - Record each assumption the plan will rest on together with the `file:line` that supports it — these become the phases' `### Assumptions` blocks
-   - Determine true scope based on codebase reality
+Resolve a lane when the plan needs its conclusion. If an agent fails or returns no useful evidence, narrow the question and investigate it in the main thread; do not repeat the same dispatch unchanged. Before writing the plan, resolve every delegated lane through findings, main-thread recovery, or an explicitly recorded uncertain assumption.
 
-6. **Present informed understanding and focused questions**:
+### Step 4: Resolve Facts and Consequential Decisions
 
-   ```
-   Based on the task and my research of the codebase, I understand we need to [accurate summary].
+Classify user feedback before reacting:
 
-   I've found that:
-   - [Current implementation detail with file:line reference]
-   - [Relevant pattern or constraint discovered]
-   - [Potential complexity or edge case identified]
+- Treat product intent, priorities, and preferences as authoritative user decisions.
+- Verify claims about current code with a targeted main-thread check. Delegate only if the correction exposes a genuinely independent technical gap.
 
-   Questions that my research couldn't answer:
-   - [Specific technical question that requires human judgment]
-   - [Business logic clarification]
-   - [Design preference that affects implementation]
-   ```
+Present design options only when more than one viable choice remains and the choice materially changes the resulting system. Lead with a recommendation and explain the concrete tradeoff. Do not add generic checkpoints for confirming your understanding, proposed approach, or phase structure; proceed when no consequential user decision remains.
 
-   Facts are yours to find; decisions are the user's to make. Never ask what the codebase can tell you — look it up. Always put a decision to the user, however much context you have already loaded, when any of these holds:
-   - being wrong is not cheaply reversible
-   - a different answer changes what you would build, not just how you would word it
-   - the user can answer from what they already know, without going off to research it themselves
+Record each defaulted but consequential decision under `### Decisions Most Likely to Change`. A decision-complete plan may acknowledge uncertainty, but it must still select one implementable path.
 
-### Step 2: Research & Discovery
+### Step 5: Shape the Plan
 
-After getting initial clarifications:
+Define the solution envelope before the phases:
 
-1. **If the user corrects any misunderstanding**:
-   - Don't just accept the correction
-   - Spawn new research tasks to verify the correct information
-   - Read the specific files/directories they mention
-   - Only proceed once the facts are verified
+- **What must be true when this is done** → `### End State`
+- **How it is proven end to end** → `### Acceptance Criteria`
+- **Rules no phase may break** → `## Global Constraints`
+- **What not to build** → `## What We're NOT Doing`
+- **Complexity traps to avoid** → `## Rabbit Holes to Avoid`
 
-2. **Create a research todo list** using TodoWrite to track exploration tasks
+Specify outcomes, affected boundaries, and consequential interfaces. Include exact signatures, types, pseudocode, or code fragments only when they lock a non-obvious decision that the implementer must not reinterpret. Do not prescribe incidental internals that the implementer can derive safely from the named files and contracts.
 
-3. **Spawn parallel sub-tasks for comprehensive research**:
-   - Create multiple Task agents to research different aspects concurrently
-   - Use the right agent for each type of research (see Agent Selection section)
+Make each phase the smallest independently verifiable deliverable worth a review gate. Fold setup, scaffolding, configuration, tests, and documentation into the phase whose outcome needs them. Split only when a reviewer could reject one phase while approving another.
 
-4. **Wait for all sub-tasks to complete** before proceeding
+For each phase:
 
-5. **Present findings and design options**:
+- name affected files or file groups and the intended outcome
+- name `Consumes` and `Produces` only when another phase depends on that contract
+- record material assumptions with a `source: file:line`, consequence if wrong, and confidence
+- separate automated verification from manual judgment; write `(none)` when no manual check is needed
 
-   ```
-   Based on my research, here's what I found:
+Build `## Execution Schedule` with every phase exactly once, one main phase and at most one background phase per wave, disjoint same-wave files, and every consumer scheduled after its producers. Use `(none)` when no safe background phase exists.
 
-   **Current State:**
-   - [Key discovery about existing code]
-   - [Pattern or convention to follow]
+Keep the plan independently resumable from the relevant phase, Global Constraints, and affected files. If a phase needs broad prior conversation context or unrelated source files, narrow or split it.
 
-   **Design Options:**
-   1. [Option A] - [pros/cons]
-   2. [Option B] - [pros/cons]
+### Step 6: Write and Self-Review the Plan
 
-   **Open Questions:**
-   - [Technical uncertainty]
-   - [Design decision needed]
+Gather metadata immediately before writing:
 
-   Which approach aligns best with your vision?
-   ```
+- Current date/time with timezone: `date +"%Y-%m-%d %H:%M:%S %Z"`
+- Author name: `git config user.name`
+- Git commit hash: `git rev-parse HEAD`
+- Current branch: `git rev-parse --abbrev-ref HEAD`
+- Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
-### Step 3: Plan Structure Development
+Read `references/plan-template.md` fully and use it as the document skeleton. Duplicate its phase section for every phase and omit optional interface details that do not apply.
 
-Once aligned on approach:
+Read the finished plan completely and fix every issue found in this review:
 
-1. **Create initial plan outline**:
+1. **Spec coverage** — every End State line maps to a phase, and every Acceptance Criteria item proves finished behavior rather than completion of a step.
+2. **Decision completeness** — no `TBD`, `TODO`, bracketed instruction, ellipsis, “similar to above,” or unresolved choice survives. Preserve only the Step 1 `(unverified)` marks.
+3. **Evidence quality** — every material assumption cites current `file:line` evidence, and high-impact or stale research claims were checked against live code.
+4. **Phase consistency** — every consumed contract is produced earlier, each phase contains enough context to implement, and the execution schedule is valid.
+5. **Verification quality** — automated checks are runnable or objectively inspectable, manual checks require genuine human judgment, and together they prove the End State.
 
-   ```
-   Here's my proposed plan structure:
+If on main/master or the commit is pushed, generate GitHub permalinks for source references.
 
-   ## Overview
-   [1-2 sentence summary]
-
-   ## Implementation Phases:
-   1. [Phase name] - [what it accomplishes]
-   2. [Phase name] - [what it accomplishes]
-   3. [Phase name] - [what it accomplishes]
-
-   ## Execution Waves:
-   1. Main: Phase [N] | Background: Phase [N] or (none)
-   2. Main: Phase [N] | Background: Phase [N] or (none)
-
-   Does this phasing and execution schedule make sense? Should I adjust the order or granularity?
-   ```
-
-2. **Get feedback on structure** before writing details
-
-### Step 4: Detailed Plan Writing
-
-After structure approval:
-
-1. **Gather metadata before writing the document**:
-   - Get current date/time with timezone: `date +"%Y-%m-%d %H:%M:%S %Z"`
-   - Get author name: `git config user.name`
-   - Get git commit hash: `git rev-parse HEAD`
-   - Get current branch name: `git rev-parse --abbrev-ref HEAD`
-   - Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
-
-2. **Use the plan template**: read `references/plan-template.md` (in this skill's directory) fully and use it as the document skeleton.
-
-3. **Self-review the finished plan before presenting it.** Read it once, checking exactly five things:
-   - **Spec coverage** — every line of `### End State` maps to at least one phase, and every `### Acceptance Criteria` item is provable once the last phase is done. Name any that are not.
-   - **Placeholders** — no `TBD`, `TODO`, `[bracketed instruction]`, `...`, "similar to above", or "etc." survives in `### End State`, `### Acceptance Criteria`, or any phase's `### Assumptions`, `### Changes Required`, or `### Success Criteria`. Every value is concrete. The one exception is an `### End State` or `### Acceptance Criteria` line the Step 1 input gate could not get answered: it ships carrying its `(unverified)` mark. Two field-specific forms count as placeholders: an `### Acceptance Criteria` list that restates phase steps rather than proving the finished feature works, and a phase whose `### Assumptions` reads `(none)` while its `### Changes Required` edits a file no earlier phase produced — editing a file this plan has not already characterized means holding assumptions about what is in it.
-   - **Interface consistency** — every name and type in a phase's `Consumes` appears verbatim in some earlier phase's `Produces`.
-   - **Execution schedule** — every phase appears exactly once; every wave has one main phase and at most one background phase; same-wave phases name disjoint files and do not consume each other's outputs; every consumed output is produced in an earlier wave.
-   - **Confidence rollup** — `### Decisions Most Likely to Change` names at most three lines, each pointing at a phase that exists. Every assumption marked `Confidence: Unclear` appears there unless the section is already at three.
-
-   Fix what the review finds, then present.
-
-If on main/master branch or commit is pushed, generate GitHub permalinks for file references.
-
-### Step 5: Sync and Review
-
-1. **Present the draft plan location**:
-
-   If any `### End State` or `### Acceptance Criteria` line still carries `(unverified)`, list those lines first and ask the user to confirm or correct them — `df:implement` does not read the mark, so this is the last point at which a guessed goal can be caught.
-
-   ```
-   I've created the initial implementation plan at:
-   `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
-
-   Please review it and let me know:
-   - Are the phases properly scoped?
-   - Are the success criteria specific enough?
-   - Any technical details that need adjustment?
-   - Missing edge cases or considerations?
-   ```
-
-2. **Iterate based on feedback** - be ready to:
-   - Add missing phases
-   - Adjust technical approach
-   - Clarify success criteria (both automated and manual)
-   - Add/remove scope items
-
-3. **Continue refining** until the user is satisfied
+Present the plan path and a concise summary. If any `(unverified)` lines remain, list them first and ask the user to confirm or correct them. Otherwise invite focused corrections without requiring another approval checkpoint.
 
 </workflow>
 
 <success_criteria>
 
-- Unless the user accepted the skip offer, plan file created at `thoughts/plans/YYYY-MM-DD_HHMM_topic.md` with all sections populated
-- Each phase has specific file:line references, concrete changes, and separated automated/manual success criteria
-- `## Execution Schedule` assigns every phase to one valid main or background slot
-- User confirms plan structure, phasing, and technical approach
+- A reader can implement the selected path from the plan without making an unstated product or architecture decision
+- `df:implement` can execute every phase from the document and verify the final End State without recovering this conversation
 
 </success_criteria>
-
-<success_criteria_guidelines>
-
-Success criteria exist at two levels and answer different questions:
-
-- **Plan level** — `### Acceptance Criteria`, under `## Desired End State`. Does the finished feature work? An independent reviewer runs these without reading the phases.
-- **Phase level** — `### Success Criteria`, inside each phase. Did this phase's work happen correctly?
-
-A phase-level check that a file now contains a function is not evidence that the feature works. Never let the phase-level list stand in for the plan-level one.
-
-Within a phase, always separate success criteria into two categories:
-
-1. **Automated Verification** (can be run by execution agents):
-   - Commands that can be run: `make test`, `npm run lint`, etc.
-   - Specific files that should exist
-   - Code compilation/type checking
-   - Automated test suites
-
-2. **Manual Verification** (requires human testing):
-   - UI/UX functionality
-   - Performance under real conditions
-   - Edge cases that are hard to automate
-   - User-facing behaviour only a person can judge
-
-The presence or absence of manual verification items controls whether the implementer pauses after a phase. Only add manual checks where human judgment is genuinely needed.
-
-</success_criteria_guidelines>
 
 <agent_selection>
 
@@ -348,28 +192,17 @@ Select the right agent for each type of investigation:
 
 <anti_patterns>
 
-- Tracing every single import/dependency chain
-- Analyzing generated or vendored code (node_modules, build/, dist/, .git/)
-- Researching test implementations unless specifically asked
-- Exploring unrelated "interesting" findings during research
-- Understanding entire subsystems when only a component is needed
-- Over-specifying implementation details that should be left to the implementer
-
-Stay focused on planning what was actually requested.
+- Tracing every import or dependency chain
+- Analyzing generated or vendored code
+- Researching test internals unless they affect the required behavior or verification strategy
 
 </anti_patterns>
 
-<context_budget>
-
-More context isn't automatically better — accuracy and recall degrade as the token count grows ("context rot"). Scope each phase so it can be implemented from the smallest high-signal token set: the relevant plan section, the directly-affected files, and the references actually needed. Each phase should be independently resumable from the plan section + affected files alone, without prior-phase output or full conversation history. If a phase is large or sprawling, split it into smaller phases or separate plans.
-
-</context_budget>
-
 <constraints>
-- Your only output artifact is a plan document in thoughts/plans — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
-- Settle `### End State` and `### Acceptance Criteria` before spawning any research agent — a goal question asked after the context load is asked too late to be worth answering
-- Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
-- Gather metadata before writing the document — git state should be captured at planning time, not after
-- Don't write the plan with placeholder values or unresolved questions — plans are permanent artifacts that will be executed by other agents. The one exception is an `### End State` or `### Acceptance Criteria` line the input gate could not get answered: it ships marked `(unverified)`, never dropped and never presented as settled
+
+- Write only the plan document under thoughts/plans; document beneficial code changes instead of making them
+- Settle End State and Acceptance Criteria before delegating technical research
+- Gather git metadata immediately before writing the document
+- Produce one concrete, implementable path with no placeholders or unresolved choices; only Step 1 End State or Acceptance Criteria lines may carry `(unverified)`
 
 </constraints>

@@ -24,7 +24,7 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 | Skill            | Description                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `df:research`    | Main-first codebase research with adaptive parallel sub-agents for independent areas                                                                                  |
-| `df:planning`    | Create detailed implementation plans with thorough research and explicit execution waves                                                                              |
+| `df:planning`    | Create decision-complete implementation plans with main-thread analysis and adaptive delegation                                                                       |
 | `df:iterate`     | Update existing plans based on feedback                                                                                                                               |
 | `df:implement`   | Execute plans in the main thread with one bounded background phase when the plan declares safe overlap                                                                |
 | `df:validate`    | Verify implementation against plan, identify issues; saves a report with an explainer and comprehension check                                                         |
