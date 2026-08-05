@@ -20,7 +20,7 @@ This skill runs in one of two modes:
 
 **Phased**: enabled ONLY when the user explicitly asks for it ("phased", "phase by phase", "commit per phase"). If the plan itself calls for a commit per phase but the user did not specify a mode, ask one question before starting — "The plan calls for per-phase commits — run in phased mode?" — never enable phased mode silently.
 
-In phased mode, each phase is a discrete unit: implement → verify → commit → next. Always stop after each phase and present a summary:
+In phased mode, each phase is a discrete unit: implement → verify → commit → next. That commit is gated by the phase's own success criteria — the plan's `### Acceptance Criteria` run once, before the final phase's commit, so an intermediate commit can be red against a repo-wide check that the finished branch passes. Always stop after each phase and present a summary:
 
 ```
 ## Phase [N] Complete
@@ -155,7 +155,7 @@ Before writing any code: if the plan's approach has a clearly better alternative
 
 **Start the background lane only when it creates overlap.** At the first delegated wave, create one scratch directory with `mktemp -d` and keep it for the run. Write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Give the brief a `## Concurrently edited` section naming the main phase's files, so the worker can tell which of its citations point at ground you are moving. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
 
-**Work the main lane immediately.** Validate the main phase's assumptions and consumed interfaces against live code, then implement it. Do not launch a worker and wait for it before making progress. Respect the phase's named files; classify any necessary change outside them with `<deviation_handling>`.
+**Work the main lane immediately.** Validate the main phase's assumptions and consumed interfaces against live code, then implement it. Do not launch a worker and wait for it before making progress. Respect the phase's named files; classify any necessary change outside them with `<deviation_handling>`. While the phase is still in progress, run only the focused check that can falsify the change you just made — the phase's full automated criteria run once at the join.
 
 **Join the wave.** Finish the main phase before starting another wave, then collect the background result. A failed dispatch before any worker edit becomes a later main-thread phase. A worker that edited files but returned no usable report becomes `DONE_WITH_CONCERNS`; inspect that changed surface after the join and finish it in the main thread.
 
@@ -177,7 +177,7 @@ How should I proceed?
 
 ### Step 3: Verify the joined wave
 
-After every lane has stopped writing, re-validate every assumption the worker reported as deferred, then run every automated success criterion for every phase in the wave. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree. The same goes for a deferred assumption: the worker read it against a file you were mid-edit, so only a re-read now settles it.
+After every lane has stopped writing, re-validate every assumption the worker reported as deferred, then run the wave's automated success criteria — the union across its phases, so a criterion two phases share runs once and not twice. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree. The same goes for a deferred assumption: the worker read it against a file you were mid-edit, so only a re-read now settles it.
 
 For each criterion:
 
@@ -241,6 +241,14 @@ Then close out every phase in the wave:
 4. **For plans without auto/manual split**: Treat all success criteria as automated. Continue without stopping.
 
 Do not check off manual verification items until confirmed by the user.
+
+### Step 4: Verify the finished plan
+
+After the final wave, run the plan's `### Acceptance Criteria` once. They are the plan-level checks — the repo-wide commands and the end-to-end behaviour no single phase can prove — and this is the only place `df:implement` runs them. Mark each one with Step 3's three outcomes, and open a fix round on a failure under Step 3's cap. A criterion needing human judgment stays unchecked and joins the deferred manual list.
+
+In phased mode, run this after the final phase's own checks and before its commit.
+
+Report the outcome in the final summary: which acceptance criteria passed, which failed, and which need the user. This report covers `### Acceptance Criteria` only — it does not stand in for a phase's pending manual verification.
 
 ### When Things Don't Match Expectations
 
@@ -344,19 +352,20 @@ Before starting a new wave, re-read the plan's checkbox state and run `git log -
 
 <anti_patterns>
 
-| Excuse                                                          | Reality                                                                                                                                     |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| "The plan clearly forgot this — I'll just add it."              | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                 |
-| "I'll commit both phases together, they're related."            | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                   |
-| "The user will obviously approve this phase."                   | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                            |
-| "I'll read the later phases' files now while I'm in here."      | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                   |
-| "The plan has no schedule, but these phases look independent."  | Parallel writes need an explicit reviewed claim. Run them in the main thread instead of inferring ownership during execution.               |
-| "I'll launch the worker now and wait."                          | A background lane exists only to overlap useful main-thread work. If there is no main phase to execute, do not dispatch it.                 |
-| "The files are disjoint, so both lanes can run the full suite." | Both lanes still share one worktree. Run broad and acceptance checks only after the join.                                                   |
-| "The schedule says parallel, so I don't need to validate it."   | Plans drift. A stale file or interface list turns safe overlap into a collision; downgrade the wave instead.                                |
-| "This finding is obviously real — verifying it is waste."       | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.            |
-| "It was refuted, so there's nothing to record."                 | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job. |
-| "One more round and it converges."                              | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                            |
+| Excuse                                                          | Reality                                                                                                                                                           |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The plan clearly forgot this — I'll just add it."              | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                                       |
+| "I'll commit both phases together, they're related."            | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                                         |
+| "The user will obviously approve this phase."                   | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                                                  |
+| "I'll read the later phases' files now while I'm in here."      | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                                         |
+| "The plan has no schedule, but these phases look independent."  | Parallel writes need an explicit reviewed claim. Run them in the main thread instead of inferring ownership during execution.                                     |
+| "I'll launch the worker now and wait."                          | A background lane exists only to overlap useful main-thread work. If there is no main phase to execute, do not dispatch it.                                       |
+| "The files are disjoint, so both lanes can run the full suite." | Both lanes still share one worktree. Run broad and acceptance checks only after the join.                                                                         |
+| "One more full-suite run, just to be sure."                     | Sure of what? Nothing has changed since the last one. It returns the same verdict plus a second copy of its output, which stays resident for the rest of the run. |
+| "The schedule says parallel, so I don't need to validate it."   | Plans drift. A stale file or interface list turns safe overlap into a collision; downgrade the wave instead.                                                      |
+| "This finding is obviously real — verifying it is waste."       | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.                                  |
+| "It was refuted, so there's nothing to record."                 | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job.                       |
+| "One more round and it converges."                              | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                  |
 
 Stay focused on implementing what was actually planned.
 
@@ -367,6 +376,7 @@ Stay focused on implementing what was actually planned.
 - Keep one main-thread phase in every wave; dispatch at most one background implementer, and only from a valid explicit schedule
 - If asynchronous dispatch is unavailable, or the schedule is absent or invalid, execute the affected phases in the main thread
 - Join every lane before acceptance checks, integration fixes, review, progress updates, or the next wave
+- Run the plan's `### Acceptance Criteria` once, after the final wave — not per phase and not per wave
 - Dispatch one task-scoped `code-reviewer` for a delegated wave and none for a main-only wave
 - Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later

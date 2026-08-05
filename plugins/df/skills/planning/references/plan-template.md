@@ -23,6 +23,8 @@
 
 - [ ] [Command, observable behavior, or file state that proves the finished feature works]
 
+List every repo-wide command the plan requires here, once. `df:implement` runs this section one time, after the final wave.
+
 ### Decisions Most Likely to Change
 
 - Phase [N] — [Defaulted, unclear, user-facing, or stored-data decision; use `(none)` when none apply and cap the list at three]
@@ -84,7 +86,9 @@ Write `(none)` only when every affected file was produced by an earlier phase an
 
 #### Automated Verification
 
-- [ ] [Runnable command or objectively inspectable result]
+- [ ] [Runnable command or objectively inspectable result, scoped to this phase's files]
+
+Scope each command to the files this phase names — a path-scoped invocation of a repo-wide tool belongs here. A command that also reads files this phase does not name goes in `### Acceptance Criteria` instead, unless exactly one phase in the plan changes an input it reads, in which case it stays in that phase.
 
 #### Manual Verification
 
