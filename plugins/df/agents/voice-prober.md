@@ -1,7 +1,7 @@
 ---
 name: voice-prober
 description: Grades a draft sentence by sentence against the author's voice sample, returning one verdict per sentence and never replacement text. Dispatch it with the filled prompt template from `df:deslop`'s `references/voice-prober.md` — the ladder, the draft, the sample, and the preserve list all travel in that prompt.
-tools: []
+tools: Read
 model: sonnet
 effort: medium
 ---

@@ -1,7 +1,7 @@
 ---
 name: phase-implementer
 description: Implements one scheduled background phase from a brief file, runs checks isolated to that phase, writes a report file, and returns a four-status contract. Receives paths rather than the controller's conversation. Cannot ask the user; escalates as BLOCKED or NEEDS_CONTEXT.
-tools: Read, Write, Edit, Grep, Glob, LS, TodoWrite, Bash
+tools: Read, Write, Edit, Grep, Glob, LS, Bash
 effort: high
 ---
 

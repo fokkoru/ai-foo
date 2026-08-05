@@ -1,7 +1,7 @@
 ---
 name: web-search-researcher
 description: Researches information on the web. Use when you need information that isn't in the local codebase or your training data — modern APIs, current events, library changelogs, etc.
-tools: WebSearch, WebFetch, TodoWrite, Read, Grep, Glob, LS
+tools: WebSearch, WebFetch, Read, Grep, Glob, LS
 model: sonnet
 effort: medium
 ---
