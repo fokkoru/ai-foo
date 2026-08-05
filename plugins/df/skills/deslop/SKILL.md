@@ -42,7 +42,14 @@ Read the mode from the invocation; default to `tune`. Modes are permitted-operat
 
 ### Resolve the voice sample
 
-Read `.claude/voice-sample.md` if it exists. Otherwise run `git log --no-merges --author="$(git config user.name)" --format=%B -n 30`.
+Read `.claude/voice-sample.md` if it exists. Otherwise resolve the author first, then read the log — two commands, one per line:
+
+```bash
+git config user.name
+git log --no-merges --author="<the resolved name>" --format=%B -n 30
+```
+
+Substitute the name you got back into the second command. Inlining the first command as a shell substitution instead makes the whole line an unsafe compound that prompts every run, no matter what `allowed-tools` grants.
 
 Curate to 5–10 messages: drop version bumps, one-word subjects, subject-only commits, and anything that reads as generated. Curation is the mechanism, not tidying — corpus size tracks stylistic fidelity at r < 0.1, and a raw log holds messages the author is not proud of. If fewer than five survive, say so and work from the baseline. If no sample resolves at all and the caller expects one, stop and ask the user.
 
