@@ -96,3 +96,5 @@ Use [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope
 - `feat(df): add validate command`
 - `fix(df): correct path resolution in plan command`
 - `docs(df): update installation instructions`
+
+**A commit that removes a capability names its replacement in the body**, or states that there is none. This applies to a named step, a workflow trigger, an agent dispatch, a documented behaviour — anything a user could have relied on. The subject line describes the change the commit is _for_; a removal that rides along under it leaves no record anywhere, which is how three summer regressions reached `main` (`thoughts/research/2026-08-05_0043_summer-regression-audit.md`). A removal is also never `refactor` — if behaviour changed, the type is `feat` or `fix`.
