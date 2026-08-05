@@ -153,7 +153,7 @@ Before writing any code: if the plan's approach has a clearly better alternative
 
 **Select the execution shape.** In continuous mode, use `## Execution Schedule` only after checking that every phase appears once, each wave has one main phase and at most one background phase, same-wave files are disjoint, and no same-wave phase consumes the other's output. If the section is absent or invalid, say that parallel execution was downgraded and run every remaining phase as a single-phase main-thread wave. In phased mode, always use single-phase main-thread waves.
 
-**Start the background lane only when it creates overlap.** At the first delegated wave, create one scratch directory with `mktemp -d` and keep it for the run. Write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
+**Start the background lane only when it creates overlap.** At the first delegated wave, create one scratch directory with `mktemp -d` and keep it for the run. Write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Give the brief a `## Concurrently edited` section naming the main phase's files, so the worker can tell which of its citations point at ground you are moving. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
 
 **Work the main lane immediately.** Validate the main phase's assumptions and consumed interfaces against live code, then implement it. Do not launch a worker and wait for it before making progress. Respect the phase's named files; classify any necessary change outside them with `<deviation_handling>`.
 
@@ -177,7 +177,7 @@ How should I proceed?
 
 ### Step 3: Verify the joined wave
 
-After every lane has stopped writing, run every automated success criterion for every phase in the wave. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree.
+After every lane has stopped writing, re-validate every assumption the worker reported as deferred, then run every automated success criterion for every phase in the wave. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree. The same goes for a deferred assumption: the worker read it against a file you were mid-edit, so only a re-read now settles it.
 
 For each criterion:
 
@@ -191,7 +191,7 @@ For each criterion:
 
 Skip this step when the wave had no background phase. Otherwise run one integrated `code-reviewer` pass over the whole wave, not one pass per phase.
 
-Write `<run-dir>/wave-<N>-spec.md` with both phase sections plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of both phases' named files, including new files with `git add -N`, then undo the intent-to-add state. Run `git status --porcelain`; any changed file outside the union is a scope finding.
+Write `<run-dir>/wave-<N>-spec.md` with both phase sections plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of both phases' named files. Reach the wave's new files with `git add -N -- <the wave's new files>`, and undo it afterwards with `git restore --staged -- <the same paths>`. The pathspec is those named files in both directions, never `.` — a bare pathspec reaches the whole index and unstages work the user staged before the run. Run `git status --porcelain`; any changed file outside the union is a scope finding.
 
 Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`; name `model: sonnet`. Never send the worker report or this conversation. Do not pre-judge the result.
 
@@ -337,7 +337,6 @@ Before starting a new wave, re-read the plan's checkbox state and run `git log -
 
 - Each phase passes automated verification
 - Manual verification completed by user at blocking checkpoints or deferred to end
-- Plan checkboxes updated as work progresses
 - Build/test commands execute successfully
 - No unresolved mismatches between plan and implementation
 
