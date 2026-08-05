@@ -56,6 +56,20 @@ is_block_scalar() {
   case $1 in '|'* | '>'*) return 0 ;; *) return 1 ;; esac
 }
 
+# The other way a value outgrows one line: a plain scalar continued onto
+# indented lines. fm_value reads only the key's own line, so a description grown
+# past one line is measured short and passes a cap it exceeds. Fail loudly, the
+# same as a block scalar. The helper prints a marker rather than setting an exit
+# status, because awk's END block would override it.
+has_continuation() {
+  [ "$(awk -v key="$2" '
+    NR==1 && $0=="---" {infm=1; next}
+    infm && $0=="---" {exit}
+    found && /^[[:space:]]/ && NF {print "yes"; exit}
+    found {exit}
+    infm && index($0, key ":")==1 {found=1}' "$1")" = yes ]
+}
+
 # Code points, not bytes: -CA decodes @ARGV as UTF-8 whatever the locale is.
 char_len() {
   perl -CA -e 'print length($ARGV[0])' -- "$1"
@@ -89,10 +103,21 @@ for skill in "${skills[@]}"; do
     continue
   fi
 
+  if has_continuation "$skill" description; then
+    echo "UNSUPPORTED($name): description continues past its first line in $skill — write it as a single-line scalar"
+    fail=1
+    continue
+  fi
+
   listing="$description"
   when_to_use=$(fm_value "$skill" when_to_use)
   if is_block_scalar "$when_to_use"; then
     echo "UNSUPPORTED($name): when_to_use is a YAML block scalar in $skill — write it as a single-line scalar"
+    fail=1
+    continue
+  fi
+  if has_continuation "$skill" when_to_use; then
+    echo "UNSUPPORTED($name): when_to_use continues past its first line in $skill — write it as a single-line scalar"
     fail=1
     continue
   fi
