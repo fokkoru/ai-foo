@@ -25,6 +25,7 @@ tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
 ref=""
+ref_file=""
 fail=0
 while IFS= read -r f; do
   out="$tmpdir/$(echo "$f" | tr / _)"
@@ -36,10 +37,11 @@ while IFS= read -r f; do
   fi
   if [ -z "$ref" ]; then
     ref="$out"
+    ref_file="$f"
     continue
   fi
   if ! cmp -s "$ref" "$out"; then
-    echo "DRIFT: $f differs from the reference copy"
+    echo "DRIFT: $f differs from $ref_file"
     diff "$ref" "$out" | head -20 || true
     fail=1
   fi

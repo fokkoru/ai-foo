@@ -47,7 +47,7 @@
 
 | Wave | Main-thread phase | Background phase |
 | ---- | ----------------- | ---------------- |
-| 1    | Phase [N]         | Phase [N]        |
+| 1    | Phase [N]         | Phase [M]        |
 
 List every phase exactly once. Use `(none)` when a wave has no safe background phase.
 
