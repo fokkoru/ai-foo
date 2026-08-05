@@ -2,7 +2,7 @@
 name: peer-review
 description: Use when performing an independent, isolated code review of an implementation against its plan/spec before committing — one isolated reviewer reads the diff from a file and returns a spec-compliance verdict plus quality findings. Runs between df:validate and df:commit.
 disable-model-invocation: true
-allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git add -N:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
+allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git ls-files:*), Bash(git add -N:*), Bash(git restore --staged:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git rev-parse:*), Bash(git merge-base:*), Bash(git show:*)
 ---
 
 <objective>
@@ -37,7 +37,15 @@ Spec compliance governs the **fix order**, not the dispatch order. If the spec v
    - Honor an explicit range if the user gave one. Capture both SHAs. An explicit `<base> <head>` covers committed work only.
 3. Write the review package to a file. Never into your own context:
    - `mktemp -d` to get a scratch directory
-   - `git add -N .` so untracked files appear in the diff — intent-to-add records the path and stages no content
+   - Capture the untracked paths, then stage exactly those so they appear in the diff — intent-to-add records the path and stages no content:
+
+     ```bash
+     git ls-files -z --others --exclude-standard > <dir>/untracked.nul
+     git add -N --pathspec-from-file=<dir>/untracked.nul --pathspec-file-nul
+     ```
+
+     The list is what the restore below undoes, so capture it before staging anything. It lives in the scratch directory: written inside the repository it would land in its own untracked set. When the captured list is empty — the same condition as `git status --porcelain` reporting no `??` entries — skip both this `git add -N` and the `git restore --staged` below, because an empty pathspec list is a benign no-op for `git add -N` but a fatal error for `git restore`.
+
    - Write the package with one simple command per line. For the default range, name **one** revision, not two: a one-revision diff compares that commit against the working tree, which is the range item 2 above describes. Two revisions would drop every uncommitted change, and whenever the base equals `HEAD` they would emit an empty package that reads as a legitimate empty change.
 
      ```bash
@@ -51,11 +59,17 @@ Spec compliance governs the **fix order**, not the dispatch order. If the spec v
      git diff -U10 <base> >> <dir>/review.diff
      ```
 
-     For a user-supplied explicit range, name both revisions instead — `git log --oneline <base>..<head>`, `git diff --stat=200 <base> <head>`, `git diff -U10 <base> <head>` — and skip both the `git add -N` and the `git restore --staged` below. An explicit range asks for committed work only.
+     For a user-supplied explicit range, name both revisions instead — `git log --oneline <base>..<head>`, `git diff --stat=200 <base> <head>`, `git diff -U10 <base> <head>` — and skip the untracked-path capture, the `git add -N`, and the `git restore --staged` entirely. An explicit range asks for committed work only.
 
      Keep the lines separate: a `{ ...; }` group is an unsafe compound that always prompts, no matter what `allowed-tools` says, while each line above matches a prefix rule on its own. `--stat=200` because `--stat` off a tty wraps at 80 columns and elides long paths to `...`. The wide context is what lets the reviewer judge a hunk without opening the file it came from.
 
-   - `git restore --staged .` once the package is written, undoing the `git add -N .` — on the default path only. Leave those entries behind and they outlive the review: a later `git commit -a` captures them, and `df:commit`'s pre-staged check does not catch them because intent-to-add reports as unstaged.
+   - Undo the intent-to-add once the package is written, restoring exactly the paths you staged — on the default path only:
+
+     ```bash
+     git restore --staged --pathspec-from-file=<dir>/untracked.nul --pathspec-file-nul
+     ```
+
+     The pathspec is the captured list, never `.`. A bare `git restore --staged .` reaches every path in the index, so it unstages work the user staged before the review ran, and a review that empties the index is not read-only. Leave the intent-to-add entries behind and they outlive the review: a later `git commit -a` captures them, and `df:commit`'s pre-staged check does not catch them because intent-to-add reports as unstaged.
 
    Do not `cat`, read, or echo the package. The path is what you pass on. Everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn.
 
@@ -215,7 +229,7 @@ Scoping is not suppression. To narrow a re-review, name the surface that changed
 - Spec-compliance findings are fixed before quality findings — a polished implementation of the wrong thing is still wrong.
 - NEVER paste the diff or the spec into a dispatch prompt — pass the file path to each.
 - Write the diff to a file and capture the SHAs before spawning the reviewer — the reviewer needs the exact work product.
-- NEVER modify code during review — review is read-only; fixes are a separate, explicit step. The one exception is the index, not any file: Step 1 runs `git add -N .` so untracked files reach the package, and `git restore --staged .` in that same step puts the index back.
+- NEVER modify code during review — review is read-only; fixes are a separate, explicit step. The one exception is the index, not any file: Step 1 adds the untracked paths it captured so they reach the package, then restores that same captured list. Nothing the user staged is touched.
 - NEVER run build/test/lint commands without user permission — the user's CLAUDE.md requires this.
 - Critical means the finding blocks the commit — reserve it for that, and don't inflate nits to reach it
 
