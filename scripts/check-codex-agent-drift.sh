@@ -26,6 +26,18 @@
 # multi-line description = """...""" field above it). Effort extraction is
 # anchored at column 0 and stops at the body, because two agents quote
 # 'model_reasoning_effort' again inside their prose as a Codex call example.
+#
+# Sandbox rule: the .md side's 'tools:' frontmatter and the .toml's
+# 'sandbox_mode' must agree on write capability. Writing tools are the exact
+# comma-separated tokens Write, Edit, NotebookEdit, Bash (matched whole, never
+# as a substring — TodoWrite contains 'Write' but is not one). Bash counts
+# because the .md side has no way to say "shell, but read-only": the grant is
+# unrestricted, so pairing it with a read-only mirror gives the two runtimes
+# unequal capability. Any writing tool present requires sandbox_mode =
+# "workspace-write"; none present requires "read-only". An absent
+# sandbox_mode, or a value outside those two, is drift -> exit 1. Extraction
+# is anchored at column 0 and stops at the body, same as effort, because an
+# agent could quote 'sandbox_mode' again inside its own prose.
 set -euo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
@@ -64,6 +76,20 @@ toml_effort() {
        sub(/^model_reasoning_effort[[:space:]]*=[[:space:]]*/, "") {gsub(/^"|"$/, ""); print; exit}' "$1"
 }
 
+# Reads the key's own line only, so `tools:` must be an inline list. Written as
+# a YAML block list the value here is empty, which reads as "no writing tool"
+# and would hide real drift rather than report it. All 12 agents are inline.
+md_tools() {
+  awk 'NR==1 && $0=="---" {infm=1; next}
+       infm && $0=="---" {exit}
+       infm && sub(/^tools:[[:space:]]*/, "") {print; exit}' "$1"
+}
+
+toml_sandbox() {
+  awk '$0=="developer_instructions = \"\"\"" {exit}
+       sub(/^sandbox_mode[[:space:]]*=[[:space:]]*/, "") {gsub(/^"|"$/, ""); print; exit}' "$1"
+}
+
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -98,6 +124,26 @@ while IFS= read -r name; do
         fail=1
         ;;
     esac
+  fi
+
+  # Whole-token match on the comma-separated tools: list, wrapped in commas so
+  # a leading/trailing token still anchors — TodoWrite must not match Write.
+  md_tools_normalized=",$(md_tools "$MD_DIR/$name.md" | tr -d '[:space:]'),"
+  case "$md_tools_normalized" in
+    *,Write,* | *,Edit,* | *,NotebookEdit,* | *,Bash,*) expected_sandbox="workspace-write" ;;
+    *) expected_sandbox="read-only" ;;
+  esac
+  toml_sandbox_val=$(toml_sandbox "$toml")
+
+  if [ -z "$toml_sandbox_val" ]; then
+    echo "DRIFT($name): sandbox_mode is not declared in $toml"
+    fail=1
+  elif [ "$toml_sandbox_val" != "workspace-write" ] && [ "$toml_sandbox_val" != "read-only" ]; then
+    echo "DRIFT($name): sandbox_mode '$toml_sandbox_val' in $toml is not 'workspace-write' or 'read-only'"
+    fail=1
+  elif [ "$toml_sandbox_val" != "$expected_sandbox" ]; then
+    echo "DRIFT($name): tools grant in $MD_DIR/$name.md implies sandbox_mode '$expected_sandbox' but $toml declares '$toml_sandbox_val'"
+    fail=1
   fi
 
   md_body "$MD_DIR/$name.md" >"$tmpdir/md"
