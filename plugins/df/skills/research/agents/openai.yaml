@@ -1,5 +1,6 @@
 interface:
   display_name: "Research"
-  short_description: "Comprehensive codebase research with parallel sub-agents"
+  short_description: "Main-first research with adaptive parallelism"
+  default_prompt: "Use $df:research to investigate this codebase question in the main thread with parallel agents only for independent areas."
 policy:
   allow_implicit_invocation: false

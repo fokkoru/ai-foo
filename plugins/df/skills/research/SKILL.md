@@ -1,12 +1,12 @@
 ---
 name: research
-description: Use when researching the codebase comprehensively using parallel sub-agents — opens with a blind spot pass that names what the question does not cover
+description: Use when researching a codebase with main-thread investigation, adaptive parallel sub-agents for independent areas, and a self-contained research document
 disable-model-invocation: true
 allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
-Conduct comprehensive codebase research to answer a user's question by decomposing it into parallel sub-agent tasks and synthesizing findings into a structured research document.
+Answer a user's codebase question with main-thread investigation, bounded parallel research where it adds independent coverage, and a structured research document.
 
 </objective>
 
@@ -22,49 +22,51 @@ If you identify a beneficial code change, document it in the research document a
 <quick_start>
 If no research question is provided, ask the user what they want to research before proceeding.
 
-1. Read any mentioned files fully in main context first
-2. Run the blind spot pass — name what the question does not cover, and stop only if the answer changes the fan-out
-3. Decompose the research question into parallel sub-agent tasks
-4. Select appropriate agents and spawn them in parallel
-5. Wait for all sub-agents to complete
-6. Synthesize findings and write research document
-7. Present concise summary with key file references
+1. Read authoritative task artifacts fully
+2. Run a lightweight scope pass
+3. Choose main-only or main-plus-background research lanes
+4. Dispatch independent background lanes, then investigate the main lane immediately
+5. Resolve every lane and verify important claims
+6. Synthesize findings and write the research document
+7. Present a concise summary with key file references
 
 </quick_start>
 
 <workflow>
 
-### Read Before Decomposing
+### Read Task Context
 
-If the user mentions specific files (tickets, docs, JSON), read them fully in the main context before spawning any sub-tasks. Use the Read tool without limit/offset parameters to get entire file contents. Never delegate this initial reading to sub-agents.
+Read any explicitly referenced ticket, specification, research document, or plan fully in the main context because it defines the task. For every other repository file — including source, tests, logs, JSON, and generated data — decide what evidence to retrieve from the research question. A mentioned path does not by itself require a complete read.
 
-### Blind Spot Pass
+### Scope Pass
 
-Before decomposing, name what the question does not cover. Survey what the repo actually contains around the question — with `Grep` and `Glob`, not a sub-agent — and list the areas the user has not mentioned whose answer would change the research: subsystems the question touches without naming, constraints it assumes away, adjacent code that would invalidate the obvious answer.
+Survey the repository with `Grep` and `Glob` only far enough to identify the central investigation and any independent areas that could change the answer. Findings from this pass are valid main-thread evidence; carry them into the investigation instead of reserving findings for sub-agents.
 
-Keep the output interrogative. This step produces questions and area names, never findings. A finding belongs to a sub-agent, and chasing one here is the scope creep `<anti_patterns>` forbids.
+Ask the user only when the pass exposes a decision that repository evidence cannot answer and different choices would materially change the research question or conclusion. Resolve uncertainty about paths, research order, or fan-out through investigation. Carry a decision the user declines to make into the document's `## Open Questions`.
 
-Then apply one test to each blind spot: **would the user's answer change which sub-agents you spawn, or what you ask them?**
+### Choose Research Lanes
 
-- Yes for one or more — present those, one line each, and wait. Fold the answers into the decomposition.
-- No for all — state in one line what the pass surfaced, and continue without stopping.
+Choose the smallest shape that covers the question:
 
-Carry any blind spot the user declines to answer into the document's `## Open Questions`.
+- **Narrow file, symbol, or behavior**: investigate in the main thread; dispatch no sub-agent.
+- **One subsystem with independent aspects**: keep the central code path in the main thread and dispatch up to two background lanes.
+- **Cross-cutting or whole-codebase question**: keep the central architectural question in the main thread and dispatch two to four background lanes with distinct boundaries.
 
-### Decomposition Strategy
+Do not spawn an agent merely to reach a count. Create a TodoWrite research plan that names the main lane and every background lane, with one owner per area and no duplicated questions.
 
-Take time to ultrathink about the underlying patterns, connections, and architectural implications the user might be seeking. Break the query into composable research areas:
+### Execute Research Lanes
 
-- Identify specific components, patterns, or concepts to investigate
-- Consider cross-component connections and architectural patterns
-- Consider which directories, files, or architectural patterns are relevant
-- Create a research plan using TodoWrite to track subtasks
+Dispatch all background lanes in parallel before starting the main lane. Give each sub-agent the question, known paths, its independent boundary, and the expected concise output with file:line evidence. Pass paths rather than file contents or session history, and describe what to establish rather than how to search.
 
-### Synthesis
+Investigate the main lane immediately after dispatch. Do not launch background work and wait while the main thread is idle. If the runtime cannot dispatch asynchronously, complete the main lane first, then run only the remaining independent lanes.
 
-Wait for all sub-agent tasks to complete before synthesizing. Don't proceed with partial results.
+### Resolve and Synthesize
 
-- Compile all sub-agent results (codebase and thoughts findings)
+Before synthesis, resolve every dispatched lane. Join running agents. If a lane fails without useful findings, investigate that area in the main thread or record why it remains unresolved. Treat partial output as evidence only after checking the relevant claim against the live codebase.
+
+Cross-check high-impact, surprising, or contradictory sub-agent claims against the actual code. Do not repeat an agent's entire investigation when a targeted check can establish the claim.
+
+- Compile main-thread and sub-agent findings
 - Prioritize live codebase findings as primary source of truth
 - Use thoughts/ findings as supplementary historical context
 - Connect findings across different components
@@ -153,7 +155,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 - Present a concise summary of findings to the user
 - Include key file references for easy navigation
 - Ask if they have follow-up questions or need clarification
-- For follow-ups, append to the same research document and spawn new sub-agents as needed
+- For follow-ups, append to the same research document and choose the research shape again; handle a narrow follow-up in the main thread
   - Update fields: `last_updated`, `last_updated_by`
   - Add `last_updated_note: "Added follow-up research for [brief description]"`
   - Add new section: `## Follow-up Research [timestamp]`
@@ -162,7 +164,7 @@ If on main/master branch or commit is pushed, generate GitHub permalinks for fil
 
 <success_criteria>
 
-- All sub-agent tasks completed (no partial results)
+- Every research lane resolved through completed findings, main-thread recovery, or an explicit limitation
 - Research document created with metadata filled in (no placeholder values)
 - Findings include specific file paths and line numbers
 - User's question answered with concrete evidence from codebase
@@ -197,17 +199,16 @@ Select the right agent for each type of investigation:
 
 **Guidelines:**
 
-- Size the fan-out to the question before choosing agents: a single file or symbol needs 1 agent; one subsystem, 2-3; a cross-cutting or whole-codebase question, 4-6. Add an agent only when it has a distinct question to answer — two agents given the same question return the same findings twice.
+- Size delegated work after the current workflow's own inspection: use no sub-agent for a narrow question the main thread can answer, and add an agent only for a distinct, self-contained question.
 - Prefer a named agent over `general-purpose` wherever one covers the job: the catch-all inherits every tool and carries the highest mean context per turn of any agent type, 90.3k, while a named agent's declared tool list bounds where it can wander. The catch-all's 23k first-turn system-prompt floor, against 9.3k for a locator, is the smaller half of the gap.
 - Give an agent paths and the question, not file contents or your session history — everything you paste into a dispatch prompt stays resident in your context for the rest of the session and is re-read on every later turn
-- Stop after 3 parallel agent attempts that return no meaningful findings — reframe the question more narrowly, ask the user, or write down what could not be resolved and why
-- Start with locator agents to find what exists, then use analyzer agents on the most promising findings
-- Run multiple agents in parallel when searching for different things
-- Each agent knows its job — provide what to find, not how to search
+- After an agent returns no meaningful findings, narrow or reframe the question before another dispatch — never repeat the same search unchanged
+- Use a locator only when relevant paths are unknown; when paths or symbols are known, dispatch an analyzer or pattern finder directly
+- Run multiple agents in parallel only for independent areas
+- Give every agent an objective, an independent boundary, a concise output shape, and required file:line evidence — provide what to establish, not how to search
 - Do not write detailed prompts about HOW to search; the agents already know
 - Keep prompts focused on read-only operations
-- Request specific file:line references in responses
-- Verify sub-task results — if unexpected, spawn follow-up tasks and cross-check against the actual codebase
+- Verify high-impact, surprising, or contradictory results — if unexpected, cross-check against the actual codebase
 
 </agent_selection>
 
@@ -225,12 +226,6 @@ Stay focused on answering the user's actual question.
 </anti_patterns>
 
 <constraints>
-- Your only output artifact is a research document in thoughts/research — don't write or modify files anywhere else. If you find a beneficial code change, document it and suggest /df:implement.
-- Read mentioned files first in main context before spawning sub-tasks — sub-agents don't share the main context and will miss this information
-- Run the blind spot pass before spawning any sub-agent — a blind spot found after the fan-out cannot change it
-- Wait for all sub-agents to complete before synthesizing — partial results lead to incomplete or contradictory conclusions
-- Gather metadata before writing the document — git state should be captured at research time, not after
-- Don't write the research document with placeholder values — research documents are permanent artifacts that others will reference
 - Research documents must be self-contained — a reader with no access to this session should be able to act on the document alone
 
 </constraints>
