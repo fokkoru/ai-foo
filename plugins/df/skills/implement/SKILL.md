@@ -187,13 +187,13 @@ For each criterion:
 
 **Three fix rounds maximum per phase.** Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. Re-run the affected criteria after each fix. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
 
-### Step 3.5: Review delegated waves
+### Step 3.5: Review the wave
 
-Skip this step when the wave had no background phase. Otherwise run one integrated `code-reviewer` pass over the whole wave, not one pass per phase.
+Run one integrated `code-reviewer` pass over every wave, not one pass per phase. A wave whose phases all ran in the main thread is reviewed exactly like a delegated one: you hold the whole implementation conversation in context, and that is the non-independence this pass exists to remove.
 
-Write `<run-dir>/wave-<N>-spec.md` with both phase sections plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of both phases' named files. Reach the wave's new files with `git add -N -- <the wave's new files>`, and undo it afterwards with `git restore --staged -- <the same paths>`. The pathspec is those named files in both directions, never `.` — a bare pathspec reaches the whole index and unstages work the user staged before the run. Run `git status --porcelain`; any changed file outside the union is a scope finding.
+Write `<run-dir>/wave-<N>-spec.md` with every phase section in the wave plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of the wave's named files. Reach the wave's new files with `git add -N -- <the wave's new files>`, and undo it afterwards with `git restore --staged -- <the same paths>`. The pathspec is those named files in both directions, never `.` — a bare pathspec reaches the whole index and unstages work the user staged before the run. Run `git status --porcelain`; any changed file outside the union is a scope finding.
 
-Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`; name `model: sonnet`. Never send the worker report or this conversation. Do not pre-judge the result.
+Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`. Name no model — the agent's own default tier applies, because a wave can carry more than one phase and nothing has measured a cheaper tier at that width. Never send the worker report or this conversation. Do not pre-judge the result.
 
 Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-run affected criteria and re-review only the fix diff.
 
@@ -258,7 +258,7 @@ When something isn't working as expected:
 - Consider if the codebase has evolved since the plan was written
 - Classify it with `<deviation_handling>` — that table decides whether to fix it or stop and ask
 
-Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` is reserved for the scheduled background lane; `code-reviewer` runs only for a delegated wave. When spawning a research sub-task:
+Spawn a research sub-task only when the answer is not in the plan or in a file the plan names — targeted debugging, or unfamiliar territory the phase did not describe — and not for an answer a handful of tool calls would settle. `phase-implementer` is reserved for the scheduled background lane and `code-reviewer` for Step 3.5 — neither is a research sub-task. When spawning a research sub-task:
 
 | Agent                     | Purpose                            | When to Use                                        |
 | ------------------------- | ---------------------------------- | -------------------------------------------------- |
@@ -343,10 +343,10 @@ Before starting a new wave, re-read the plan's checkbox state and run `git log -
 
 <success_criteria>
 
-- Each phase passes automated verification
-- Manual verification completed by user at blocking checkpoints or deferred to end
-- Build/test commands execute successfully
-- No unresolved mismatches between plan and implementation
+- Every wave's automated criteria are marked in the plan file — `[x]` when they passed, `[ ]` with a `<!-- FAILED: ... -->` note when they did not
+- The plan's `### Acceptance Criteria` carries a disposition for every item
+- Manual verification is either confirmed by the user or presented as deferred, grouped by phase
+- No unresolved mismatch between plan and implementation
 
 </success_criteria>
 
@@ -377,7 +377,7 @@ Stay focused on implementing what was actually planned.
 - If asynchronous dispatch is unavailable, or the schedule is absent or invalid, execute the affected phases in the main thread
 - Join every lane before acceptance checks, integration fixes, review, progress updates, or the next wave
 - Run the plan's `### Acceptance Criteria` once, after the final wave — not per phase and not per wave
-- Dispatch one task-scoped `code-reviewer` for a delegated wave and none for a main-only wave
+- Dispatch one task-scoped `code-reviewer` for every wave — a wave that ran entirely in the main thread is reviewed exactly like a delegated one
 - Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria
