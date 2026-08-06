@@ -95,7 +95,7 @@ If the reviewer reports it cannot read either file, do NOT paste that file's con
 
 A finding is a claim about the code, not a fact about it. Test every claim that would cost a fix round before spending one on it.
 
-Dispatch one `finding-verifier` per spec-compliance gap and per Critical or Important finding. Issue every Task call in a single message so they run in parallel. Each dispatch carries exactly three things:
+Dispatch one `finding-verifier` per spec-compliance gap and per Critical or Important finding. Issue every Task call in a single message so they run in parallel. Collect every verifier before acting on any verdict. Where a runtime's wait returns the first finisher, keep waiting and release each finished agent until all have reported — acting on a partial roster spends a fix round on a finding the rest would have refuted, and an unreleased agent holds the slot the next dispatch needs. Each dispatch carries exactly three things:
 
 - The **path** to the diff file from Step 1 — never its text
 - The **path** to `<dir>/spec.md` from Step 1 — the spec the finding is judged against, never its text
