@@ -2,7 +2,7 @@
 name: implement
 description: Use when implementing a technical plan from the plans directory with main-thread execution, bounded background work, joined verification, and optional phase-by-phase commits
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mktemp:*), Bash(echo:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
+allowed-tools: Read, Write, Edit, LS, Grep, Glob, TodoWrite, Task, Bash(mkdir:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(git add:*), Bash(git commit:*), Bash(git restore --staged:*), Bash(git rev-parse:*)
 ---
 
 <objective>
@@ -142,10 +142,11 @@ If no plan path is provided, ask the user for the path to the plan file, then wa
 
    Ask once, then implement. If the scan finds nothing, say so in one line and start. A targeted scan establishes that a name still exists — not that its behaviour is unchanged; re-validation when each phase starts is what catches that. Conflicts that only emerge during implementation are handled by `<deviation_handling>`.
 
-3. Read the original ticket if the plan cites one
-4. Take time to ultrathink about how the pieces fit together
-5. Create a todo list to track progress
-6. Start implementing once the requirements are confirmed understood
+3. Create the run directory. Run `git rev-parse --path-format=absolute --git-common-dir` and read its output: `<run-dir>` is that path plus `/df-runs/<plan-slug>`, where `<plan-slug>` is the plan's filename without `.md`. Create it with `mkdir -p "<run-dir>"`, and write `<run-dir>` out in full every time a path goes to a tool or a sub-agent — a relative path resolves against the reader's own directory, which a sub-agent does not share with you. It holds every artifact this run writes — briefs, reports, wave specs, and diffs — and the path is derived from the plan, so a later session given only the plan path finds the same directory. Git tracks nothing under the common directory, so nothing here reaches a diff or a scope check. Then record the run's base: add `**Run base**: <sha>`, the output of `git rev-parse HEAD`, to the plan header under `**Branch**`, or leave the existing line untouched when resuming a run that already wrote one.
+4. Read the original ticket if the plan cites one
+5. Take time to ultrathink about how the pieces fit together
+6. Create a todo list to track progress
+7. Start implementing once the requirements are confirmed understood
 
 Before writing any code: if the plan's approach has a clearly better alternative — one that avoids significant risk or wasted work — say so briefly and wait for the user's call; never push back for minor stylistic preferences. Otherwise implement the plan as approved.
 
@@ -153,7 +154,7 @@ Before writing any code: if the plan's approach has a clearly better alternative
 
 **Select the execution shape.** In continuous mode, use `## Execution Schedule` only after checking that every phase appears once, each wave has one main phase and at most one background phase, same-wave files are disjoint, and no same-wave phase consumes the other's output. If the section is absent or invalid, say that parallel execution was downgraded and run every remaining phase as a single-phase main-thread wave. In phased mode, always use single-phase main-thread waves.
 
-**Start the background lane only when it creates overlap.** At the first delegated wave, create one scratch directory with `mktemp -d` and keep it for the run. Write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Give the brief a `## Concurrently edited` section naming the main phase's files, so the worker can tell which of its citations point at ground you are moving. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
+**Start the background lane only when it creates overlap.** Both lanes write one checkout. That is bounded on purpose — one worker and never a fan-out, disjoint files claimed in a reviewed plan, a worker forbidden to commit, and every broad check held until the join — and the abort in Step 3.5 is what stops a bad claim from repeating. At the first delegated wave, write the background phase plus `## Global Constraints` verbatim to `<run-dir>/phase-<N>-brief.md`; use `<run-dir>/phase-<N>-report.md` for its report. Give the brief a `## Concurrently edited` section naming the main phase's files, so the worker can tell which of its citations point at ground you are moving. Dispatch one `phase-implementer` asynchronously, passing paths rather than file contents. On Claude Code set `run_in_background: true` and `model: sonnet`; on another runtime use its non-blocking spawn and request Sonnet only when the interface supports it. If asynchronous dispatch is unavailable, do not spawn — move that phase to the next main-thread wave.
 
 **Work the main lane immediately.** Validate the main phase's assumptions and consumed interfaces against live code, then implement it. Do not launch a worker and wait for it before making progress. Respect the phase's named files; classify any necessary change outside them with `<deviation_handling>`. While the phase is still in progress, run only the focused check that can falsify the change you just made — the phase's full automated criteria run once at the join.
 
@@ -185,7 +186,7 @@ For each criterion:
 - **Fails or does not run**: keep `[ ]`, add `<!-- FAILED: [brief explanation] -->`, and open a fix round
 - **Requires manual testing**: leave `[ ]` unchanged
 
-**Three fix rounds maximum per phase.** Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. Re-run the affected criteria after each fix. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
+**Three fix rounds maximum per phase.** Write `<!-- FIX ROUND <R> -->` under the phase before each round, and read the phase to get `<R>`. A compacted session cannot tell round 1 from round 3, which is the point at which the cap is supposed to stop the loop and ask. Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. Re-run the affected criteria after each fix. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
 
 ### Step 3.5: Review the wave
 
@@ -193,9 +194,13 @@ Run one integrated `code-reviewer` pass over every wave, not one pass per phase.
 
 Write `<run-dir>/wave-<N>-spec.md` with every phase section in the wave plus `## Global Constraints`. Build `<run-dir>/wave-<N>-round-<R>.diff` from the union of the wave's named files. Reach the wave's new files with `git add -N -- <the wave's new files>`, and undo it afterwards with `git restore --staged -- <the same paths>`. The pathspec is those named files in both directions, never `.` — a bare pathspec reaches the whole index and unstages work the user staged before the run. Run `git status --porcelain`; any changed file outside the union is a scope finding.
 
-Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`. Name no model — the agent's own default tier applies, because a wave can carry more than one phase and nothing has measured a cheaper tier at that width. Never send the worker report or this conversation. Do not pre-judge the result.
+The plan file is neither a scope finding nor a collision — this run edits it. In a delegated wave, two observations are collisions rather than scope findings: a changed file outside the union that the main lane did not itself edit and the worker's report names, and a file the worker reports changing that the main phase also changed. When the worker returned no usable report, treat any changed file outside the union that the main lane did not itself edit as a collision — that is where corroboration is unavailable, so that is where the conservative reading belongs. On any of these, write `> **Deviation**: collision — <what was observed>; background lane disabled for this run` under the affected phase, and run every remaining wave as a single-phase main-thread wave. Do not re-enable the lane for this run; the claim that produced the collision is the one the schedule kept making.
 
-Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-run affected criteria and re-review only the fix diff.
+Before sending any dispatch — reviewer or verifier — scan the prompt you wrote for "do not flag", "don't treat X as a defect", "at most Minor", "the plan chose", "suppress", and "no need to report". Rewrite the sentence any of them sits in: deleting the matched words leaves the bias and removes the evidence of it. A verifier dispatch pre-judges in its own form — asserting the finding is real, serious, or already agreed — so send the finding verbatim and stop there.
+
+Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`. Name no model — the agent's own default tier applies, because a wave can carry more than one phase and nothing has measured a cheaper tier at that width. Never send the worker report or this conversation.
+
+Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. Collect every verifier before acting on any verdict. Where a runtime's wait returns the first finisher, keep waiting and release each finished agent until all have reported — acting on a partial roster spends a fix round on a finding the rest would have refuted, and an unreleased agent holds the slot the next dispatch needs. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. A `⚠️ CANNOT VERIFY` item is not a finding and does not go to a verifier — you hold the plan and the cross-wave context the reviewer lacks, so resolve each one yourself before closing the wave. One that names a path it could not read is a runtime problem, not a review result — fix the path and re-dispatch, because resolving it yourself closes a wave whose review never ran. Confirmed as a real gap, it enters the fix round as a spec failure. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-run affected criteria and re-review only the fix diff.
 
 A finding that contradicts the plan is the user's call: present both texts and ask which governs.
 
@@ -250,6 +255,16 @@ In phased mode, run this after the final phase's own checks and before its commi
 
 Report the outcome in the final summary: which acceptance criteria passed, which failed, and which need the user. This report covers `### Acceptance Criteria` only — it does not stand in for a phase's pending manual verification.
 
+### Step 4.5: Review the run
+
+Run one `branch-scoped` `code-reviewer` pass over the whole run when it executed more than one wave. A single-wave run needs no second pass — Step 3.5 already reviewed exactly that diff. Nothing else reviews wave integration, because every wave diff is built from that wave's named files only.
+
+Write `<run-dir>/run-spec.md` with the plan's `### End State`, `### Acceptance Criteria`, and `## Global Constraints`. Build `<run-dir>/run-round-<R>.diff` exactly as Step 3.5 builds a wave diff, over the union of every wave's named files and the plan header's `**Run base**` SHA. Dispatch with the plan's overview, both paths, that base SHA, and `branch-scoped`. Verify, route, and dispose of findings under Step 3.5's rules, then re-run any acceptance criterion a fix touched.
+
+In phased mode, run this after Step 4 and before the final phase's commit. A fix it produces that reaches an earlier phase's files is its own commit — phased mode exists so each phase can be rejected on its own, and folding a cross-phase fix into the last one takes that away.
+
+`/df:peer-review` still covers the branch from its merge-base, including commits made before this run. This pass covers this run.
+
 ### When Things Don't Match Expectations
 
 When something isn't working as expected:
@@ -270,6 +285,7 @@ Spawn a research sub-task only when the answer is not in the plan or in a file t
 
 If the plan has existing checkmarks:
 
+- Read the plan's run marks — `**Run base**` in the header, `<!-- FIX ROUND <R> -->` under each phase, and any collision deviation note — before selecting the next wave
 - Trust that completed work is done
 - Check git log to see which phases were already committed
 - Pick up from the first unchecked item
@@ -375,9 +391,11 @@ Stay focused on implementing what was actually planned.
 - Read the plan's preamble, Global Constraints, Execution Schedule when present, and every phase's `### Assumptions` before starting — read a phase body when its wave starts
 - Keep one main-thread phase in every wave; dispatch at most one background implementer, and only from a valid explicit schedule
 - If asynchronous dispatch is unavailable, or the schedule is absent or invalid, execute the affected phases in the main thread
+- Stop dispatching the background lane for the rest of the run once a collision is recorded in the plan — a schedule that collided once is evidence, not a one-off
 - Join every lane before acceptance checks, integration fixes, review, progress updates, or the next wave
 - Run the plan's `### Acceptance Criteria` once, after the final wave — not per phase and not per wave
 - Dispatch one task-scoped `code-reviewer` for every wave — a wave that ran entirely in the main thread is reviewed exactly like a delegated one
+- After the final wave of a run that executed more than one wave, dispatch one `branch-scoped` `code-reviewer` over the whole run diff — a wave review never sees how two waves fit together
 - Verify every spec gap and every Critical or Important finding with `finding-verifier` before opening a fix round — the reviewer's severity is self-assigned and nothing else checks it
 - Update checkboxes in the plan as work completes — this is the progress record for resuming later
 - Don't check off manual verification items without user confirmation — only the user can verify manual criteria

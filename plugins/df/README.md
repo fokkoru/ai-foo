@@ -37,17 +37,17 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 
 What each skill guarantees, stated so you can check it from your own working copy and the run in front of you — no need to open a `SKILL.md`. A run that does not produce its row is a bug worth reporting, and a change that removes a row has to say so here first.
 
-| Skill            | You know it worked when                                                                                                                        |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `df:research`    | A new file exists under `thoughts/research/`, and its findings cite `file:line` instead of describing the code in prose                        |
-| `df:planning`    | A new file exists under `thoughts/plans/`, and its `## Execution Schedule` lists every phase exactly once                                      |
-| `df:iterate`     | The plan file changed, and its `## Execution Schedule` still lists every phase exactly once                                                    |
-| `df:implement`   | Every wave ends with one `code-reviewer` pass over that wave's diff, and each blocking finding goes to a `finding-verifier` before it is fixed |
-| `df:validate`    | A report exists under `thoughts/validation/`, and you are asked at most three comprehension questions in chat afterwards                       |
-| `df:peer-review` | Every finding you are asked to fix survived a `finding-verifier` dispatched to refute it                                                       |
-| `df:handoff`     | A file exists under `thoughts/handoffs/` that a fresh session can act on without this one                                                      |
-| `df:commit`      | The run announces the skill by name, and each commit stages named files rather than `git add .`                                                |
-| `df:deslop`      | You get one verdict per sentence — the probe never hands back rewritten text                                                                   |
+| Skill            | You know it worked when                                                                                                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `df:research`    | A new file exists under `thoughts/research/`, and its findings cite `file:line` instead of describing the code in prose                                                                                          |
+| `df:planning`    | A new file exists under `thoughts/plans/`, and its `## Execution Schedule` lists every phase exactly once                                                                                                        |
+| `df:iterate`     | The plan file changed, and its `## Execution Schedule` still lists every phase exactly once                                                                                                                      |
+| `df:implement`   | Every wave ends with one `code-reviewer` pass over that wave's diff, a run of two or more waves ends with one more over the whole run, and each blocking finding goes to a `finding-verifier` before it is fixed |
+| `df:validate`    | A report exists under `thoughts/validation/`, and you are asked at most three comprehension questions in chat afterwards                                                                                         |
+| `df:peer-review` | Every finding you are asked to fix survived a `finding-verifier` dispatched to refute it                                                                                                                         |
+| `df:handoff`     | A file exists under `thoughts/handoffs/` that a fresh session can act on without this one                                                                                                                        |
+| `df:commit`      | The run announces the skill by name, and each commit stages named files rather than `git add .`                                                                                                                  |
+| `df:deslop`      | You get one verdict per sentence — the probe never hands back rewritten text                                                                                                                                     |
 
 ## Subagents
 
