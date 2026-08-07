@@ -138,10 +138,11 @@ Get user confirmation before proceeding.
    - If scope changes, update `### End State` and `### Acceptance Criteria` to match — a plan whose end state no longer describes what it builds cannot be validated or reviewed
    - If a phase's files, symbols, or APIs change, update that phase's `### Assumptions` and their `source:` references — `df:implement` re-checks each one against the live codebase
    - If phases are added, removed, or renumbered, or a phase's `### Assumptions` gain or lose a `Confidence: Unclear`, update `### Decisions Most Likely to Change` to match — a stale rollup points the reviewer at the wrong decisions
-   - If a phase's `Produces` changes, update every later phase whose `Consumes` names it
+   - If a phase's `Produces` changes, update every later phase whose `Consumes` names it, and re-check that phase's own `Affects` — a widened surface reaches units the old line did not name
    - If phases, `Consumes`/`Produces`, or files under `### Changes Required` change, update `## Execution Schedule`: list every phase exactly once; keep one main phase and at most one background phase per wave; keep same-wave files disjoint; and schedule every consumer after its producers
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
+   - If a new or edited check compiles or executes a whole package, module, or directory, put it in `### Wave Checks` rather than a phase — `df:implement` runs a phase's criteria at its wave's join, so a command repeated across phases is paid once per wave they span
 
 3. **Preserve quality standards**:
    - Include specific file paths and line numbers for new content

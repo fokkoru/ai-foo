@@ -178,7 +178,13 @@ How should I proceed?
 
 ### Step 3: Verify the joined wave
 
-After every lane has stopped writing, re-validate every assumption the worker reported as deferred, then run the wave's automated success criteria — the union across its phases, so a criterion two phases share runs once and not twice. Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree. The same goes for a deferred assumption: the worker read it against a file you were mid-edit, so only a re-read now settles it.
+After every lane has stopped writing, re-validate every assumption the worker reported as deferred, then run the wave's checks in two tiers.
+
+First the union of its phases' `#### Automated Verification` criteria, so a criterion two phases share runs once and not twice. Then `### Wave Checks`, each narrowed to the units holding this wave's files plus every unit its phases declare under `Affects`. Narrow only on that declared basis: a phase whose `Affects` line is missing gives you none, so run the check unnarrowed and say so in one line.
+
+A plan carrying no `### Wave Checks` section predates the tier: hoist every phase criterion that compiles or executes a whole unit, run those here, and name in one line which ones you moved.
+
+Worker checks are useful evidence, but they do not replace joined verification because they may have run while the main lane was changing the shared worktree. The same goes for a deferred assumption: the worker read it against a file you were mid-edit, so only a re-read now settles it.
 
 For each criterion:
 
@@ -186,7 +192,7 @@ For each criterion:
 - **Fails or does not run**: keep `[ ]`, add `<!-- FAILED: [brief explanation] -->`, and open a fix round
 - **Requires manual testing**: leave `[ ]` unchanged
 
-**Three fix rounds maximum per phase.** Write `<!-- FIX ROUND <R> -->` under the phase before each round, and read the phase to get `<R>`. A compacted session cannot tell round 1 from round 3, which is the point at which the cap is supposed to stop the loop and ask. Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. Re-run the affected criteria after each fix. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
+**Three fix rounds maximum per phase.** Write `<!-- FIX ROUND <R> -->` under the phase before each round, and read the phase to get `<R>`. A compacted session cannot tell round 1 from round 3, which is the point at which the cap is supposed to stop the loop and ask. Fix a main-phase failure in the main thread. Return a worker-phase failure to the same implementer for rounds 1 and 2 when it can be resumed; on round 3 use a fresh `phase-implementer` carrying the brief, report, and open findings. The main thread owns a finding that crosses both lanes. After each fix, re-run only the focused criteria covering the amended code; `### Wave Checks` run once more after the wave's last round, never inside one. At the cap, give every open criterion one disposition — Fixed, Parked with ruling, Deferred with reason, or BLOCKED — then ask the user.
 
 ### Step 3.5: Review the wave
 
@@ -200,7 +206,7 @@ Before sending any dispatch — reviewer or verifier — scan the prompt you wro
 
 Dispatch `code-reviewer` with the wave overview, spec path, commit range, diff path, and `task-scoped`. Name no model — the agent's own default tier applies, because a wave can carry more than one phase and nothing has measured a cheaper tier at that width. Never send the worker report or this conversation.
 
-Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. Collect every verifier before acting on any verdict. Where a runtime's wait returns the first finisher, keep waiting and release each finished agent until all have reported — acting on a partial roster spends a fix round on a finding the rest would have refuted, and an unreleased agent holds the slot the next dispatch needs. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. A `⚠️ CANNOT VERIFY` item is not a finding and does not go to a verifier — you hold the plan and the cross-wave context the reviewer lacks, so resolve each one yourself before closing the wave. One that names a path it could not read is a runtime problem, not a review result — fix the path and re-dispatch, because resolving it yourself closes a wave whose review never ran. Confirmed as a real gap, it enters the fix round as a spec failure. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-run affected criteria and re-review only the fix diff.
+Verify every spec gap and Critical or Important finding with one `finding-verifier` per finding, dispatched in parallel. Collect every verifier before acting on any verdict. Where a runtime's wait returns the first finisher, keep waiting and release each finished agent until all have reported — acting on a partial roster spends a fix round on a finding the rest would have refuted, and an unreleased agent holds the slot the next dispatch needs. `REFUTED` clears it; `CONFIRMED` and `CANNOT DETERMINE` keep it blocking. A `⚠️ CANNOT VERIFY` item is not a finding and does not go to a verifier — you hold the plan and the cross-wave context the reviewer lacks, so resolve each one yourself before closing the wave. One that names a path it could not read is a runtime problem, not a review result — fix the path and re-dispatch, because resolving it yourself closes a wave whose review never ran. Confirmed as a real gap, it enters the fix round as a spec failure. Act on the verifier's severity, record refutations and Minor findings under the affected phase, and route blocking fixes by file ownership using Step 3's fix rules. A cross-lane finding belongs to the main thread after the join. Re-review only the fix diff.
 
 A finding that contradicts the plan is the user's call: present both texts and ask which governs.
 
@@ -250,6 +256,8 @@ Do not check off manual verification items until confirmed by the user.
 ### Step 4: Verify the finished plan
 
 After the final wave, run the plan's `### Acceptance Criteria` once. They are the plan-level checks — the repo-wide commands and the end-to-end behaviour no single phase can prove — and this is the only place `df:implement` runs them. Mark each one with Step 3's three outcomes, and open a fix round on a failure under Step 3's cap. A criterion needing human judgment stays unchecked and joins the deferred manual list.
+
+Start these commands in the background so Step 4.5's review can run while they work — a reviewer writes nothing, so the two cannot interfere, and a repo-wide command is usually the longest single wait in the run. If one is interrupted, read the output it already produced before restarting: a failure it already printed is one you can fix now, which makes the restart the last one rather than the second of three.
 
 In phased mode, run this after the final phase's own checks and before its commit.
 
@@ -368,20 +376,23 @@ Before starting a new wave, re-read the plan's checkbox state and run `git log -
 
 <anti_patterns>
 
-| Excuse                                                          | Reality                                                                                                                                                           |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "The plan clearly forgot this — I'll just add it."              | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                                       |
-| "I'll commit both phases together, they're related."            | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                                         |
-| "The user will obviously approve this phase."                   | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                                                  |
-| "I'll read the later phases' files now while I'm in here."      | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                                         |
-| "The plan has no schedule, but these phases look independent."  | Parallel writes need an explicit reviewed claim. Run them in the main thread instead of inferring ownership during execution.                                     |
-| "I'll launch the worker now and wait."                          | A background lane exists only to overlap useful main-thread work. If there is no main phase to execute, do not dispatch it.                                       |
-| "The files are disjoint, so both lanes can run the full suite." | Both lanes still share one worktree. Run broad and acceptance checks only after the join.                                                                         |
-| "One more full-suite run, just to be sure."                     | Sure of what? Nothing has changed since the last one. It returns the same verdict plus a second copy of its output, which stays resident for the rest of the run. |
-| "The schedule says parallel, so I don't need to validate it."   | Plans drift. A stale file or interface list turns safe overlap into a collision; downgrade the wave instead.                                                      |
-| "This finding is obviously real — verifying it is waste."       | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.                                  |
-| "It was refuted, so there's nothing to record."                 | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job.                       |
-| "One more round and it converges."                              | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                  |
+| Excuse                                                          | Reality                                                                                                                                                                                     |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "The plan clearly forgot this — I'll just add it."              | If the plan is wrong, that is Rule 4 in `<deviation_handling>`: stop and ask. Adding it silently means nobody agreed to it.                                                                 |
+| "I'll commit both phases together, they're related."            | Phased mode exists so each phase can be rejected on its own. One commit means one gate for two decisions.                                                                                   |
+| "The user will obviously approve this phase."                   | Then the confirmation costs one message. Proceeding without it removes their only chance to stop the next phase.                                                                            |
+| "I'll read the later phases' files now while I'm in here."      | They stay resident for every remaining turn, and the phase that needs them reads them anyway. You pay twice for one read.                                                                   |
+| "The plan has no schedule, but these phases look independent."  | Parallel writes need an explicit reviewed claim. Run them in the main thread instead of inferring ownership during execution.                                                               |
+| "I'll launch the worker now and wait."                          | A background lane exists only to overlap useful main-thread work. If there is no main phase to execute, do not dispatch it.                                                                 |
+| "The files are disjoint, so both lanes can run the full suite." | Both lanes still share one worktree. Run wave, broad, and acceptance checks only after the join.                                                                                            |
+| "One more full-suite run, just to be sure."                     | Sure of what? Nothing has changed since the last one. It returns the same verdict plus a second copy of its output, which stays resident for the rest of the run.                           |
+| "This build only takes a minute — per phase is fine."           | A run has several waves and a wave can carry two phases, so per-phase means paying that minute on every one of them.                                                                        |
+| "The fix touched that package, so re-run its checks now."       | Three rounds means three runs of one package check for one wave. Run the focused check covering the fix; the package check runs once, after the last round.                                 |
+| "No `Affects` line, but nothing else can depend on this."       | Narrowing needs a declared claim, the same way parallel execution does. Run the check unnarrowed and say so — inferring the dependents here is the guess the declaration exists to replace. |
+| "The schedule says parallel, so I don't need to validate it."   | Plans drift. A stale file or interface list turns safe overlap into a collision; downgrade the wave instead.                                                                                |
+| "This finding is obviously real — verifying it is waste."       | Then the verifier costs one dispatch and confirms it. The findings that are obviously real are not the ones the gate exists for.                                                            |
+| "It was refuted, so there's nothing to record."                 | A refuted finding that leaves no trace is indistinguishable from one you dropped. The refutation is the evidence that the gate did its job.                                                 |
+| "One more round and it converges."                              | Past the cap, rounds do not converge — the failure is structural. Give every open finding a disposition and ask.                                                                            |
 
 Stay focused on implementing what was actually planned.
 
@@ -392,7 +403,9 @@ Stay focused on implementing what was actually planned.
 - Keep one main-thread phase in every wave; dispatch at most one background implementer, and only from a valid explicit schedule
 - If asynchronous dispatch is unavailable, or the schedule is absent or invalid, execute the affected phases in the main thread
 - Stop dispatching the background lane for the rest of the run once a collision is recorded in the plan — a schedule that collided once is evidence, not a one-off
-- Join every lane before acceptance checks, integration fixes, review, progress updates, or the next wave
+- Join every lane before wave or acceptance checks, integration fixes, review, progress updates, or the next wave
+- Run `### Wave Checks` once per wave, and once more after the wave's last fix round — never inside one
+- Narrow a wave check only to the units holding that wave's files plus the units its phases declare under `Affects` — a phase declaring none leaves the check unnarrowed
 - Run the plan's `### Acceptance Criteria` once, after the final wave — not per phase and not per wave
 - Dispatch one task-scoped `code-reviewer` for every wave — a wave that ran entirely in the main thread is reviewed exactly like a delegated one
 - After the final wave of a run that executed more than one wave, dispatch one `branch-scoped` `code-reviewer` over the whole run diff — a wave review never sees how two waves fit together

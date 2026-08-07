@@ -98,6 +98,7 @@ Define the solution envelope before the phases:
 
 - **What must be true when this is done** → `### End State`
 - **How it is proven end to end** → `### Acceptance Criteria`
+- **Checks too coarse for one phase** → `### Wave Checks`
 - **Rules no phase may break** → `## Global Constraints`
 - **What not to build** → `## What We're NOT Doing`
 - **Complexity traps to avoid** → `## Rabbit Holes to Avoid`
@@ -110,8 +111,10 @@ For each phase:
 
 - name affected files or file groups and the intended outcome
 - name `Consumes` and `Produces` only when another phase depends on that contract
+- name under `Affects` every unit outside the phase's files that its changes can break — the wave check covers only the units this line and the wave's files name, so one left out goes unchecked until the final repo-wide run
 - record material assumptions with a `source: file:line`, consequence if wrong, and confidence
 - separate automated verification from manual judgment; write `(none)` when no manual check is needed
+- keep every phase check runnable in seconds — one whose smallest runnable unit is a whole package, module, or directory goes to `### Wave Checks`, where it runs once per wave instead of once per phase
 
 Build `## Execution Schedule` with every phase exactly once, one main phase and at most one background phase per wave, disjoint same-wave files, and every consumer scheduled after its producers. Use `(none)` when no safe background phase exists.
 
@@ -135,7 +138,7 @@ Read the finished plan completely and fix every issue found in this review:
 2. **Decision completeness** — no `TBD`, `TODO`, bracketed instruction, ellipsis, “similar to above,” or unresolved choice survives. Preserve only the Step 1 `(unverified)` marks.
 3. **Evidence quality** — every material assumption cites current `file:line` evidence, and high-impact or stale research claims were checked against live code.
 4. **Phase consistency** — every consumed contract is produced earlier, each phase contains enough context to implement, and the execution schedule is valid.
-5. **Verification quality** — automated checks are runnable or objectively inspectable, manual checks require genuine human judgment, and together they prove the End State.
+5. **Verification quality** — automated checks are runnable or objectively inspectable, manual checks require genuine human judgment, every check sits at the finest tier that can run it, and together they prove the End State.
 
 If on main/master or the commit is pushed, generate GitHub permalinks for source references.
 

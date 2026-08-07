@@ -25,6 +25,12 @@
 
 List every repo-wide command the plan requires here, once. `df:implement` runs this section one time, after the final wave.
 
+### Wave Checks
+
+- [ ] [Check whose smallest runnable unit is a whole package, module, or directory — name the unit it takes], or `(none)`
+
+`df:implement` runs this section once per wave, narrowed to the units holding that wave's files plus the units its phases name under `Affects`. A phase that leaves `Affects` unwritten supplies no narrowing basis, so the check runs unnarrowed.
+
 ### Decisions Most Likely to Change
 
 - Phase [N] — [Defaulted, unclear, user-facing, or stored-data decision; use `(none)` when none apply and cap the list at three]
@@ -63,8 +69,11 @@ List every phase exactly once. Use `(none)` when a wave has no safe background p
 
 - **Consumes**: [Exact earlier-phase contract, or `(nothing)`]
 - **Produces**: [Exact contract later phases require, or `(nothing)`]
+- **Affects**: [Units outside this phase's files that its changes can break, or `(nothing)`]
 
 Keep only consequential cross-phase contracts. Do not specify incidental internal signatures.
+
+`Affects` is not a contract — it is the narrowing basis for `### Wave Checks`. `(nothing)` claims that nothing outside this phase's own files depends on what it changes.
 
 ### Assumptions
 
@@ -88,7 +97,7 @@ Write `(none)` only when every affected file was produced by an earlier phase an
 
 - [ ] [Runnable command or objectively inspectable result, scoped to this phase's files]
 
-Scope each command to the files this phase names — a path-scoped invocation of a repo-wide tool belongs here. A command that also reads files this phase does not name goes in `### Acceptance Criteria` instead, unless exactly one phase in the plan changes an input it reads, in which case it stays in that phase.
+Route each check by the smallest unit it can run against. One that takes this phase's files as its argument belongs here, and so does one that reads wider but returns in seconds — a search, a file-shape assertion — because repeating it costs nothing. One that must compile or execute a whole package, module, or directory belongs in `### Wave Checks`, however narrow the behavior it is asserting. One that reads the whole repository belongs in `### Acceptance Criteria`.
 
 #### Manual Verification
 
