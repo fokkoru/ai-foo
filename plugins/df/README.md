@@ -27,7 +27,7 @@ All workflow surfaces are skills (no slash commands). `commit` and `deslop` auto
 | `df:planning`    | Create decision-complete implementation plans with main-thread analysis and adaptive delegation                                                                       |
 | `df:iterate`     | Update existing plans based on feedback                                                                                                                               |
 | `df:implement`   | Execute plans in the main thread with one bounded background phase when the plan declares safe overlap                                                                |
-| `df:validate`    | Verify implementation against plan, identify issues; saves a report with an explainer and comprehension check                                                         |
+| `df:validate`    | Verify implementation against plan, identify issues; presents a report with an explainer and comprehension check                                                      |
 | `df:peer-review` | Independent code review by an isolated reviewer — one pass, spec + quality verdicts                                                                                   |
 | `df:handoff`     | Create handoff document for session transfer                                                                                                                          |
 | `df:commit`      | Commit changes in logical chunks, with message length sized to the change (Conventional Commits 1.0.0)                                                                |
@@ -43,7 +43,7 @@ What each skill guarantees, stated so you can check it from your own working cop
 | `df:planning`    | A new file exists under `thoughts/plans/`, and its `## Execution Schedule` lists every phase exactly once                                                                                                                                                                                       |
 | `df:iterate`     | The plan file changed, and its `## Execution Schedule` still lists every phase exactly once                                                                                                                                                                                                     |
 | `df:implement`   | Every wave ends with one `code-reviewer` pass over that wave's diff, a run of two or more waves ends with one more over the whole run, each blocking finding goes to a `finding-verifier` before it is fixed, and the plan's repo-wide commands run once for the run rather than once per phase |
-| `df:validate`    | A report exists under `thoughts/validation/`, and you are asked at most three comprehension questions in chat afterwards                                                                                                                                                                        |
+| `df:validate`    | A report appears in chat and no file is written, and you are asked at most three comprehension questions afterwards                                                                                                                                                                             |
 | `df:peer-review` | Every finding you are asked to fix survived a `finding-verifier` dispatched to refute it                                                                                                                                                                                                        |
 | `df:handoff`     | A file exists under `thoughts/handoffs/` that a fresh session can act on without this one                                                                                                                                                                                                       |
 | `df:commit`      | The run announces the skill by name, and each commit stages named files rather than `git add .`                                                                                                                                                                                                 |
@@ -99,7 +99,6 @@ Skills use these default paths:
 
 - Research documents: `thoughts/research`
 - Implementation plans: `thoughts/plans`
-- Validation reports: `thoughts/validation`
 - Handoffs: `thoughts/handoffs`
 
 To override, add a one-line note to your project's `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `df: write plans to docs/plans`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
