@@ -1,3 +1,10 @@
+---
+status: draft
+supersedes: ""
+superseded_by: ""
+last_updated: "[date]"
+---
+
 # [Feature/Task Name] - Implementation Plan
 
 **Date**: [date]

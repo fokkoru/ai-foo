@@ -2,7 +2,7 @@
 name: planning
 description: Use when creating a decision-complete implementation plan between df:research and df:implement, with main-thread analysis and adaptive delegation for independent gaps.
 disable-model-invocation: true
-allowed-tools: Read, Write, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, TodoWrite, Task, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git diff:*), Bash(git status:*), Bash(gh repo view:*)
 ---
 
 <objective>
@@ -14,9 +14,9 @@ Keep requirements, consequential decisions, the central technical analysis, and 
 
 <artifact_scope>
 This is a document-only command.
-Your only output artifact is a single document under thoughts/plans.
+Your output artifacts live under thoughts/plans: the new plan, and — only when it supersedes an earlier plan — an edit to that earlier plan's frontmatter.
 Don't create, write, or modify files anywhere else.
-Before any Write call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
+Before any Write or Edit call, verify the target path is inside thoughts/plans — if it is not, stop and ask the user.
 If you identify a beneficial code change, document it in the plan document and suggest the user run /df:implement. Do not make code changes in this command.
 
 </artifact_scope>
@@ -130,7 +130,7 @@ Gather metadata immediately before writing:
 - Current branch: `git rev-parse --abbrev-ref HEAD`
 - Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
-Read `references/plan-template.md` fully and use it as the document skeleton. Duplicate its phase section for every phase and omit optional interface details that do not apply.
+Read `references/plan-template.md` fully and use it as the document skeleton. Duplicate its phase section for every phase and omit optional interface details that do not apply. Fill the frontmatter block with `status: draft`, `last_updated` set to today's date as `YYYY-MM-DD`, and `supersedes`/`superseded_by` empty unless this plan replaces a named earlier one — in which case write both sides, here and in the plan being replaced. Set the replaced plan's frontmatter `status: superseded` with `last_updated` refreshed to the same `YYYY-MM-DD`; when that plan carries no frontmatter block, add none — the supersession stays recorded in the new plan's `supersedes`.
 
 Read the finished plan completely and fix every issue found in this review:
 

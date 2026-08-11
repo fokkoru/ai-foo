@@ -261,6 +261,8 @@ Start these commands in the background so Step 4.5's review can run while they w
 
 In phased mode, run this after the final phase's own checks and before its commit.
 
+Once every criterion is checked or dispositioned, set the plan's frontmatter `status: implemented` and `last_updated` to today's date as `YYYY-MM-DD`. Skip silently when the plan has no frontmatter block.
+
 Report the outcome in the final summary: which acceptance criteria passed, which failed, and which need the user. This report covers `### Acceptance Criteria` only — it does not stand in for a phase's pending manual verification.
 
 ### Step 4.5: Review the run

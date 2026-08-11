@@ -143,6 +143,7 @@ Get user confirmation before proceeding.
    - If changing approach, update "Implementation Approach" section
    - Maintain the distinction between automated vs manual success criteria
    - If a new or edited check compiles or executes a whole package, module, or directory, put it in `### Wave Checks` rather than a phase — `df:implement` runs a phase's criteria at its wave's join, so a command repeated across phases is paid once per wave they span
+   - After editing the plan, update `last_updated` in its frontmatter to today's date as `YYYY-MM-DD`. When the plan has no frontmatter block, add none — an old plan stays as it is
 
 3. **Preserve quality standards**:
    - Include specific file paths and line numbers for new content
