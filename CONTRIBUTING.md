@@ -46,9 +46,46 @@ plugin-name/
    }
    ```
 
+6. Create `plugins/<plugin-name>/.codex-plugin/plugin.json` for the Codex half — Codex plugins can only bundle skills, so `skills` points at the skills directory:
+
+   ```json
+   {
+     "name": "<plugin-name>",
+     "version": "1.0.0",
+     "description": "Brief description",
+     "skills": "./skills/",
+     "interface": {
+       "displayName": "<plugin-name>",
+       "shortDescription": "Brief description",
+       "longDescription": "..."
+     }
+   }
+   ```
+
+7. Register in `.agents/plugins/marketplace.json` using the `git-subdir` source with `"ref": "main"`:
+
+   ```json
+   {
+     "name": "<plugin-name>",
+     "source": {
+       "source": "git-subdir",
+       "url": "fokkoru/ai-foo",
+       "path": "plugins/<plugin-name>",
+       "ref": "main"
+     },
+     "policy": {
+       "installation": "AVAILABLE",
+       "authentication": "ON_USE"
+     },
+     "category": "Coding"
+   }
+   ```
+
+The split that is easy to get backwards: `version` lives in the Codex manifest (`.codex-plugin/plugin.json`) and in the Claude marketplace entry, never in `.claude-plugin/plugin.json`.
+
 ## Adding a Command or Agent
 
-**New workflow surface:** Create a skill at `plugins/df/skills/<name>/SKILL.md`. df ships no slash commands — `commands/` is empty and stays that way.
+**New workflow surface:** Create a skill at `plugins/df/skills/<name>/SKILL.md`. df ships no slash commands — `commands/` is empty and stays that way. A manual-only skill also needs `agents/openai.yaml` with `allow_implicit_invocation: false`; an auto-triggering skill has no `agents/` directory.
 
 **New agent:** Create _both_ `plugins/df/agents/<name>.md` and its mirror `plugins/df/codex/agents/<name>.toml`. The drift check compares the name sets first, so an `.md` without its `.toml` fails immediately. Add it to the agent table in `plugins/df/README.md`, and — if a skill spawns it — to the `<agent_selection>` table in all three of `research`, `planning`, `iterate`.
 

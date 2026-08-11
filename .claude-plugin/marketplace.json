@@ -16,6 +16,23 @@
       },
       "category": "development",
       "keywords": ["workflow", "development", "planning", "research", "commits"]
+    },
+    {
+      "name": "kb",
+      "source": "./plugins/kb",
+      "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+      "version": "1.0.0",
+      "author": {
+        "name": "fokkoru"
+      },
+      "category": "development",
+      "keywords": [
+        "knowledge-base",
+        "documentation",
+        "okf",
+        "provenance",
+        "compile"
+      ]
     }
   ]
 }

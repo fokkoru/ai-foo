@@ -22,20 +22,26 @@ Steps in brackets `[]` are optional. All workflow steps are skills, invoked expl
 
 The skill and agent tables live in `plugins/df/README.md` — that is the single copy.
 
+### kb (plugins/kb/)
+
+Knowledge base compiler. One skill, `/kb:compile` on Claude Code or `$kb:compile` on Codex CLI, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
+
+The skill table lives in `plugins/kb/README.md` — that is the single copy.
+
 ## Versioning
 
-**A `df` version bump touches exactly these two fields, bumped together in one commit:**
+**A version bump touches exactly two fields for the plugin being bumped, bumped together in one commit:**
 
-| Location                               | Runtime     | Field                |
-| -------------------------------------- | ----------- | -------------------- |
-| `.claude-plugin/marketplace.json`      | Claude Code | `plugins[0].version` |
-| `plugins/df/.codex-plugin/plugin.json` | Codex CLI   | `version`            |
+| Location                                   | Runtime     | Field                          |
+| ------------------------------------------ | ----------- | ------------------------------ |
+| `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
+| `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
 
-There is no bump script — edit both fields to the same value in a single `chore(df): bump version to X.Y.Z` commit. Do not split them across commits.
+There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 
-No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins the `git-subdir` source to `"ref": "main"`, so Codex always tracks the latest `plugins/df` on `main` — nothing to bump there, no tag to create or push.
+No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins every entry's `git-subdir` source to `"ref": "main"`, so Codex always tracks the latest `plugins/<name>` on `main` — nothing to bump there, no tag to create or push.
 
-> `plugins/df/.claude-plugin/plugin.json` must NOT carry a `version` (it would override the marketplace version for this relative-path plugin). The **Codex** manifest (`plugins/df/.codex-plugin/plugin.json`) is the opposite: it _must_ carry the version. `.agents/plugins/marketplace.json` uses `"ref": "main"` and carries no version — nothing to bump there.
+> No plugin's `.claude-plugin/plugin.json` may carry a `version` (it would override the marketplace version for a relative-path plugin). Each plugin's **Codex** manifest (`plugins/<name>/.codex-plugin/plugin.json`) is the opposite: it _must_ carry the version. `.agents/plugins/marketplace.json` uses `"ref": "main"` and carries no version — nothing to bump there.
 
 **When to update:** Any change to files in `plugins/<name>/skills/`, `plugins/<name>/agents/`, or `plugins/<name>/codex/` → bump version.
 
@@ -71,6 +77,7 @@ claude plugin validate .                  # after editing either manifest; --str
 scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/*.md body or frontmatter
 scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
 scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
+plugins/kb/skills/compile/scripts/check-docs.sh  # after any change under docs/
 ```
 
 These check structure, and none of them can see a lost capability. So when a change removes one — a named step, a workflow trigger, an agent dispatch, a documented behaviour — the commit body names what replaces it, or says nothing does. `CONTRIBUTING.md` carries the rule; the audit that earned it is `thoughts/research/2026-08-05_0043_summer-regression-audit.md`. A skill's row in `plugins/df/README.md`'s **It's working if** table is the second place a guarantee is written down, so removing one from a skill must fail that table too.
@@ -83,4 +90,5 @@ These check structure, and none of them can see a lost capability. So when a cha
 - Formatting is Prettier's job — run `prettier --write .` and gate with `prettier --check .`. `.prettierignore` excludes `plugins/df/agents/` (mirrored byte-for-byte into `.toml`, which Prettier can't reformat) and `thoughts/`. One rule Prettier can't enforce: leave a blank line before a closing section tag. Without it Prettier pulls the tag into the list above and indents it, then treats that shape as correct forever, so no later run flags it.
 - Run `scripts/check-agent-selection-drift.sh` after editing the `<agent_selection>` table in any of `research`, `planning`, `iterate` — all three carry it verbatim, and they have drifted apart before (`cc3ef2c`). Three copies is the deliberate choice: only one skill loads at a time, so a shared reference file would trade inline tokens for a `Read` at equal cost.
 - `sonnet` is the floor for `code-reviewer`; `effort` never moves. `effort: high` stays in both agents' frontmatter — Claude Code reads `effort:` only from there, so it is not a per-dispatch knob, and the Codex mirrors carry the same value as `model_reasoning_effort = "high"`. `finding-verifier` stays pinned at `model: opus`: a lenient refuter costs more than a lenient finder, because a missed defect can still be caught downstream but a wrongly refuted finding is gone and nothing else looks at it. `code-reviewer`'s frontmatter also keeps `model: opus`, so a caller that names nothing gets the strong tier; a caller may name `sonnet` for a narrow, task-scoped review, and that scoping is what makes it safe — no surveyed framework routes code review to a cheap model without a compensating structure. df's two callers both name nothing and so keep the `opus` default. `df:implement` dropped its `model: sonnet` when review moved from per-phase to per-wave: the justification was one phase's diff against one brief, and a wave can carry two phases, so the scoping that made the cheap tier safe stopped describing the dispatch. Naming a cheaper tier there again needs a measurement at wave width, and there is none. `phase-implementer` is the one agent that pins no model at all — it inherits the session's tier, and a dispatch names one only to deviate, never below `sonnet`. `haiku` is never valid for either agent, and that is the tier the local measurement covers: df's own haiku-tier run flagged 0 of 10 planted defects at correct severity. Weak judges' measurably higher false-negative rates under suggestive framing and spec-kitty's independent 0.35 task-fit score for haiku on code review point the same way. Read the run with its caveat — planted defects are the exact condition under which review F1 was measured to collapse 92% from synthetic samples to real PRs. The Codex mirrors pin no model, so that half comes from `~/.codex/config.toml`. Evidence: `thoughts/research/2026-08-02_1531_code-reviewer-dispatch-and-tiering.md`.
+- A plugin's own checker ships inside that plugin rather than in the repository's `scripts/`, because a user installing `kb` receives `plugins/kb/**` and nothing else. The repository's `scripts/` are maintainer gates for this repository and reach no installation.
 - **One rule, one place.** A behavioural rule in a skill or agent file belongs at its **point of use** — the workflow step or section where it fires — plus `<constraints>` when it is a hard gate. Restating it in a catch-all Guidelines or Key Principles section, in `<success_criteria>`, or in an agent's `## Important Guidelines` tail does not reinforce it; it creates copies that drift apart. Before removing a restatement, classify it: **duplicate** (the rule survives at an equal-or-stronger slot → delete), **orphan** (no other copy → move it to its strongest slot verbatim, never delete), **conflict** (two copies disagree → resolve, don't cut). Classify against the _post-edit_ file: two blocks being deleted together cannot cover for each other. Slot strength, strongest first: `<constraints>` and the workflow step that fires the rule > `<anti_patterns>` > `<success_criteria>` and `<quick_start>` > any catch-all guidelines section.

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Compile"
+  short_description: "Compile raw thoughts/ sources into the docs/ knowledge base"
+policy:
+  allow_implicit_invocation: false

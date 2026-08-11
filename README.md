@@ -4,6 +4,8 @@ Reusable plugins for development workflows. Runs on both **Claude Code** and **C
 
 ## Plugins
 
+Two independent plugins live here — installing one does not install the other.
+
 ### df
 
 Development workflow plugin providing a structured feature development cycle:
@@ -29,16 +31,27 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (`c
 | `df:commit`      | Commit changes in logical chunks (Conventional Commits)                                                   |
 | `df:deslop`      | Revise outbound prose against a sample of your own writing (not a workflow step; auto-triggers on intent) |
 
+### kb
+
+Knowledge base compiler. One skill, `kb:compile`, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it.
+
+- **Claude Code**: `/kb:compile`.
+- **Codex CLI**: `$kb:compile`.
+
+See [plugins/kb/README.md](plugins/kb/README.md) for the skill table and detailed usage.
+
 ## Install
 
-### Claude Code
+### df
+
+#### Claude Code
 
 ```bash
 claude /plugin marketplace add fokkoru/ai-foo
 claude /plugin install df@ai-foo
 ```
 
-### Codex CLI
+#### Codex CLI
 
 ```bash
 # 1. Add the marketplace
@@ -63,7 +76,7 @@ After install you have:
 - **Subagents**: 11 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`, `code-reviewer`, `finding-verifier`, `voice-prober`, plus the two advisors `codex-advisor` and `architecture-advisor` — and `phase-implementer`, the one subagent that writes. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`; both advisors require the `codex` MCP server (see [Advisor requirements](plugins/df/README.md#advisor-requirements)).
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 
-### Naming and invocation
+#### Naming and invocation
 
 All df skills are plugin-namespaced. The canonical invocation forms are:
 
@@ -72,7 +85,7 @@ All df skills are plugin-namespaced. The canonical invocation forms are:
 
 The unprefixed forms `/research`, `/implement`, etc. are **not** provided by this plugin. If your environment binds them to something (a personal skill, a bundled command, a different plugin), that's a different artifact — invoke df's workflows via `/df:<name>` to be explicit.
 
-### Update
+#### Update
 
 ```bash
 # Claude Code
@@ -84,15 +97,35 @@ codex plugin marketplace upgrade ai-foo
 bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/install-codex-agents.sh)
 ```
 
-### From a local clone
+#### From a local clone
 
 ```bash
 git clone https://github.com/fokkoru/ai-foo.git
 claude --plugin-dir /path/to/ai-foo/plugins/df
 ```
 
-### Customize paths (optional)
+#### Customize paths (optional)
 
 df writes research to `thoughts/research`, plans to `thoughts/plans`, and handoffs to `thoughts/handoffs`. If your project uses different paths, add a one-line note to your `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `df: write research to docs/research and plans to docs/plans`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
 
 See [plugins/df/README.md](plugins/df/README.md) for detailed usage.
+
+### kb
+
+#### Claude Code
+
+```bash
+claude /plugin marketplace add fokkoru/ai-foo
+claude /plugin install kb@ai-foo
+```
+
+#### Codex CLI
+
+```bash
+codex plugin marketplace add fokkoru/ai-foo
+codex plugin add kb@ai-foo
+```
+
+Two steps, and there is no third: `kb` ships no subagents, so nothing needs installing separately — the visible difference from df's install path above.
+
+See [plugins/kb/README.md](plugins/kb/README.md) for detailed usage.

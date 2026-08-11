@@ -1,0 +1,28 @@
+{
+  "name": "kb",
+  "version": "1.0.0",
+  "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "documentation",
+    "okf",
+    "provenance",
+    "compile"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "kb — Knowledge Base",
+    "shortDescription": "Compile raw notes into a committed knowledge base",
+    "longDescription": "One skill, kb:compile, which reads the raw corpus under thoughts/ and writes a durable knowledge base under docs/ in Open Knowledge Format v0.2, with per-source provenance hashes so drift is detectable. Invoke it manually as $kb:compile; it never auto-triggers. The plugin ships no subagents, so there is no install script to run. It requires no other plugin.",
+    "developerName": "fokkoru",
+    "category": "Coding",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/fokkoru/ai-foo",
+    "defaultPrompt": ["Compile my notes into the knowledge base"]
+  }
+}
