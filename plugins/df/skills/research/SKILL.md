@@ -68,7 +68,7 @@ Cross-check high-impact, surprising, or contradictory sub-agent claims against t
 
 - Compile main-thread and sub-agent findings
 - Prioritize live codebase findings as primary source of truth
-- Use thoughts/ findings as supplementary historical context
+- Read compiled `docs/` pages before raw thoughts/ notes; both are historical context, the live codebase is primary
 - Connect findings across different components
 - Include specific file paths and line numbers for reference
 - Highlight patterns, connections, and architectural decisions
@@ -186,10 +186,10 @@ Select the right agent for each type of investigation:
 
 **Historical context:**
 
-| Agent               | Purpose                                 | When to Use                       |
-| ------------------- | --------------------------------------- | --------------------------------- |
-| `thoughts-locator`  | Discover documents in thoughts/         | Find prior research or decisions  |
-| `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context |
+| Agent               | Purpose                                 | When to Use                         |
+| ------------------- | --------------------------------------- | ----------------------------------- |
+| `thoughts-locator`  | Discover compiled pages, then raw notes | Find what the project already knows |
+| `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context   |
 
 **External research:**
 

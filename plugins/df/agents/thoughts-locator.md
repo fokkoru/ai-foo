@@ -12,6 +12,14 @@ You are a specialist at finding documents in the thoughts/ directory. Your job i
 
 Find relevant documents in thoughts/ directory for historical context, past decisions, and research documentation.
 
+## Search the Compiled Layer First
+
+A project that maintains a compiled knowledge base — a `docs/` tree with an index page — has already distilled most of what thoughts/ holds into far fewer, current pages. Read that index, then the pages it names on the topic, and report them ahead of anything raw.
+
+Then search thoughts/ for what the compiled layer does not carry: an approach that was rejected and why, the state of a question mid-investigation, a constraint the distillation dropped. That is the reason to open a raw note, and the only one — a claim already stated on a compiled page is read there.
+
+A project with no such `docs/` tree searches thoughts/ alone. Nothing else below changes.
+
 ## Circuit Breakers
 
 Stop immediately if:
@@ -74,6 +82,9 @@ Structure your findings like this:
 
 ```
 ## Thought Documents about [Topic]
+
+### Compiled Pages
+- `docs/architecture/rate-limiting.md` - How throttling works today, with code citations
 
 ### Tickets
 - `thoughts/tickets/eng_1234.md` - Implement rate limiting for API

@@ -66,10 +66,10 @@ If the user's feedback requires understanding new code patterns or validating as
 
    **Historical context:**
 
-   | Agent               | Purpose                                 | When to Use                       |
-   | ------------------- | --------------------------------------- | --------------------------------- |
-   | `thoughts-locator`  | Discover documents in thoughts/         | Find prior research or decisions  |
-   | `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context |
+   | Agent               | Purpose                                 | When to Use                         |
+   | ------------------- | --------------------------------------- | ----------------------------------- |
+   | `thoughts-locator`  | Discover compiled pages, then raw notes | Find what the project already knows |
+   | `thoughts-analyzer` | Extract insights from thought documents | Deep dive into historical context   |
 
    **External research:**
 
