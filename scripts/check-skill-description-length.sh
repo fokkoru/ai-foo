@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Cap check for the frontmatter descriptions in plugins/df/skills/*/SKILL.md.
+# Cap check for the frontmatter descriptions in plugins/*/skills/*/SKILL.md —
+# every plugin this repository ships, not one of them.
 #
 # 250 is MAX_LISTING_DESC_CHARS in the Claude Code harness
 # (src/tools/SkillTool/prompt.ts) — an external number, not a house style
@@ -24,7 +25,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 
-SKILL_DIR="plugins/df/skills"
+PLUGIN_DIR="plugins"
 LISTING_CAP=250     # model-invocable: MAX_LISTING_DESC_CHARS
 FRONTMATTER_CAP=1024 # manual-only: the description frontmatter limit
 fail=0
@@ -81,14 +82,17 @@ sliced_tail() {
 }
 
 shopt -s nullglob
-skills=("$SKILL_DIR"/*/SKILL.md)
+skills=("$PLUGIN_DIR"/*/skills/*/SKILL.md)
 if [ ${#skills[@]} -eq 0 ]; then
-  echo "NO SKILLS: found no SKILL.md under $SKILL_DIR"
+  echo "NO SKILLS: found no SKILL.md under $PLUGIN_DIR/*/skills"
   exit 1
 fi
 
 for skill in "${skills[@]}"; do
-  name=$(basename "$(dirname "$skill")")
+  # Two plugins may each carry a skill of the same name, so the reported subject
+  # is the invocation string a reader can act on rather than the bare directory.
+  skill_dir=$(dirname "$skill")
+  name="$(basename "$(dirname "$(dirname "$skill_dir")")"):$(basename "$skill_dir")"
 
   description=$(fm_value "$skill" description)
   if [ -z "$description" ]; then
