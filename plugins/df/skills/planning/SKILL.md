@@ -99,13 +99,13 @@ Define the solution envelope before the phases:
 - **What must be true when this is done** → `### End State`
 - **How it is proven end to end** → `### Acceptance Criteria`
 - **Checks too coarse for one phase** → `### Wave Checks`
-- **Rules no phase may break** → `## Global Constraints`
+- **Rules no phase may break** → `## Constraint Check` — check the work against each source, name the sources checked, write out only a constraint whose source is not a companion or that this plan violates, and write `None` rather than leaving a part empty
 - **What not to build** → `## What We're NOT Doing`
 - **Complexity traps to avoid** → `## Rabbit Holes to Avoid`
 
 Specify outcomes, affected boundaries, and consequential interfaces. Include exact signatures, types, pseudocode, or code fragments only when they lock a non-obvious decision that the implementer must not reinterpret. Do not prescribe incidental internals that the implementer can derive safely from the named files and contracts.
 
-Make each phase the smallest independently verifiable deliverable worth a review gate. Fold setup, scaffolding, configuration, tests, and documentation into the phase whose outcome needs them. Split only when a reviewer could reject one phase while approving another.
+Make each phase the smallest independently verifiable deliverable worth a review gate. Fold setup, scaffolding, configuration, tests, and documentation into the phase whose outcome needs them. Split into another phase only when a reviewer could reject one phase while approving another — that test draws the boundary between phases. One altitude up, apply the same kind of test to the plan itself: work covering independent subsystems, each of which produces something working on its own, becomes separate plans rather than one plan with more phases.
 
 For each phase:
 
@@ -118,7 +118,7 @@ For each phase:
 
 Build `## Execution Schedule` with every phase exactly once, one main phase and at most one background phase per wave, disjoint same-wave files, and every consumer scheduled after its producers. Use `(none)` when no safe background phase exists.
 
-Keep the plan independently resumable from the relevant phase, Global Constraints, and affected files. If a phase needs broad prior conversation context or unrelated source files, narrow or split it.
+Keep the plan independently resumable from the relevant phase, Constraint Check, and affected files. If a phase needs broad prior conversation context or unrelated source files, narrow or split it.
 
 ### Step 6: Write and Self-Review the Plan
 
@@ -130,7 +130,7 @@ Gather metadata immediately before writing:
 - Current branch: `git rev-parse --abbrev-ref HEAD`
 - Filename: `thoughts/plans/YYYY-MM-DD_HHMM_topic.md`
 
-Read `references/plan-template.md` fully and use it as the document skeleton. Duplicate its phase section for every phase and omit optional interface details that do not apply. Fill the frontmatter block with `status: draft`, `last_updated` set to today's date as `YYYY-MM-DD`, and `supersedes`/`superseded_by` empty unless this plan replaces a named earlier one — in which case write both sides, here and in the plan being replaced. Set the replaced plan's frontmatter `status: superseded` with `last_updated` refreshed to the same `YYYY-MM-DD`; when that plan carries no frontmatter block, add none — the supersession stays recorded in the new plan's `supersedes`.
+Read `references/plan-template.md` fully and use it as the document skeleton. Duplicate its phase section for every phase and omit optional interface details that do not apply. Fill the frontmatter block: `date`, `author`, `git_commit`, and `branch` from the values gathered above; `status: draft`; `companions:` with every file named under `## Constraint Check`'s **Sources checked**, each one a path inside the repository; `last_updated` set to today's date as `YYYY-MM-DD`; and `supersedes`/`superseded_by` empty unless this plan replaces a named earlier one — in which case write both sides, here and in the plan being replaced. Set the replaced plan's frontmatter `status: superseded` with `last_updated` refreshed to the same `YYYY-MM-DD`; when that plan carries no frontmatter block, add none — the supersession stays recorded in the new plan's `supersedes`.
 
 Read the finished plan completely and fix every issue found in this review:
 

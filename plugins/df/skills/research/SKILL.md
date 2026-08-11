@@ -84,7 +84,7 @@ Gather metadata before writing the document:
 - Get current branch name: `git rev-parse --abbrev-ref HEAD`
 - Filename: `thoughts/research/YYYY-MM-DD_HHMM_topic.md`
 
-Structure the document with YAML frontmatter followed by content:
+Structure the document with YAML frontmatter followed by content. `## Research Question`, `## Summary`, `## Detailed Findings`, and `## Open Questions` are required in every document; every other section below is conditional — include it when the research produced content for it, and omit a section with nothing to say rather than filling it with a placeholder.
 
 ```markdown
 ---
@@ -100,11 +100,6 @@ last_updated_by: "[git user name]"
 ---
 
 # Research: [User's Question/Topic]
-
-**Date**: [date]
-**Author**: [git user name]
-**Git Commit**: [commit hash]
-**Branch**: [branch name]
 
 ## Research Question
 
@@ -126,7 +121,13 @@ last_updated_by: "[git user name]"
 
 ...
 
+## Recommendation
+
+[The course of action the findings support. Omit this section when the research is purely descriptive.]
+
 ## Code References
+
+[The entry points a reader must open to act on this document — one line each, not a ledger of every path the findings cite.]
 
 - `path/to/file.py:123` - Description of what's there
 - `another/file.ts:45-67` - Description of the code block
@@ -135,13 +136,12 @@ last_updated_by: "[git user name]"
 
 [Patterns, conventions, and design decisions discovered]
 
-## Historical Context (from thoughts/)
+## Prior Work
 
-[Relevant insights from thoughts/ directory with document references]
+[Every document this research already relies on — research, plans, handoffs — each with a line reference and one line naming what that document established. A document worth listing is worth annotating.]
 
-## Related Research
-
-[Links to other research documents in the research directory]
+- `thoughts/research/YYYY-MM-DD_HHMM_topic.md:42` - What that document established
+- `thoughts/plans/YYYY-MM-DD_HHMM_topic.md:10` - What that document established
 
 ## Open Questions
 

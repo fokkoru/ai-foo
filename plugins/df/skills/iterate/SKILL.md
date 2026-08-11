@@ -37,7 +37,7 @@ If no plan file path is provided, ask the user which plan to update, then wait f
 1. **Read the existing plan file COMPLETELY**:
    - Use the Read tool WITHOUT limit/offset parameters
    - Understand the current structure, phases, and scope
-   - Note the success criteria and implementation approach
+   - Note the success criteria and `## Overview`
 
 2. **Understand the requested changes**:
    - Parse what the user wants to add/modify/remove
@@ -134,13 +134,13 @@ Get user confirmation before proceeding.
 2. **Ensure consistency**:
    - If adding a new phase, ensure it follows the existing pattern
    - If modifying scope, update "What We're NOT Doing" section
-   - If a constraint changes, copy the new wording verbatim from its source into "Global Constraints" — never paraphrase it, and never drop a constraint while editing around it
+   - If a constraint changes, record it in `## Constraint Check` in that section's form: add the source under **Sources checked** when the file is a companion, write the constraint in full when it is not, and open a **Violations** row when the change makes the plan violate it — never paraphrase a constraint written in full, and never drop one while editing around it. Adding a source under **Sources checked** also adds it to the frontmatter `companions:` when it is not already there — `df:implement` reads and drift-checks `companions:`, not the list in the section body
    - If scope changes, update `### End State` and `### Acceptance Criteria` to match — a plan whose end state no longer describes what it builds cannot be validated or reviewed
    - If a phase's files, symbols, or APIs change, update that phase's `### Assumptions` and their `source:` references — `df:implement` re-checks each one against the live codebase
    - If phases are added, removed, or renumbered, or a phase's `### Assumptions` gain or lose a `Confidence: Unclear`, update `### Decisions Most Likely to Change` to match — a stale rollup points the reviewer at the wrong decisions
    - If a phase's `Produces` changes, update every later phase whose `Consumes` names it, and re-check that phase's own `Affects` — a widened surface reaches units the old line did not name
    - If phases, `Consumes`/`Produces`, or files under `### Changes Required` change, update `## Execution Schedule`: list every phase exactly once; keep one main phase and at most one background phase per wave; keep same-wave files disjoint; and schedule every consumer after its producers
-   - If changing approach, update "Implementation Approach" section
+   - If changing approach, update the `## Overview` section
    - Maintain the distinction between automated vs manual success criteria
    - If a new or edited check compiles or executes a whole package, module, or directory, put it in `### Wave Checks` rather than a phase — `df:implement` runs a phase's criteria at its wave's join, so a command repeated across phases is paid once per wave they span
    - After editing the plan, update `last_updated` in its frontmatter to today's date as `YYYY-MM-DD`. When the plan has no frontmatter block, add none — an old plan stays as it is
