@@ -52,6 +52,8 @@ Choose the smallest shape that covers the question:
 - **One subsystem with independent aspects**: keep the central code path in the main thread and dispatch up to two background lanes.
 - **Cross-cutting or whole-codebase question**: keep the central architectural question in the main thread and dispatch two to four background lanes with distinct boundaries.
 
+Give every background lane a path boundary as well as a question boundary: name the files or directories it owns, and name them in no other lane's dispatch. Sub-agents share no cache, so two lanes sent over one path read it twice at full price.
+
 Do not spawn an agent merely to reach a count. Create a TodoWrite research plan that names the main lane and every background lane, with one owner per area and no duplicated questions.
 
 ### Execute Research Lanes

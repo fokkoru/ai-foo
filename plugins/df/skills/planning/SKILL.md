@@ -75,6 +75,8 @@ Choose the smallest research shape after the main-thread scope pass:
 - **Independent technical gaps remain**: dispatch up to two background agents with distinct, self-contained questions.
 - **A new blocking gap appears later**: dispatch another agent only when it could not have been part of the earlier lanes and cannot be settled with a few targeted main-thread tool calls.
 
+Give every background lane a path boundary as well as a question boundary: name the files or directories it owns, and name them in no other lane's dispatch. Sub-agents share no cache, so two lanes sent over one path read it twice at full price.
+
 Create a TodoWrite research plan only when there is more than one lane to track. Give one owner to each lane and do not duplicate questions.
 
 Dispatch independent background lanes together, then continue the central analysis immediately. Do not launch agents and leave the main thread idle. If asynchronous dispatch is unavailable, complete the main lane first and then investigate only the remaining gaps.
