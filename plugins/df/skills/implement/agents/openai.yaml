@@ -1,6 +1,6 @@
 interface:
   display_name: "Implement"
-  short_description: "Execute plans with bounded background work"
-  default_prompt: "Use $df:implement to execute this technical plan with main-thread work, safe background overlap, and joined verification."
+  short_description: "Execute plans one phase at a time"
+  default_prompt: "Use $df:implement to execute this technical plan one phase at a time in the main thread, with per-phase verification and independent review."
 policy:
   allow_implicit_invocation: false

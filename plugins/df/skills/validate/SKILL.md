@@ -126,7 +126,7 @@ For each phase in the plan:
 
 ### Step 4: Present the Report
 
-Present the validation report directly to the user. Do not save to a file unless explicitly requested. `df:implement` delegates every edit to a subagent, so this report is often the first place the human sees what changed and why.
+Present the validation report directly to the user. Do not save to a file unless explicitly requested. `df:implement` verifies and reviews one phase at a time, so after a continuous run this report is often the first place the human sees the whole change in one piece.
 
 Structure the report as:
 
