@@ -45,6 +45,8 @@ mcp__codex__codex-reply({
 })
 ```
 
+**Send at most six `codex-reply` exchanges on one thread, and twelve across every thread you open.** One thread per question means a per-thread cap alone bounds nothing — five questions at five exchanges each is a runaway that never trips it. When either ceiling is reached, consult no further: write the report in the Output Format below from whatever you hold, and name every question that stayed open under `## Assumptions and Missing Context`. A consultation that runs unbounded is cut off mid-thought and returns no report at all, so a partial report that names its gaps beats a complete one that never arrives.
+
 **Model and reasoning effort are inherited from the user's `~/.codex/config.toml`.** That file is the single place they are set — do not pass `model` unless you are deliberately overriding it for this one call. When a question is cheap enough not to deserve the configured depth, lower the effort for that call instead:
 
 ```
