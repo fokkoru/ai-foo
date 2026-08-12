@@ -78,7 +78,7 @@ toml_effort() {
 
 # Reads the key's own line only, so `tools:` must be an inline list. Written as
 # a YAML block list the value here is empty, which reads as "no writing tool"
-# and would hide real drift rather than report it. All 12 agents are inline.
+# and would hide real drift rather than report it. All 11 agents are inline.
 md_tools() {
   awk 'NR==1 && $0=="---" {infm=1; next}
        infm && $0=="---" {exit}

@@ -110,7 +110,7 @@ When committing changes to a plugin, update its version in `.claude-plugin/marke
 
 ## Codex Distribution
 
-There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 12 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — the 10 the skills spawn plus the two advisors you invoke yourself. There is no way to deliver them via `codex plugin add`.
+There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 11 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script — the 9 the skills spawn plus the two advisors you invoke yourself. There is no way to deliver them via `codex plugin add`.
 
 `scripts/sync-to-codex-plugin.sh` publishes `plugins/df/` to the official `openai/plugins` catalog. It is an **internal/parked maintainer tool**, not a user install channel — it is not advertised in the user docs, and it cannot carry subagents either.
 
