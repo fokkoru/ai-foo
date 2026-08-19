@@ -67,7 +67,7 @@ No permission flag is passed, and that is what makes the run read-only — a pro
 
 Read the `response` field from the JSON envelope. Check each claim against the repository before repeating it. Label anything unverified and name what was missing — the file you could not find, the version you could not confirm, the behavior you could not reach.
 
-If the envelope carries no usable answer — a `status` other than `SUCCESS`, or an empty `response` — report that the consultation returned nothing, with the `status` value and the path to the envelope, and synthesize nothing. There is no partial answer to salvage, and a second identical run fails the same way.
+If the envelope carries no usable answer — a `status` other than `SUCCESS`, or an empty `response` — report that the consultation returned nothing, with the `status` value and the raw envelope text, and synthesize nothing. There is no partial answer to salvage, and a second identical run fails the same way.
 
 </workflow>
 

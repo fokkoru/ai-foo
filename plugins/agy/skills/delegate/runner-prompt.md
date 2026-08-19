@@ -80,14 +80,22 @@ minutes and expires in the same place.
 
 ## 4. Verify
 
-The diff from the Step 1 baseline is the source of truth. The envelope's `status` field is not: it
-has been observed reporting `ERROR` on runs whose work landed correctly, because `agy` tripped on an
-unrelated file read. Never report a failure that the diff contradicts.
+The diff from the Step 1 baseline is the source of truth — "the diff" here means the three commands
+below together, not `git diff` alone. The envelope's `status` field is not: it has been observed
+reporting `ERROR` on runs whose work landed correctly, because `agy` rejected one `write_to_file`
+tool call as an invalid artifact path while the file itself was written. Never report a failure that
+the diff contradicts.
 
 ```bash
+git status --porcelain
 git diff --stat <the Step 1 baseline SHA>
 git diff <the Step 1 baseline SHA>
 ```
+
+`git diff` shows only tracked files, so every file `agy` created appears in `git status --porcelain`
+as untracked (`??`) and nowhere in the diff. Subtract the pre-existing dirt recorded in Step 1 —
+what remains is this run's new files. A delegation that only creates files produces an empty diff
+and a non-empty status, and that is success, not failure.
 
 Then run the project's own tests and linter yourself. `agy` could not run them — that is why you are
 here. Find the commands the way you would in any unfamiliar repository: check the project's build
@@ -113,7 +121,7 @@ Then return ONLY this, under 15 lines:
 - Files changed (path + one clause each)
 - One-line test summary (e.g. "14/14 passing, lint clean")
 - Your concerns, if any
-- The report file path
+- The report file path, if a report was written
 
 Do not paste the diff, the envelope, or the test output into your reply. They are in the report
 file, and the caller reads it if the verdict warrants.
