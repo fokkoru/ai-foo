@@ -1,6 +1,6 @@
 {
   "name": "agy",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Delegate already-decided implementation work to the Google Antigravity CLI, and ask it for a networked second opinion",
   "author": {
     "name": "fokkoru"
