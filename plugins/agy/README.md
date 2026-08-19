@@ -32,11 +32,11 @@ Three rules follow. `delegate` runs under `--mode accept-edits`. `--dangerously-
 
 `consult` ships no `Bash(agy:*)` grant, so every consultation costs one permission prompt. That is the price of the first row: Bash rules match by prefix, so a grant on `agy` would pre-approve `agy --dangerously-skip-permissions` and `agy --mode` as well, and "read-only by mechanism" would come back down to prose.
 
-## Not available on Codex CLI
+## Runtimes
 
-The omission is deliberate, and the reason is demand rather than difficulty. `agy` has not yet proven itself over a run of real work on one harness, so a second harness is work ahead of that.
+`agy` installs on Claude Code and on Codex CLI. It ships no subagent definitions, so both runtimes get the same `skills/` directory and there is no separate agent-install step.
 
-It is not expensive when it is wanted. `agy` ships no agent definitions, so a Codex port copies no file and adds no drift gate: a `.codex-plugin/plugin.json` pointing at the same `./skills/`, plus a note naming Codex's own subagent dispatch in place of Claude Code's `Task`.
+Two differences are worth knowing before the first Codex run. Codex ignores the `allowed-tools` field in a `SKILL.md`, so the per-skill pre-approval that keeps `consult` read-only on Claude Code falls back to Codex's own session approval — you approve each `agy` call by hand, which is more prompts rather than fewer. And `delegate` dispatches a subagent, which Codex offers only when `[features] multi_agent = true` is set in `~/.codex/config.toml`; without it the skill runs the same prompt inline.
 
 ## Install
 

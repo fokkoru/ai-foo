@@ -30,7 +30,7 @@ The skill table lives in `plugins/kb/README.md` — that is the single copy.
 
 ### agy (plugins/agy/)
 
-Bridges Claude Code to Google's Antigravity CLI. Two skills, `/agy:consult` and `/agy:delegate`, both manual-only.
+Bridges Claude Code and Codex CLI to Google's Antigravity CLI. Two skills, `/agy:consult` and `/agy:delegate` on Claude Code or `$agy:consult` and `$agy:delegate` on Codex CLI, both manual-only. It ships no subagents, so Codex needs no agent-install step.
 
 The skill table lives in `plugins/agy/README.md` — that is the single copy.
 
@@ -43,7 +43,7 @@ The skill table lives in `plugins/agy/README.md` — that is the single copy.
 | `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
 | `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
 
-`agy` ships no Codex manifest, so its version lives only in the `marketplace.json` entry — one field, not two. The missing `plugins/agy/.codex-plugin/plugin.json` is the intended state; do not create one.
+All three plugins carry both fields.
 
 There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 

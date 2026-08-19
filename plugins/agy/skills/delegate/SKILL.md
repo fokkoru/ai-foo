@@ -61,6 +61,8 @@ Read `runner-prompt.md` — a path relative to the base directory the harness an
 
 The skill itself never runs `agy` — that is the subagent's job, and running it here would put the verification noise back in the context this skill exists to protect.
 
+On Codex CLI the dispatch tool is not `Agent`, and it exists only when `[features] multi_agent = true` is set in `~/.codex/config.toml`. With it, dispatch Codex's subagent on the same prompt. Without it, run the prompt inline in this session: the verdict is the same, but the verification noise stays in context, which is the cost this skill otherwise avoids.
+
 ### 5. Act on the verdict
 
 Read the returned block. On `DONE`, report the change and the test line to the user. On `DONE_WITH_CONCERNS` or `NEEDS_CONTEXT`, read the report file before deciding. On `BLOCKED`, report the reason and the run path; do not re-dispatch automatically — a second identical run costs the same and fails the same way.

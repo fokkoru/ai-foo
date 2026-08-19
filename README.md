@@ -42,7 +42,7 @@ See [plugins/kb/README.md](plugins/kb/README.md) for the skill table and detaile
 
 ### agy
 
-Bridges Claude Code to Google's Antigravity CLI (`agy` binary). It does two jobs: `agy:consult` asks `agy` one scoped question for a networked second opinion, and `agy:delegate` hands an already-decided implementation to `agy` so the edits happen outside Claude's context. Requires the `agy` binary on `PATH`, authenticated.
+Bridges Claude Code and Codex CLI to Google's Antigravity CLI (`agy` binary). It does two jobs: `agy:consult` asks `agy` one scoped question for a networked second opinion, and `agy:delegate` hands an already-decided implementation to `agy` so the edits happen outside Claude's context. Requires the `agy` binary on `PATH`, authenticated.
 
 See [plugins/agy/README.md](plugins/agy/README.md) for the skill table and detailed usage.
 
@@ -143,6 +143,13 @@ claude /plugin marketplace add fokkoru/ai-foo
 claude /plugin install agy@ai-foo
 ```
 
-There is no Codex CLI install path for `agy`: the official `openai-codex` plugin already covers delegation to Codex, and `delegate` depends on Claude Code's subagent mechanics.
+#### Codex CLI
+
+```bash
+codex plugin marketplace add fokkoru/ai-foo
+codex plugin add agy@ai-foo
+```
+
+There is no subagent step — `agy` ships only skills. Codex ignores `allowed-tools`, so `consult` costs one approval prompt per `agy` call instead of a per-skill pre-approval, and `delegate` needs `[features] multi_agent = true` in `~/.codex/config.toml` to dispatch a subagent rather than run inline.
 
 See [plugins/agy/README.md](plugins/agy/README.md) for detailed usage.
