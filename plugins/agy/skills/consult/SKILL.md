@@ -47,6 +47,8 @@ Read the absolute path this prints and write it out literally in every later ste
 
 Write the question with `Write`, to the absolute path Step 2 printed. The brief carries crafted context — the problem, the constraints, and the specific code — and never the session transcript. Pasting the conversation hands over the conclusions `agy` is supposed to reach independently.
 
+End it with this instruction: "You cannot run shell commands in this session — every tool call that needs one is denied and ends the run. Answer from reading and from your own knowledge." Read-only means shell is closed, and a denial does not degrade into a text answer: a measured run whose question invited `agy --help` came back `status: CANCELED` with an empty `response` after one turn. A question that can only be settled by running something is out of scope for this skill, not a brief to try anyway.
+
 ### 4. Run the consultation
 
 ```bash
