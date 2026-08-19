@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "agy — Antigravity Bridge",
     "shortDescription": "Delegate work to, and get second opinions from, Antigravity",
-    "longDescription": "Two skills, both manual-only. $agy:consult asks the Antigravity CLI one scoped question read-only, with live internet access, and returns a synthesis. $agy:delegate hands an already-decided implementation to agy under accept-edits so the edits happen outside this context, then verifies the result from the git diff. Requires the agy binary on PATH, authenticated. The plugin ships no subagents, so there is no install script to run.",
+    "longDescription": "Two skills, both model-invocable and gated on the user having asked. $agy:consult asks the Antigravity CLI one scoped question read-only, with live internet access, and returns a synthesis. $agy:delegate hands an already-decided implementation to agy under accept-edits so the edits happen outside this context, then verifies the result from the git diff. Requires the agy binary on PATH, authenticated. The plugin ships no subagents, so there is no install script to run.",
     "developerName": "fokkoru",
     "category": "Coding",
     "capabilities": ["Read", "Write"],

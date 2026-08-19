@@ -1,7 +1,6 @@
 ---
 name: consult
-description: Ask the Google Antigravity CLI one scoped technical question and get an answer checked against this repository — a trade-off, a theoretical point, or a claim that needs verifying against the live internet. Runs read-only: no permission flags are passed, so agy cannot modify anything.
-disable-model-invocation: true
+description: Ask the Google Antigravity CLI one scoped technical question, answered read-only against this repository with live internet. Invoke only when the user asks for Antigravity, agy, or Gemini — never on your own initiative.
 allowed-tools: Read, Write, Grep, Glob, LS, Bash(command -v agy), Bash(date:*), Bash(printf:*), Bash(cat:*), Bash(git rev-parse:*)
 ---
 
@@ -72,6 +71,7 @@ If the envelope carries no usable answer — a `status` other than `SUCCESS`, or
 </workflow>
 
 <constraints>
+- Run only on the user's request. If nothing the user said asks for Antigravity's opinion, stop before the first `agy` call and say why — "the answer would be useful here" is the rationalization to refuse.
 - Pass no permission flags. Never `--mode`, never `--dangerously-skip-permissions`, never `--sandbox`.
 - Pass no `--model`. The user's `agy` configuration decides.
 - Treat the answer as an opinion to check, never as a fact to repeat.

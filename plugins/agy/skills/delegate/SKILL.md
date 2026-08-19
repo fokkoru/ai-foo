@@ -1,7 +1,6 @@
 ---
 name: delegate
-description: Hand an already-decided implementation to the Google Antigravity CLI so the edits happen outside this context. A subagent runs agy under accept-edits, verifies the result with git diff and the project's tests, and returns a verdict under 15 lines. Use when the plan exists and only the typing remains.
-disable-model-invocation: true
+description: Hand an already-decided implementation to the Google Antigravity CLI, where a subagent runs agy under accept-edits and verifies the result. Invoke only when the user asks to delegate to agy — never on your own initiative.
 allowed-tools: Read, Write, Task, Grep, Glob, LS, Bash(command -v agy), Bash(git rev-parse:*), Bash(mkdir:*), Bash(date:*), Bash(printf:*)
 ---
 
@@ -79,6 +78,7 @@ The plugin's own artifacts never land inside the user's repository, so the plugi
 </artifact_scope>
 
 <constraints>
+- Run only on the user's request. If the user did not ask for this work to go to agy, stop before writing the brief and say why — a plan being ready is not a request to delegate it.
 - Never pass `--dangerously-skip-permissions`. It auto-approves every tool call, shell included.
 - Never pass `--sandbox`. Under `accept-edits` it adds nothing, since shell is already closed; under skip-permissions a probe showed `agy` bypassing it through its own escape path, and that pairing is the only one the bypass was measured in.
 - Never pass `--model`. The user's `agy` configuration decides.

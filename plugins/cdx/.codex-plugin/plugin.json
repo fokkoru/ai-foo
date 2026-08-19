@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "cdx — Codex Consultation Bridge",
     "shortDescription": "Second opinions from Codex on decisions and solution designs",
-    "longDescription": "One manual-only skill. $cdx:consult asks a current Codex model about a decision before it becomes code, grounded in this repository rather than in the session transcript. It sizes itself to the question: a single decision is answered in the main thread, a whole solution design is delegated to a subagent that owns the consultation threads and returns a validation report. Requires the codex MCP server at user scope; deepwiki is optional. Consultation only — writing code and reviewing written code belong to the Codex CLI plugin. The plugin ships no subagents, so there is no install script to run.",
+    "longDescription": "One skill, model-invocable and gated on the user having asked. $cdx:consult asks a current Codex model about a decision before it becomes code, grounded in this repository rather than in the session transcript. It sizes itself to the question: a single decision is answered in the main thread, a whole solution design is delegated to a subagent that owns the consultation threads and returns a validation report. Requires the codex MCP server at user scope; deepwiki is optional. Consultation only — writing code and reviewing written code belong to the Codex CLI plugin. The plugin ships no subagents, so there is no install script to run.",
     "developerName": "fokkoru",
     "category": "Coding",
     "capabilities": ["Read"],

@@ -30,13 +30,13 @@ The skill table lives in `plugins/kb/README.md` — that is the single copy.
 
 ### agy (plugins/agy/)
 
-Bridges Claude Code and Codex CLI to Google's Antigravity CLI. Two skills, `/agy:consult` and `/agy:delegate` on Claude Code or `$agy:consult` and `$agy:delegate` on Codex CLI, both manual-only. It ships no subagents, so Codex needs no agent-install step.
+Bridges Claude Code and Codex CLI to Google's Antigravity CLI. Two skills, `/agy:consult` and `/agy:delegate` on Claude Code or `$agy:consult` and `$agy:delegate` on Codex CLI. Both are model-invocable, and their descriptions gate them on the user having asked — the harness offers no mode that permits invocation on request but forbids it unprompted. It ships no subagents, so Codex needs no agent-install step.
 
 The skill table lives in `plugins/agy/README.md` — that is the single copy.
 
 ### cdx (plugins/cdx/)
 
-Bridges Claude Code and Codex CLI to a current Codex model for second opinions. One skill, `/cdx:consult` on Claude Code or `$cdx:consult` on Codex CLI, manual-only. It ships no subagents, so Codex needs no agent-install step.
+Bridges Claude Code and Codex CLI to a current Codex model for second opinions. One skill, `/cdx:consult` on Claude Code or `$cdx:consult` on Codex CLI, model-invocable and gated on the user having asked by its description. It ships no subagents, so Codex needs no agent-install step.
 
 The skill sizes itself to the request: a single decision is answered in the main thread, a whole solution design is delegated to a subagent dispatched with `skills/consult/design-runner-prompt.md`. Both modes read the one copy of the consultation rules in `skills/consult/consultation-rules.md`. `cdx` consults only — reviewing written code and delegating implementation belong to `openai/codex-plugin-cc`, whose namespace is `codex`, which is why this plugin is not called that.
 
@@ -83,7 +83,7 @@ Don't bolt nuance onto a rule that works: "don't X unless it matters" reopens th
 
 **Emphasis.** Explain why a rule exists instead of shouting it — `skill-creator` calls all-caps ALWAYS/NEVER "a yellow flag". Bold marks the lead-in a scanning reader navigates by; bold inside running prose is noise. Reach for a table at three parallel dimensions (agent × purpose × when-to-use).
 
-**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit` and `df:deslop` auto-trigger, so theirs are the only descriptions worth tuning for trigger phrases; the other seven set `disable-model-invocation: true` and are read by a human picking a command.
+**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit`, `df:deslop`, both `agy` skills and `cdx:consult` auto-trigger, so theirs are the descriptions worth tuning for trigger phrases; df's other seven and `kb:compile` set `disable-model-invocation: true` and are read by a human picking a command.
 
 ## Verify Before Finishing
 
