@@ -37,6 +37,7 @@ Reject and say why if any of these hold:
 
 - The decision has not been made. `agy` executes; it does not design. Send the question to `/agy:consult` or settle it here first.
 - The work needs shell inside the run — a migration, code generation, `npm install`. Split the task; do not open the permission surface.
+- The change removes a path — a deletion or a rename. `agy` has no verb for it: its only file-mutation tool is `write_to_file`, whose `CodeContent` field is required, and `accept-edits` closes shell, so `rm` is gone too. Asked to delete, it has been measured writing a placeholder into the file and narrating the rest of the run as complete. Do the removal on this side and scope the brief to what gets written.
 - There is no acceptance criterion. Nothing to verify means nothing to delegate.
 
 ### 2. Print the run paths
@@ -53,7 +54,7 @@ Read the three absolute paths this prints and write each one out literally where
 
 ### 3. Write the brief
 
-Write to the `BRIEF=` path Step 2 printed with `Write`, never inline in the command. The brief contains four parts: the task, the exact files in scope, the acceptance criterion, and this instruction verbatim: "Edit files only. Do not run any shell command — you do not have permission to, and the attempt will end the run."
+Write to the `BRIEF=` path Step 2 printed with `Write`, never inline in the command. The brief contains four parts: the task, the exact files in scope, the acceptance criterion, and this instruction verbatim: "Edit files only. Do not run any shell command — you do not have permission to, and the attempt will end the run. If any part of this task cannot be done by writing file contents, leave the file untouched and say which part you skipped. Do not approximate it with a placeholder."
 
 ### 4. Dispatch the subagent
 

@@ -28,6 +28,8 @@ Every cell in this table comes from a live probe against `agy` v1.1.14, not from
 
 \* Not probed directly. Creating a file and editing one both go through `write_file`, and the denial landed on that tool — `permission check failed for write_file`. The cell is an inference from the same mechanism, not a separate measurement.
 
+**Deleting a file is not a column, because it is not one of `agy`'s verbs.** The only file-mutation tool is `write_to_file`, whose `CodeContent` field is required, so no call it can make removes a path — and `accept-edits` has already closed shell, so `rm` is gone too. Three probes on v1.1.14 under that mode: once it declined in prose and returned `status: SUCCESS` with the deletion undone; twice the attempt surfaced as `error: … CodeContent is a required parameter` while the response narrated the other operations as complete, and one of those two left an `export {}` placeholder in the file it was told to remove. Nothing in the envelope names the path it failed to delete. So `delegate` refuses a task that removes or renames a path, and the caller does that part.
+
 Three rules follow. `delegate` runs under `--mode accept-edits`. `--dangerously-skip-permissions` is not shipped. `--sandbox` is not shipped either — under `accept-edits` it adds nothing, because shell is already closed, and row 4 is what it is worth alongside skip-permissions.
 
 `consult` ships no `Bash(agy:*)` grant, so every consultation costs one permission prompt. That is the price of the first row: Bash rules match by prefix, so a grant on `agy` would pre-approve `agy --dangerously-skip-permissions` and `agy --mode` as well, and "read-only by mechanism" would come back down to prose.
