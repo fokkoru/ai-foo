@@ -2,7 +2,7 @@
 name: delegate
 description: Hand an already-decided implementation to the Google Antigravity CLI so the edits happen outside this context. A subagent runs agy under accept-edits, verifies the result with git diff and the project's tests, and returns a verdict under 15 lines. Use when the plan exists and only the typing remains.
 disable-model-invocation: true
-allowed-tools: Read, Write, Task, Grep, Glob, LS, Bash(command -v agy), Bash(echo "agy not found on PATH"), Bash(git rev-parse:*)
+allowed-tools: Read, Write, Task, Grep, Glob, LS, Bash(command -v agy), Bash(git rev-parse:*)
 ---
 
 <objective>
@@ -17,7 +17,7 @@ A subagent exists not because `agy`'s output is large — the JSON envelope is c
 1. Check the binary:
 
 ```bash
-command -v agy || echo "agy not found on PATH"
+command -v agy
 ```
 
 2. Confirm the task qualifies: a decision already made, no shell needed inside the run, and a one-sentence acceptance criterion.
