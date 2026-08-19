@@ -43,7 +43,7 @@ The skill table lives in `plugins/agy/README.md` — that is the single copy.
 | `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
 | `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
 
-`agy` ships no Codex manifest, so its version lives only in the `marketplace.json` entry — one field, not two. Without this sentence, a later reader will read the missing `.codex-plugin/plugin.json` as an oversight and create one.
+`agy` ships no Codex manifest, so its version lives only in the `marketplace.json` entry — one field, not two. The missing `plugins/agy/.codex-plugin/plugin.json` is the intended state; do not create one.
 
 There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 

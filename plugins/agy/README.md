@@ -4,7 +4,7 @@
 
 ## Requirements
 
-`agy` v1.1.14 or later on `PATH`, authenticated. A plugin manifest cannot declare this dependency, so both skills check `command -v agy` first and stop with a clear message rather than failing with `command not found` from the middle of a pipe.
+`agy` on `PATH`, authenticated. The safety matrix below was measured on v1.1.14 and says nothing about any other version — re-running those probes is what moves the boundary, not reading the help text. A plugin manifest cannot declare this dependency, so both skills check `command -v agy` first and stop with a clear message rather than failing with `command not found` from the middle of a pipe.
 
 ## The skills
 
@@ -28,7 +28,9 @@ Every cell in this table comes from a live probe against `agy` v1.1.14, not from
 
 \* Not probed directly. Creating a file and editing one both go through `write_file`, and the denial landed on that tool — `permission check failed for write_file`. The cell is an inference from the same mechanism, not a separate measurement.
 
-Two rules follow: `delegate` runs under `--mode accept-edits`, and `--dangerously-skip-permissions` is not shipped.
+Three rules follow. `delegate` runs under `--mode accept-edits`. `--dangerously-skip-permissions` is not shipped. `--sandbox` is not shipped either — under `accept-edits` it adds nothing, because shell is already closed, and row 4 is what it is worth alongside skip-permissions.
+
+`consult` ships no `Bash(agy:*)` grant, so every consultation costs one permission prompt. That is the price of the first row: Bash rules match by prefix, so a grant on `agy` would pre-approve `agy --dangerously-skip-permissions` and `agy --mode` as well, and "read-only by mechanism" would come back down to prose.
 
 ## Not available on Codex CLI
 

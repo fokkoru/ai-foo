@@ -2,7 +2,7 @@
 name: consult
 description: Ask the Google Antigravity CLI one scoped technical question and get an answer checked against this repository — a trade-off, a theoretical point, or a claim that needs verifying against the live internet. Runs read-only: no permission flags are passed, so agy cannot modify anything.
 disable-model-invocation: true
-allowed-tools: Read, Write, Grep, Glob, LS, Bash(command -v agy), Bash(agy:*), Bash(git rev-parse:*)
+allowed-tools: Read, Write, Grep, Glob, LS, Bash(command -v agy), Bash(date:*), Bash(printf:*), Bash(cat:*), Bash(git rev-parse:*)
 ---
 
 <objective>
@@ -23,8 +23,9 @@ command -v agy
 If it is missing, stop and say so — do not attempt the run.
 
 2. Read the repository for the files the question turns on and capture `file:line` references.
-3. Ask `agy` the one scoped question, grounded in what you read.
-4. Synthesize: check every claim in the answer against the repository before repeating any of it.
+3. Print the brief path, then write the brief to that literal path.
+4. Ask `agy` the one scoped question, grounded in what you read.
+5. Synthesize: check every claim in the answer against the repository before repeating any of it.
 
 </quick_start>
 
@@ -34,25 +35,37 @@ If it is missing, stop and say so — do not attempt the run.
 
 Gather the files the question turns on and capture `file:line` references before asking anything. A question asked first gets answered about an imagined repository, and nothing remains to check the answer against.
 
-### 2. Write the brief
-
-Write the question to a file under `${TMPDIR}` with `Write`. The brief carries crafted context — the problem, the constraints, and the specific code — and never the session transcript. Pasting the conversation hands over the conclusions `agy` is supposed to reach independently.
-
-### 3. Run the consultation
+### 2. Print the brief path
 
 ```bash
-agy -p "$(cat "$BRIEF")" \
+printf '%s\n' "${TMPDIR:-/tmp}/agy-brief-$(date +%Y%m%d-%H%M%S).md"
+```
+
+Read the absolute path this prints and write it out literally in every later step. Nothing carries it for you: `Write` performs no shell expansion and resolves a non-absolute path against the working directory, so handing it `${TMPDIR}/agy-brief.md` creates a directory named `${TMPDIR}` in the repository, and a shell variable set here is gone by the next Bash call.
+
+### 3. Write the brief
+
+Write the question with `Write`, to the absolute path Step 2 printed. The brief carries crafted context — the problem, the constraints, and the specific code — and never the session transcript. Pasting the conversation hands over the conclusions `agy` is supposed to reach independently.
+
+### 4. Run the consultation
+
+```bash
+agy -p "$(cat "<the path Step 2 printed>")" \
   --add-dir "$(git rev-parse --show-toplevel)" \
   --output-format json --print-timeout 5m
 ```
 
+Set the Bash call's `timeout` parameter to `300000`. The tool's own default is 120,000 ms, so without it the call dies at two minutes and a five-minute `--print-timeout` is never reachable — the number is matched to the flag above it, not chosen for comfort.
+
 `--add-dir` on the repository root is mandatory — without it, `agy` works in `~/.gemini/antigravity-cli/scratch/` instead of this repository. `--new-project` is deliberately absent: it exists to legalize file creation, and this skill creates nothing.
 
-No permission flag is passed, and that is what makes the run read-only — a probe's edit attempt returned `permission check failed for write_file`.
+No permission flag is passed, and that is what makes the run read-only — a probe's edit attempt returned `permission check failed for write_file`. This skill also carries no `Bash(agy:*)` grant, so the run asks for permission once, every time; a prefix grant would pre-approve every other `agy` invocation too.
 
-### 4. Synthesize
+### 5. Synthesize
 
 Read the `response` field from the JSON envelope. Check each claim against the repository before repeating it. Label anything unverified and name what was missing — the file you could not find, the version you could not confirm, the behavior you could not reach.
+
+If the envelope carries no usable answer — a `status` other than `SUCCESS`, or an empty `response` — report that the consultation returned nothing, with the `status` value and the path to the envelope, and synthesize nothing. There is no partial answer to salvage, and a second identical run fails the same way.
 
 </workflow>
 
