@@ -28,6 +28,12 @@ Knowledge base compiler. One skill, `/kb:compile` on Claude Code or `$kb:compile
 
 The skill table lives in `plugins/kb/README.md` — that is the single copy.
 
+### agy (plugins/agy/)
+
+Bridges Claude Code to Google's Antigravity CLI. Two skills, `/agy:consult` and `/agy:delegate`, both manual-only.
+
+The skill table lives in `plugins/agy/README.md` — that is the single copy.
+
 ## Versioning
 
 **A version bump touches exactly two fields for the plugin being bumped, bumped together in one commit:**
@@ -36,6 +42,8 @@ The skill table lives in `plugins/kb/README.md` — that is the single copy.
 | ------------------------------------------ | ----------- | ------------------------------ |
 | `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
 | `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
+
+`agy` ships no Codex manifest, so its version lives only in the `marketplace.json` entry — one field, not two. Without this sentence, a later reader will read the missing `.codex-plugin/plugin.json` as an oversight and create one.
 
 There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 

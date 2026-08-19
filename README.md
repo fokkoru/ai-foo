@@ -4,7 +4,7 @@ Reusable plugins for development workflows. Runs on both **Claude Code** and **C
 
 ## Plugins
 
-Two independent plugins live here — installing one does not install the other.
+Three independent plugins live here — installing one does not install the others.
 
 ### df
 
@@ -39,6 +39,12 @@ Knowledge base compiler. One skill, `kb:compile`, reads markdown under `thoughts
 - **Codex CLI**: `$kb:compile`.
 
 See [plugins/kb/README.md](plugins/kb/README.md) for the skill table and detailed usage.
+
+### agy
+
+Bridges Claude Code to Google's Antigravity CLI (`agy` binary). It does two jobs: `agy:consult` asks `agy` one scoped question for a networked second opinion, and `agy:delegate` hands an already-decided implementation to `agy` so the edits happen outside Claude's context. Requires the `agy` binary on `PATH`, authenticated.
+
+See [plugins/agy/README.md](plugins/agy/README.md) for the skill table and detailed usage.
 
 ## Install
 
@@ -129,3 +135,14 @@ codex plugin add kb@ai-foo
 Two steps, and there is no third: `kb` ships no subagents, so nothing needs installing separately — the visible difference from df's install path above.
 
 See [plugins/kb/README.md](plugins/kb/README.md) for detailed usage.
+
+### agy
+
+```bash
+claude /plugin marketplace add fokkoru/ai-foo
+claude /plugin install agy@ai-foo
+```
+
+There is no Codex CLI install path for `agy`: the official `openai-codex` plugin already covers delegation to Codex, and `delegate` depends on Claude Code's subagent mechanics.
+
+See [plugins/agy/README.md](plugins/agy/README.md) for detailed usage.
