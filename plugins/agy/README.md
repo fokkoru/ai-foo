@@ -34,7 +34,9 @@ Three rules follow. `delegate` runs under `--mode accept-edits`. `--dangerously-
 
 ## Not available on Codex CLI
 
-The omission is deliberate. The official `openai-codex` plugin already covers delegation to Codex, and `delegate` depends on Claude Code's subagent mechanics.
+The omission is deliberate, and the reason is demand rather than difficulty. `agy` has not yet proven itself over a run of real work on one harness, so a second harness is work ahead of that.
+
+It is not expensive when it is wanted. `agy` ships no agent definitions, so a Codex port copies no file and adds no drift gate: a `.codex-plugin/plugin.json` pointing at the same `./skills/`, plus a note naming Codex's own subagent dispatch in place of Claude Code's `Task`.
 
 ## Install
 
