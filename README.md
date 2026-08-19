@@ -46,6 +46,14 @@ Bridges Claude Code and Codex CLI to Google's Antigravity CLI (`agy` binary). It
 
 See [plugins/agy/README.md](plugins/agy/README.md) for the skill table and detailed usage.
 
+### cdx
+
+Bridges Claude Code and Codex CLI to a current Codex model for second opinions. One skill, `cdx:consult`, asks Codex about a decision that has not become code yet and checks the answer against this repository. It sizes itself to the ask: one decision is settled in the main thread, a whole solution design goes to a subagent that returns a validation report. Requires the `codex` MCP server at user scope; deepwiki is optional.
+
+It consults and nothing else. Reviewing code that already exists, and handing implementation work over, belong to [`openai/codex-plugin-cc`](https://github.com/openai/codex-plugin-cc).
+
+See [plugins/cdx/README.md](plugins/cdx/README.md) for the skill table and detailed usage.
+
 ## Install
 
 ### df
@@ -72,14 +80,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-Step 3 is **required**, not optional: Codex plugins can only bundle skills, so the 8 subagents that `research`/`planning`/`iterate`/`peer-review` spawn must be copied into `~/.codex/agents/` separately. The script copies all eleven — those 8, `voice-prober`, which `deslop` and `commit` spawn, and the two advisors, which no skill spawns and you invoke yourself (and it reminds you to enable `web_search` for `web-search-researcher`).
+Step 3 is **required**, not optional: Codex plugins can only bundle skills, so the 8 subagents that `research`/`planning`/`iterate`/`peer-review` spawn must be copied into `~/.codex/agents/` separately. The script copies all nine — those 8 plus `voice-prober`, which `deslop` and `commit` spawn (and it reminds you to enable `web_search` for `web-search-researcher`).
 
 As a **dev-only** shortcut, opening the repo directly with `cd ai-foo && codex` auto-discovers the marketplace from `.agents/plugins/marketplace.json` — no `codex plugin marketplace add` needed, only the plugin-enable line in `~/.codex/config.toml`. The subagent step (3) is still required even on this path.
 
 After install you have:
 
 - **Skills**: `commit`, `deslop`, `research`, `planning`, `implement`, `validate`, `peer-review`, `iterate`, `handoff`. `commit` and `deslop` auto-trigger on natural-language matches against their `description`; the other seven are manual-only (`disable-model-invocation: true` on Claude Code, `allow_implicit_invocation: false` on Codex) and run only when you invoke them explicitly. Explicit invocation differs by runtime: `/df:<name>` on Claude Code, `$df:<name>` or `$<name>` on Codex CLI.
-- **Subagents**: 11 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`, `code-reviewer`, `finding-verifier`, `voice-prober`, plus the two advisors `codex-advisor` and `architecture-advisor`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`; both advisors require the `codex` MCP server (see [Advisor requirements](plugins/df/README.md#advisor-requirements)).
+- **Subagents**: 9 read-only subagents — `codebase-locator`, `codebase-analyzer`, `codebase-pattern-finder`, `thoughts-locator`, `thoughts-analyzer`, `web-search-researcher`, `code-reviewer`, `finding-verifier`, `voice-prober`. Claude Code auto-loads them; Codex CLI requires the one-time subagent install step above (step 3: `install-codex-agents.sh`). The `web-search-researcher` Codex agent additionally requires `web_search` enabled under `[tools]` in `~/.codex/config.toml`; no subagent here needs an MCP server (see [External dependencies](plugins/df/README.md#external-dependencies)).
 - **Tool gating note (Codex only)**: the `allowed-tools` declarations inside each `SKILL.md` are honored by Claude Code as a per-skill pre-approval list. Codex CLI ignores this field and falls back to session-level approval prompts — Codex users will see more "approve this tool call?" prompts than Claude users for the same skill. This is a UX difference, not a security issue.
 
 #### Naming and invocation
@@ -153,3 +161,21 @@ codex plugin add agy@ai-foo
 There is no subagent step — `agy` ships only skills. Codex ignores `allowed-tools`, so `consult` costs one approval prompt per `agy` call instead of a per-skill pre-approval, and `delegate` needs `[features] multi_agent = true` in `~/.codex/config.toml` to dispatch a subagent rather than run inline.
 
 See [plugins/agy/README.md](plugins/agy/README.md) for detailed usage.
+
+### cdx
+
+```bash
+claude /plugin marketplace add fokkoru/ai-foo
+claude /plugin install cdx@ai-foo
+```
+
+#### Codex CLI
+
+```bash
+codex plugin marketplace add fokkoru/ai-foo
+codex plugin add cdx@ai-foo
+```
+
+There is no subagent step — `cdx` ships only skills. Codex ignores `allowed-tools`, so each Codex MCP call costs an approval prompt instead of a per-skill pre-approval, and a Design-mode consultation needs `[features] multi_agent = true` in `~/.codex/config.toml` to dispatch a subagent rather than run inline.
+
+See [plugins/cdx/README.md](plugins/cdx/README.md) for detailed usage.

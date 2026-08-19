@@ -1,0 +1,9 @@
+{
+  "name": "cdx",
+  "description": "Ask a current Codex model for a second opinion on a decision or a whole solution design, checked against this repository",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "keywords": ["codex", "second-opinion", "architecture", "review", "cdx"]
+}

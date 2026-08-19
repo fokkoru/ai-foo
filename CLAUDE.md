@@ -34,6 +34,14 @@ Bridges Claude Code and Codex CLI to Google's Antigravity CLI. Two skills, `/agy
 
 The skill table lives in `plugins/agy/README.md` — that is the single copy.
 
+### cdx (plugins/cdx/)
+
+Bridges Claude Code and Codex CLI to a current Codex model for second opinions. One skill, `/cdx:consult` on Claude Code or `$cdx:consult` on Codex CLI, manual-only. It ships no subagents, so Codex needs no agent-install step.
+
+The skill sizes itself to the request: a single decision is answered in the main thread, a whole solution design is delegated to a subagent dispatched with `skills/consult/design-runner-prompt.md`. Both modes read the one copy of the consultation rules in `skills/consult/consultation-rules.md`. `cdx` consults only — reviewing written code and delegating implementation belong to `openai/codex-plugin-cc`, whose namespace is `codex`, which is why this plugin is not called that.
+
+The skill table lives in `plugins/cdx/README.md` — that is the single copy.
+
 ## Versioning
 
 **A version bump touches exactly two fields for the plugin being bumped, bumped together in one commit:**
@@ -43,7 +51,7 @@ The skill table lives in `plugins/agy/README.md` — that is the single copy.
 | `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
 | `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
 
-All three plugins carry both fields.
+All four plugins carry both fields.
 
 There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 

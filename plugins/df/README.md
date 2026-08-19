@@ -61,8 +61,6 @@ What each skill guarantees, stated so you can check it from your own working cop
 | `web-search-researcher`   | Research modern web information                           |
 | `code-reviewer`           | Independent, isolated reviewer (spec + quality verdicts)  |
 | `finding-verifier`        | Refute one code-review finding; rules on its severity     |
-| `codex-advisor`           | Fast second opinion from Codex on one narrow decision     |
-| `architecture-advisor`    | Review a solution design before it becomes code           |
 | `voice-prober`            | Grade a draft sentence by sentence against a voice sample |
 
 **Claude Code**: Subagents are auto-discovered from `plugins/df/agents/*.md` when the plugin is installed.
@@ -74,23 +72,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/fokkoru/ai-foo/main/scripts/
 # …or, from a local clone:  bash scripts/install-codex-agents.sh
 ```
 
-This step is required, not optional — without it the 8 subagents that `research`/`planning`/`iterate`/`peer-review` spawn are missing and those skills fail with "agent not found". The helper copies all eleven TOMLs, including `voice-prober`, which `deslop` and `commit` spawn, and the two advisors, which no skill spawns — you invoke those yourself.
+This step is required, not optional — without it the 8 subagents that `research`/`planning`/`iterate`/`peer-review` spawn are missing and those skills fail with "agent not found". The helper copies all nine TOMLs, including `voice-prober`, which `deslop` and `commit` spawn.
 
-### Advisor requirements
+### External dependencies
 
-`codex-advisor` and `architecture-advisor` depend on tools df does not ship. The plugin deliberately declares no MCP server of its own, so a `codex` server that is not installed would otherwise break every session:
+No subagent here needs an MCP server. `web-search-researcher` is the only one with an external dependency at all — `web_search` enabled under `[tools]` in `~/.codex/config.toml` on the Codex side.
 
-- **Both advisors require the `codex` MCP server** at user scope. Without it they cannot consult anything and are dead weight:
-
-  ```bash
-  claude mcp add codex -s user -- codex mcp-server
-  ```
-
-  Registered this way, the model and reasoning effort come from your `~/.codex/config.toml` rather than from the server arguments.
-
-- **`architecture-advisor` also uses deepwiki** (`mcp__deepwiki__ask_question`, `mcp__deepwiki__read_wiki_contents`) to check library and framework claims. This one is optional — without it the agent skips external validation and says so instead of guessing.
-
-The other nine subagents have no external dependencies beyond `web_search` for `web-search-researcher`.
+That is deliberate. df declares no MCP server of its own, because a server named here and missing on the machine would break every session rather than the one skill that wanted it. Second opinions from Codex used to live here as two advisor subagents; they moved to the [`cdx`](../cdx/README.md) plugin, which carries the `codex` MCP dependency where it can be installed or skipped on its own.
 
 ## Customize paths (optional)
 

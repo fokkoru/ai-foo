@@ -50,6 +50,17 @@
         "gemini",
         "agy"
       ]
+    },
+    {
+      "name": "cdx",
+      "source": "./plugins/cdx",
+      "description": "Ask a current Codex model for a second opinion on a decision or a whole solution design, checked against this repository",
+      "version": "0.1.0",
+      "author": {
+        "name": "fokkoru"
+      },
+      "category": "development",
+      "keywords": ["codex", "second-opinion", "architecture", "review", "cdx"]
     }
   ]
 }
