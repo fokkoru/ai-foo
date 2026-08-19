@@ -33,6 +33,23 @@
         "provenance",
         "compile"
       ]
+    },
+    {
+      "name": "agy",
+      "source": "./plugins/agy",
+      "description": "Delegate already-decided implementation work to the Google Antigravity CLI, and ask it for a networked second opinion",
+      "version": "0.1.0",
+      "author": {
+        "name": "fokkoru"
+      },
+      "category": "development",
+      "keywords": [
+        "antigravity",
+        "delegation",
+        "second-opinion",
+        "gemini",
+        "agy"
+      ]
     }
   ]
 }

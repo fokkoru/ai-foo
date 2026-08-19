@@ -1,0 +1,9 @@
+{
+  "name": "agy",
+  "description": "Delegate already-decided implementation work to the Google Antigravity CLI, and ask it for a networked second opinion",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "keywords": ["antigravity", "delegation", "second-opinion", "gemini", "agy"]
+}
