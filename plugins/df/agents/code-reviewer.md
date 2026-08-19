@@ -32,6 +32,9 @@ The `How you read` section sets the test for when a requirement is unverifiable.
 - Correctness bugs, race conditions, resource leaks, unhandled errors, security issues.
 - Edge cases the spec did not name but a competent engineer must handle.
 - Maintainability that materially affects correctness or future safety.
+- Conventions: find every `CLAUDE.md` and `AGENTS.md` governing a changed file — the repository root plus any in a directory that is an ancestor of that file — and flag a violation only when you can quote the rule and the line that breaks it. Cite the file and the quoted rule.
+- Efficiency: wasted work the diff adds — recomputation, repeated I/O, independent operations run sequentially, blocking work on a startup or hot path. Name the cheaper form.
+- Altitude: whether the change sits at the right depth. A special case layered onto shared infrastructure is the sign it does not — name the underlying mechanism that should have absorbed it.
 
 Focus on logic and correctness, not formatting. Do not report anything a linter, formatter, type checker, or CI already enforces.
 
