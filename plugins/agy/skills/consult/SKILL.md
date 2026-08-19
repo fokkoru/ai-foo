@@ -2,7 +2,7 @@
 name: consult
 description: Ask the Google Antigravity CLI one scoped technical question and get an answer checked against this repository — a trade-off, a theoretical point, or a claim that needs verifying against the live internet. Runs read-only: no permission flags are passed, so agy cannot modify anything.
 disable-model-invocation: true
-allowed-tools: Read, Write, Grep, Glob, LS, Bash(command -v agy), Bash(agy:*), Bash(mktemp:*), Bash(git rev-parse:*)
+allowed-tools: Read, Write, Grep, Glob, LS, Bash(command -v agy), Bash(echo "agy not found on PATH"), Bash(agy:*), Bash(git rev-parse:*)
 ---
 
 <objective>

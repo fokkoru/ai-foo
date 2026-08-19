@@ -2,11 +2,11 @@
 name: delegate
 description: Hand an already-decided implementation to the Google Antigravity CLI so the edits happen outside this context. A subagent runs agy under accept-edits, verifies the result with git diff and the project's tests, and returns a verdict under 15 lines. Use when the plan exists and only the typing remains.
 disable-model-invocation: true
-allowed-tools: Read, Write, Task, Grep, Glob, LS, Bash(command -v agy), Bash(mktemp:*), Bash(git rev-parse:*), Bash(git status:*), Bash(git diff:*)
+allowed-tools: Read, Write, Task, Grep, Glob, LS, Bash(command -v agy), Bash(echo "agy not found on PATH"), Bash(git rev-parse:*)
 ---
 
 <objective>
-The decision is already made; what remains is typing. This skill moves that typing out of this context by handing it to `agy`, and brings back a verdict rather than a transcript.
+Hand an already-decided implementation to `agy` so the edits happen outside this context, and bring back a verdict rather than a transcript.
 
 A subagent exists not because `agy`'s output is large — the JSON envelope is compact — but because verification moved to the caller's side once shell closed under `accept-edits`. `git diff`, test output, and reading the run JSON are noise that this skill exists to keep out of the main context, and the subagent is where that noise stays.
 
@@ -45,9 +45,10 @@ Write to a file under `${TMPDIR}` with `Write`, never inline in the command. The
 
 ```bash
 RUN_DIR="${TMPDIR:-/tmp}/agy-runs/$(basename "$(git rev-parse --show-toplevel)")"
+RUN_JSON="$RUN_DIR/run-$(date +%s).json"
 ```
 
-Nothing the plugin writes lands inside the user's repository, so the plugin never forces a `.gitignore` edit on the project that installs it.
+`RUN_JSON` carries the `.json` suffix `runner-prompt.md` depends on to derive the report path (`"${RUN_JSON%.json}-report.md"`). `RUN_DIR` is keyed off the repository's own basename, so runs from different repositories never collide.
 
 ### 4. Dispatch the subagent
 
@@ -61,7 +62,7 @@ Read the returned block. On `DONE`, report the change and the test line to the u
 
 <artifact_scope>
 
-The plugin writes only under `${TMPDIR}/agy-runs/`. The repository's own files are changed by `agy` inside the workspace, which is the point of the skill; the plugin's own artifacts — briefs, envelopes, reports — never are.
+The plugin's own artifacts never land inside the user's repository, so the plugin never forces a `.gitignore` edit on the project that installs it. The brief goes to `${TMPDIR}` root (Step 2); the envelope and the report go under `${TMPDIR}/agy-runs/<repo>/` (Step 3). The repository's own files are changed by `agy` inside the workspace, which is the point of the skill — the plugin's own artifacts are not.
 
 </artifact_scope>
 
@@ -69,7 +70,7 @@ The plugin writes only under `${TMPDIR}/agy-runs/`. The repository's own files a
 - Never pass `--dangerously-skip-permissions`. It auto-approves every tool call, shell included.
 - Never pass `--sandbox`. A probe showed `agy` bypassing it through its own escape path.
 - Never pass `--model`. The user's `agy` configuration decides.
-- Never treat `status` as the verdict. `git diff` is the truth; `status` has been observed lying in both directions.
+- Never treat `status` as the verdict. `git diff` is the truth; `status` has been observed reporting `ERROR` on runs whose work landed.
 - Never delegate work whose acceptance criterion you cannot state in one sentence.
 
 </constraints>
