@@ -37,7 +37,7 @@ Reject and say why if any of these hold:
 
 - The decision has not been made. `agy` executes; it does not design. Send the question to `/agy:consult` or settle it here first.
 - The work needs shell inside the run — a migration, code generation, `npm install`. Split the task; do not open the permission surface.
-- The change removes a path — a deletion or a rename. `agy` has no verb for it: its only file-mutation tool is `write_to_file`, whose `CodeContent` field is required, and `accept-edits` closes shell, so `rm` is gone too. Asked to delete, it has been measured writing a placeholder into the file and narrating the rest of the run as complete. Do the removal on this side and scope the brief to what gets written.
+- The change removes a path — a deletion or a rename. `agy` has no verb for it: its only file-mutation tool is `write_to_file`, whose `CodeContent` field is required, and `accept-edits` closes shell, so `rm` is gone too. Asked to delete, it has been measured writing a placeholder into the file and narrating the rest of the run as complete. Scope the brief to what gets written and keep the removal for Step 5.
 - There is no acceptance criterion. Nothing to verify means nothing to delegate.
 
 ### 2. Print the run paths
@@ -66,7 +66,9 @@ On Codex CLI the dispatch tool is not `Agent`, and it exists only when `[feature
 
 ### 5. Act on the verdict
 
-Read the returned block. On `DONE`, report the change and the test line to the user. On `DONE_WITH_CONCERNS` or `NEEDS_CONTEXT`, read the report file before deciding. On `BLOCKED`, report the reason and the run path; do not re-dispatch automatically — a second identical run costs the same and fails the same way.
+Read the returned block. On `DONE`, apply the removals Step 1 kept back before reporting anything. The subagent verified a tree that still holds those paths, so its test line describes a tree that is about to stop existing — delete them with `git rm`, re-run the acceptance check yourself, and report that result rather than the subagent's. On `DONE_WITH_CONCERNS` or `NEEDS_CONTEXT`, read the report file before deciding. On `BLOCKED`, report the reason and the run path; do not re-dispatch automatically — a second identical run costs the same and fails the same way.
+
+`git rm` is deliberately absent from this skill's `allowed-tools`, so each removal costs one permission prompt. Bash rules match by prefix: a `Bash(git rm:*)` grant would pre-approve `git rm -r` over any path the model names, which is a wide grant bought to save a prompt on the one operation that should never be silent.
 
 </workflow>
 
