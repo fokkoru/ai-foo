@@ -65,7 +65,7 @@
     {
       "name": "style",
       "source": "./plugins/style",
-      "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that don't reprint what the tool result already showed",
+      "description": "Output styles for Claude Code — front-loaded, plain-sentence responses with status on its own line, that don't reprint what the tool result already showed",
       "version": "0.1.0",
       "author": {
         "name": "fokkoru"
