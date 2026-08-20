@@ -1,10 +1,10 @@
 # ai-foo
 
-Reusable plugins for development workflows. Runs on both **Claude Code** and **Codex CLI**.
+Reusable plugins for development workflows. Four of them run on both **Claude Code** and **Codex CLI**; `style` is Claude Code only, because output styles have no Codex equivalent.
 
 ## Plugins
 
-Three independent plugins live here — installing one does not install the others.
+Five independent plugins live here — installing one does not install the others.
 
 ### df
 
@@ -53,6 +53,16 @@ Bridges Claude Code and Codex CLI to a current Codex model for second opinions. 
 It consults and nothing else. Reviewing code that already exists, and handing implementation work over, belong to [`openai/codex-plugin-cc`](https://github.com/openai/codex-plugin-cc).
 
 See [plugins/cdx/README.md](plugins/cdx/README.md) for the skill table and detailed usage.
+
+### style
+
+Output styles. An output style replaces the "how to talk" half of Claude Code's system prompt, so it reshapes every response in the session instead of adding a step you invoke. One style ships: `answer-first`, which puts the main point first, keeps sentences short and plain, and stops the model reprinting file contents and command output the tool result already showed.
+
+It appears in the `/output-style` picker as `style:Answer First` — plugin output styles are namespaced, and the name comes from the file's frontmatter rather than its filename.
+
+**Claude Code only.** Codex CLI has no output-style concept, so there is no `$style:` anything and no Codex install path.
+
+See [plugins/style/README.md](plugins/style/README.md) for the style table and the frontmatter keys.
 
 ## Install
 
@@ -179,3 +189,16 @@ codex plugin add cdx@ai-foo
 There is no subagent step — `cdx` ships only skills. Codex ignores `allowed-tools`, so each Codex MCP call costs an approval prompt instead of a per-skill pre-approval, and a Design-mode consultation needs `[features] multi_agent = true` in `~/.codex/config.toml` to dispatch a subagent rather than run inline.
 
 See [plugins/cdx/README.md](plugins/cdx/README.md) for detailed usage.
+
+### style
+
+```bash
+claude /plugin marketplace add fokkoru/ai-foo
+claude /plugin install style@ai-foo
+```
+
+Then run `/output-style` and pick **style:Answer First**. That writes `outputStyle: "style:Answer First"` into your `settings.json`; set it there by hand to make it a project-wide default, using the full namespaced name.
+
+There is no Codex CLI block here, and that is the visible difference from every other plugin above.
+
+See [plugins/style/README.md](plugins/style/README.md) for detailed usage.

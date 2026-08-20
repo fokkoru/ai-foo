@@ -1,0 +1,9 @@
+{
+  "name": "style",
+  "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that don't reprint what the tool result already showed",
+  "author": {
+    "name": "fokkoru"
+  },
+  "repository": "https://github.com/fokkoru/ai-foo",
+  "keywords": ["output-style", "writing", "prose", "answer-first"]
+}

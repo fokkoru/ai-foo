@@ -61,6 +61,17 @@
       },
       "category": "development",
       "keywords": ["codex", "second-opinion", "architecture", "review", "cdx"]
+    },
+    {
+      "name": "style",
+      "source": "./plugins/style",
+      "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that don't reprint what the tool result already showed",
+      "version": "0.1.0",
+      "author": {
+        "name": "fokkoru"
+      },
+      "category": "development",
+      "keywords": ["output-style", "writing", "prose", "answer-first"]
     }
   ]
 }

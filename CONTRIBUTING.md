@@ -81,6 +81,8 @@ plugin-name/
    }
    ```
 
+Steps 6 and 7 are the Codex half, and a plugin that bundles no skills skips both — Codex plugins can carry only skills, so a manifest for one would point `skills` at a directory that does not exist. `plugins/style/` is the worked example: output styles are a Claude Code concept, so it is registered in `.claude-plugin/marketplace.json` and nowhere else.
+
 The split that is easy to get backwards: `version` lives in the Codex manifest (`.codex-plugin/plugin.json`) and in the Claude marketplace entry, never in `.claude-plugin/plugin.json`.
 
 ## Adding a Command or Agent

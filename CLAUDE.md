@@ -42,16 +42,24 @@ The skill sizes itself to the request: a single decision is answered in the main
 
 The skill table lives in `plugins/cdx/README.md` — that is the single copy.
 
+### style (plugins/style/)
+
+Output styles. One style, `answer-first.md`, selected as `style:Answer First` — Claude Code namespaces a plugin's output styles as `<plugin>:<name>`, and the name comes from the file's frontmatter, not its filename.
+
+`style` is the one Claude-only plugin here. Codex CLI has no output-style concept, so it ships no `.codex-plugin/plugin.json` and has no `.agents/plugins/marketplace.json` entry — a Codex manifest would have to point `skills` at a directory that does not exist. It ships no skills and no subagents either, so the Authoring Style section below does not reach it; an output style is prose addressed to the model in the second person, closer to an agent body than to a skill.
+
+The style table lives in `plugins/style/README.md` — that is the single copy.
+
 ## Versioning
 
-**A version bump touches exactly two fields for the plugin being bumped, bumped together in one commit:**
+**A version bump touches exactly two fields for the plugin being bumped — one field for a Claude-only plugin — bumped together in one commit:**
 
 | Location                                   | Runtime     | Field                          |
 | ------------------------------------------ | ----------- | ------------------------------ |
 | `.claude-plugin/marketplace.json`          | Claude Code | that plugin's entry, `version` |
 | `plugins/<name>/.codex-plugin/plugin.json` | Codex CLI   | `version`                      |
 
-All four plugins carry both fields.
+`df`, `kb`, `agy` and `cdx` carry both fields. `style` is Claude-only and carries only the first, so its bump touches one field — its marketplace entry.
 
 There is no bump script — edit both fields to the same value in a single `chore(<plugin>): bump version to X.Y.Z` commit. Do not split them across commits.
 
@@ -59,7 +67,7 @@ No tags. The Codex catalog (`.agents/plugins/marketplace.json`) pins every entry
 
 > No plugin's `.claude-plugin/plugin.json` may carry a `version` (it would override the marketplace version for a relative-path plugin). Each plugin's **Codex** manifest (`plugins/<name>/.codex-plugin/plugin.json`) is the opposite: it _must_ carry the version. `.agents/plugins/marketplace.json` uses `"ref": "main"` and carries no version — nothing to bump there.
 
-**When to update:** Any change to files in `plugins/<name>/skills/`, `plugins/<name>/agents/`, or `plugins/<name>/codex/` → bump version.
+**When to update:** Any change to files in `plugins/<name>/skills/`, `plugins/<name>/agents/`, `plugins/<name>/codex/`, or `plugins/<name>/output-styles/` → bump version.
 
 **Version bumps are always separate commits:** `chore(<plugin>): bump version to X.Y.Z`
 
