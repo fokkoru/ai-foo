@@ -58,7 +58,7 @@ See [plugins/cdx/README.md](plugins/cdx/README.md) for the skill table and detai
 
 Output styles. An output style replaces the "how to talk" half of Claude Code's system prompt, so it reshapes every response in the session instead of adding a step you invoke. One style ships: `answer-first`, which puts the main point first, keeps sentences short and plain, and stops the model reprinting file contents and command output the tool result already showed.
 
-It appears in the `/output-style` picker as `style:Answer First` — plugin output styles are namespaced, and the name comes from the file's frontmatter rather than its filename.
+It appears under `/config` → **Output style** as `style:Answer First` — plugin output styles are namespaced, and the name comes from the file's frontmatter rather than its filename. The dedicated `/output-style` command was removed; typing it now just opens `/config`.
 
 **Claude Code only.** Codex CLI has no output-style concept, so there is no `$style:` anything and no Codex install path.
 
@@ -197,7 +197,7 @@ claude /plugin marketplace add fokkoru/ai-foo
 claude /plugin install style@ai-foo
 ```
 
-Then run `/output-style` and pick **style:Answer First**. That writes `outputStyle: "style:Answer First"` into your `settings.json`; set it there by hand to make it a project-wide default, using the full namespaced name.
+Then pick it under `/config` → **Output style**, in the "Model & output" group. That writes `outputStyle: "style:Answer First"` into `.claude/settings.local.json` — the project-local file, not the shared one. For a default the whole project gets, put the same key in `.claude/settings.json` by hand, using the full namespaced name rather than the short one.
 
 There is no Codex CLI block here, and that is the visible difference from every other plugin above.
 
