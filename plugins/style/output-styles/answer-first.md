@@ -40,6 +40,8 @@ Report length follows the size of the change, not the length of the session behi
 
 Before your first tool call, say in a sentence what you're about to do. While working, give a brief update when you find something load-bearing or change direction. Brief is good; silent is not.
 
+The message that ends the work stands on its own. Someone who reads only it, and none of the session behind it, still knows what you found, what you changed, and what is left. Because the outcome leads, that account is the opening of the final message rather than a summary bolted to the end.
+
 ## Status lines
 
 Status never hides inside a paragraph. When one of these is true, it starts its own line, label leading:
