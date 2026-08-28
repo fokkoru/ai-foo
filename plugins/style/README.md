@@ -4,15 +4,21 @@
 
 ## The styles
 
-| Style          | Appears as           | What it does                                                                                          |
-| -------------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
-| `answer-first` | `style:Answer First` | Main point first, plain sentences with the AI tells cut, no reprinting of what the tool result showed |
+| Style          | Appears as           | What it does                                                                                                                        |
+| -------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `answer-first` | `style:Answer First` | Main point first, brief plain sentences with the AI tells cut, no reprinting of what the tool result showed, status on its own line |
 
 This table is the single copy; `README.md` at the repository root links here rather than repeating it.
 
 Claude Code namespaces a plugin's output styles as `<plugin>:<name>`, and the name comes from the file's frontmatter, not its filename. So `answer-first.md` — whose frontmatter reads `name: Answer First` — is selected as `style:Answer First`.
 
-Claude Code ships a built-in `Concise` style that covers part of the same ground: lead with the result, skip preamble. `answer-first` goes further — it names what the reader cannot see, forbids reprinting a tool result, and puts status on its own line — and it treats readability, not brevity, as the budget. Pick one; running neither is also fine.
+Claude Code ships a built-in `Concise` style that covers part of the same ground: lead with the result, skip preamble. `answer-first` goes further — it names what the reader cannot see, forbids reprinting a tool result, and puts status on its own line. Both cut length, and they cut it the same way: out of what you leave out, never out of the grammar of what stays. Pick one. Output styles are mutually exclusive, so selecting `answer-first` means `Concise` is not loaded at all, which is why this file states the brevity rules itself instead of leaning on them.
+
+## Where the brevity and format rules came from
+
+The brevity rules, the carve-out for text that must survive intact, and the closing precedence line come from Anthropic's own prompts. [Prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5) records that the effort parameter changes how much the model thinks rather than how much it says, so response length has to be prompted for explicitly; it supplies the sample instructions this style adapts for conversational length, for narration during a task, and for the length of a document written to disk. The built-in `Concise` style, read out of the Claude Code 2.1.251 binary, supplied the other two — both rewritten here. Naming exempt categories the way `Concise` does ("failing test output keeps its full content") licenses pasting a whole transcript, so this style names the information that must survive instead. And an unscoped "these rules win" would let presentation override a format the user explicitly asked for, so the closing line overrides general defaults only.
+
+One more line from the same page decided the file's form: "The formatting style used in your prompt may influence Claude's response style." This style asks for complete sentences and flowing prose, so it is written that way. A rule set that demands prose while writing in numbered fragments teaches the wrong thing by example, which is why this file did not adopt the numbered shape `Concise` and `Proactive` use.
 
 ## Claude Code only
 
@@ -56,7 +62,7 @@ CLAUDE_CODE_SIMPLE_SYSTEM_PROMPT=0   # force the full prompt
 
 This is not the `Verbose output` toggle in `/config`. That one controls how much the terminal displays and never reaches the system prompt at all, even though it sits in the same settings group.
 
-**What this means for `answer-first`.** Under lean, the base prompt says almost nothing about how to talk, so the style is the only thing shaping prose — which is what it was rewritten to do. Under the full prompt it lands on top of a tone section that says responses should be short and concise. `answer-first` deliberately disagrees: comprehension is the budget, not word count. The style is injected after those sections and is meant to win. If you want the terse reading instead, the built-in `Concise` is it.
+**What this means for `answer-first`.** Under lean, the base prompt says almost nothing about how to talk, so the style is the only thing shaping prose — which is what it was rewritten to do. Under the full prompt it lands on top of a tone section that also asks for short, concise responses. The two agree on length and differ on where it comes from: the style takes it out of what you leave out and keeps the grammar of what stays. It is injected after those sections, and its closing paragraph says so in as many words.
 
 ## Editing a style
 
