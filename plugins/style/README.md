@@ -4,9 +4,9 @@
 
 ## The styles
 
-| Style          | Appears as           | What it does                                                                          |
-| -------------- | -------------------- | ------------------------------------------------------------------------------------- |
-| `answer-first` | `style:Answer First` | Main point first, short plain sentences, no reprinting of what the tool result showed |
+| Style          | Appears as           | What it does                                                                                          |
+| -------------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `answer-first` | `style:Answer First` | Main point first, plain sentences with the AI tells cut, no reprinting of what the tool result showed |
 
 This table is the single copy; `README.md` at the repository root links here rather than repeating it.
 
