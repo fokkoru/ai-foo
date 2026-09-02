@@ -56,7 +56,7 @@ See [plugins/cdx/README.md](plugins/cdx/README.md) for the skill table and detai
 
 ### style
 
-Output styles. An output style replaces the "how to talk" half of Claude Code's system prompt, so it reshapes every response in the session instead of adding a step you invoke. One style ships: `answer-first`, which puts the main point first, keeps sentences short and plain, and stops the model reprinting file contents and command output the tool result already showed.
+Output styles. An output style replaces the "how to talk" half of Claude Code's system prompt, so it reshapes every response in the session instead of adding a step you invoke. One style ships: `answer-first`, which puts the main point first, holds a report's length to the size of the change, and ends the message with one labelled line when something is the reader's to do.
 
 It appears under `/config` → **Output style** as `style:Answer First` — plugin output styles are namespaced, and the name comes from the file's frontmatter rather than its filename. The dedicated `/output-style` command was removed; typing it now just opens `/config`.
 

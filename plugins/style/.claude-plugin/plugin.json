@@ -1,6 +1,6 @@
 {
   "name": "style",
-  "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that don't reprint what the tool result already showed",
+  "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that end with what the reader must do next, when anything is theirs to do",
   "author": {
     "name": "fokkoru"
   },
