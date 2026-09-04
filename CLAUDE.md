@@ -2,7 +2,7 @@
 
 ## Repository Purpose
 
-This repository contains reusable Claude Code plugins that can be installed in other projects.
+This repository contains reusable Claude Code plugins that can be installed in other projects, plus `statusline/` — the one thing here that a plugin cannot carry.
 
 Procedures used occasionally — plugin structure, adding a plugin, adding a command or agent, the semver table, Codex distribution, commit types — are in `CONTRIBUTING.md`.
 
@@ -49,6 +49,14 @@ Output styles. One style, `answer-first.md`, selected as `style:Answer First` �
 `style` is the one Claude-only plugin here. Codex CLI has no output-style concept, so it ships no `.codex-plugin/plugin.json` and has no `.agents/plugins/marketplace.json` entry — a Codex manifest would have to point `skills` at a directory that does not exist. It ships no skills and no subagents either, so the Authoring Style section below does not reach it; an output style is prose addressed to the model in the second person, closer to an agent body than to a skill.
 
 The style table lives in `plugins/style/README.md` — that is the single copy.
+
+## statusline (statusline/)
+
+Two custom widgets for the Claude Code status line, rendered by `ccstatusline` through its `custom-command` widget. They exist because `ccstatusline` reads no `prompt_cache` field Claude Code sends, and paints each widget one colour rather than colouring by threshold.
+
+This is not a plugin and cannot become one: `PluginSettingsSchema` is `SettingsSchema().pick({ agent: true }).strip()`, so `agent` is the only settings key a plugin may carry, and `${CLAUDE_PLUGIN_ROOT}` is not expanded in a status line command. Installation is therefore a written instruction that puts an absolute path into `~/.claude/settings.json`; `docs/architecture/statusline.md` carries it.
+
+Versioning does not reach here — the semver table below covers `plugins/<name>/` only.
 
 ## Versioning
 

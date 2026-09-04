@@ -25,8 +25,8 @@ sources:
     sha256: "a776d1b2f6cf"
   - resource: "CLAUDE.md"
     id: "tiering-gotcha"
-    fragment: "L116-L116"
-    sha256: "776d58ca334c"
+    fragment: "## Gotchas"
+    sha256: "36e3c18a58b3"
 ---
 
 # Agent fleet and its tiers

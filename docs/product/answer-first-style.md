@@ -10,7 +10,7 @@ sources:
   - resource: ".claude-plugin/marketplace.json"
     id: "style-version"
     fragment: "L66-L75"
-    sha256: "fa9a422fadb1"
+    sha256: "a0713bbf5be4"
   - resource: "plugins/style/output-styles/answer-first.md"
     id: "style-head"
     fragment: "L1-L11"
@@ -22,7 +22,7 @@ sources:
   - resource: "plugins/style/README.md"
     id: "style-sources"
     fragment: "## Where the rules came from"
-    sha256: "6361eef1bd6a"
+    sha256: "2fa083db88e3"
   - resource: "plugins/style/README.md"
     id: "style-placement"
     fragment: "## What the base prompt already says about prose"
@@ -43,8 +43,10 @@ if they said "just give me the TLDR", with supporting detail after. Length follo
 change rather than the length of the session behind it, and a detail is cut whole rather than
 compressed into fragments, abbreviations or arrow chains.[^style-head]
 
-The one capability none of its sources carry is the end state. When something is the reader's to act
-on, the message ends with one of four exclusive labels — **Need from you**, **Blocked**, **Not
+Two rules come from none of its sources. The first is a test for jargon: a technical term stays only
+when it is shorter than the plain phrasing, because "use the plain word" on its own gives the model
+nothing to check against and comparing two lengths is something it can check. The second is the end
+state. When something is the reader's to act on, the message ends with one of four exclusive labels — **Need from you**, **Blocked**, **Not
 verified**, **Next** — taken in that order. An action the model can take itself is taken instead of
 being written as a next step, and when nothing is open the message stops with the content.[^style-sources]
 
@@ -68,7 +70,7 @@ in full.[^style-head]
 The body has been compared against its predecessor on a fixed prompt set with the harness in
 [Prompt A/B harness](../architecture/prompt-eval-harness.md), but that run's numbers are not
 recorded in this repository, so no effect size is stated here. The marketplace entry ships
-0.8.0.[^style-version]
+0.9.0.[^style-version]
 
 [^style-head]: `plugins/style/output-styles/answer-first.md`, frontmatter and the first two paragraphs.
 

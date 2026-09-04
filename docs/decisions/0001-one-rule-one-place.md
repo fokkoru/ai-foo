@@ -11,8 +11,8 @@ generated:
 sources:
   - resource: "CLAUDE.md"
     id: "orop-rule"
-    fragment: "L118-L118"
-    sha256: "98ec4c793b5e"
+    fragment: "## Gotchas"
+    sha256: "36e3c18a58b3"
 ---
 
 # One rule, one place

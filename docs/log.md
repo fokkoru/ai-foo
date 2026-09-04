@@ -1,5 +1,11 @@
 # Log
 
+## 2026-09-04
+
+- **Creation**: [The two-line status line](architecture/statusline.md) — considered [Antigravity execution boundary](architecture/agy-execution-boundary.md), the only other page about wrapping a third-party CLI, which is about permission flags and not about rendering; no existing page covers the status line, and `CLAUDE.md` already names this path as where the installation instruction lives.
+- **Update**: [Agent fleet and its tiers](architecture/agent-fleet.md), [Model tiering for dispatched work](decisions/0002-model-tiering-for-dispatched-work.md), [One rule, one place](decisions/0001-one-rule-one-place.md), [A removal names its replacement](decisions/0004-a-removal-names-its-replacement.md) and [The df development workflow](product/df-workflow.md) — the new `## statusline (statusline/)` section in `CLAUDE.md` shifted five line-range citations, two of which then covered blank lines. Re-cited as `## Gotchas` and `## Verify Before Finishing`, the form the schema prescribes for a resource with headings. No prose changed.
+- **Update**: [Answer First output style](product/answer-first-style.md) — `plugins/style/README.md` now records two rules the style adds beyond its sources rather than one, the jargon test having joined the end state, and the marketplace entry ships 0.9.0 rather than 0.8.0.
+
 ## 2026-09-03
 
 - **Creation**: seeded the bundle from `references/wiki-template.md`; `docs/` was empty, so every page below is a first page and no existing page was considered.
