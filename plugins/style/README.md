@@ -43,6 +43,12 @@ Then pick it under `/config` → **Output style**, in the "Model & output" group
 
 Choosing it there writes `outputStyle: "style:Answer First"` into `.claude/settings.local.json` — the project-local file, not the shared one. For a default the whole project gets, put the same key in `.claude/settings.json` by hand, using the full namespaced name rather than the short one.
 
+## Main thread only
+
+The output style is one section of the main thread's system prompt, added by the builder that assembles it. A dispatched subagent gets a different prompt: its own agent definition plus environment details, with that builder never called, so `answer-first` does not govern what an agent writes. The one exception is `subagent_type: "fork"`, which reuses the parent's already-rendered prompt and so carries the style with it. Verified by reading Claude Code 2.1.260.
+
+In practice this means a report that reaches you through the main thread is styled, and a file a subagent writes itself is not.
+
 ## Precedence, and the copy you may already have
 
 Claude Code loads output styles from five places, lowest priority first: built-in, **plugin**, `~/.claude/output-styles/`, `.claude/output-styles/` in the project, and organization policy above all. Priority only breaks ties between styles with the _same_ name, and the plugin namespace prevents that — `style:Answer First` and a personal `Answer First` are two separate entries in the picker, and both show up.
