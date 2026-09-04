@@ -52,18 +52,37 @@ require() {
 
 ID="$(printf '%s' "$ARM" | tr ' ' '_')_${MODEL}_${CELL}_${REP}"
 OUT="$EXP/$RESULTS"
-# Keyed on RESULTS as well as the id: two sweeps of the same experiment under
-# different results directories would otherwise share one work directory, and
-# the rm -rf below would delete the other one mid-run.
-WORK="$EXP/work/$RESULTS/$ID"
+# Outside any checkout, not under $EXP. CLAUDE.md discovery walks the working
+# directory's ancestors, so a work directory inside a repository loads that
+# repository's CLAUDE.md and CLAUDE.local.md into every arm. Measured on
+# 2026-09-03 against 2.1.260: three memory files reached a run, and one of them
+# carried prose rules overlapping what an arm is supposed to supply. A
+# temporary root has no such ancestors.
+#
+# Keyed on RESULTS as well as the id, because two sweeps of the same experiment
+# under different results directories would otherwise share one work directory
+# and the rm -rf below would delete the other one mid-run.
+TMP_ROOT="${TMPDIR:-/tmp}"
+WORK_ROOT="${TMP_ROOT%/}/prompt-eval/$(basename "$EXP")"
+WORK="$WORK_ROOT/$RESULTS/$ID"
 rm -rf "$WORK"
-mkdir -p "$EXP/work/$RESULTS" "$OUT" "$WORK/.claude"
+mkdir -p "$WORK_ROOT/$RESULTS" "$OUT" "$WORK/.claude"
 if [ -d "$EXP/fixture" ]; then cp -R "$EXP/fixture/." "$WORK/"; fi
 
 # INJECT names the substitution point: how one arm reaches the model. This case
 # is the whole difference between comparing output styles, agent bodies, plugins
 # and raw system prompts, which is why it is a line of config and not a fork of
 # this script.
+# The home directory's CLAUDE.md is a User memory file, which no working
+# directory escapes. claudeMdExcludes drops it by absolute-path glob and is the
+# narrow lever: --bare would also stop every keychain read, and with no
+# ANTHROPIC_API_KEY in the environment that ends the run at authentication.
+# Verified against 2.1.260: isClaudeMdExcluded in utils/claudemd.ts applies to
+# the User, Project and Local memory types, and its patterns are picomatch
+# globs over absolute paths.
+EXCLUDES='"claudeMdExcludes":["**/CLAUDE.md","**/CLAUDE.local.md"]'
+SETTINGS="{$EXCLUDES}"
+
 INJECT_FLAGS=()
 case "$INJECT" in
 output-style)
@@ -72,7 +91,8 @@ output-style)
   # file whose frontmatter carries "$ARM" and there is no cost to carrying all.
   require "$EXP/arms" dir
   cp -R "$EXP/arms" "$WORK/.claude/output-styles"
-  INJECT_FLAGS=(--settings "{\"outputStyle\":\"$ARM\"}" --setting-sources project)
+  SETTINGS="{\"outputStyle\":\"$ARM\",$EXCLUDES}"
+  INJECT_FLAGS=(--setting-sources project)
   ;;
 append-system-prompt)
   # Passing this turns --system-prompt-snapshot off, so the arm text applies
@@ -108,7 +128,12 @@ require "$EXP/prompts/$CELL.txt"
 
 cd "$WORK"
 RC=0
-claude -p \
+# CLAUDE_CODE_DISABLE_AUTO_MEMORY is first in the priority chain in
+# memdir/paths.ts, so it holds whatever settings.json says. Without it the run
+# reads the memory directory keyed to its working directory, which is state
+# accumulated outside the experiment.
+CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p \
+  --settings "$SETTINGS" \
   --model "$MODEL" \
   --effort "$EFFORT" \
   --max-budget-usd "$MAX_BUDGET_USD" \

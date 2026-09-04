@@ -21,6 +21,16 @@ echo "review_id,judge_model,count,phrases" > "$OUT"
 for f in "$DIR"/r*.md; do
   [ -e "$f" ] || continue
   ID="$(basename "$f" .md)"
+  # A response with no non-whitespace content is not something a judge can
+  # score. Measured on 2026-09-03: the Claude family answers `count: 0` on
+  # whitespace, which is indistinguishable from a clean response, while the
+  # Antigravity family returns nothing at all. Deciding it here rather than in
+  # the rubric makes all three families agree by construction, and costs no
+  # judge call.
+  if ! grep -q '[^[:space:]]' "$f"; then
+    printf '%s,%s,ERROR,\n' "$ID" "$MODEL" >> "$OUT"
+    continue
+  fi
   P="$(mktemp)"; printf '%s\n\n%s\n' "$(cat "$RUBRIC")" "$(cat "$f")" > "$P"
   agy -p "$(cat "$P")" --model "$MODEL" --output-format json \
       --json-schema "$SCHEMA" 2>/dev/null \
