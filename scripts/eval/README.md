@@ -59,22 +59,29 @@ into each run, so the names have to be distinct.
 R=scripts/eval
 E=thoughts/validation/<experiment>
 
-# 1. Sweep. Resumes by re-running the same command: a combination that already
-#    has a response is not queued again.
-ARMS="AF Old|AF New" MODELS="opus fable" RESULTS=results-gate-a "$R/drive.sh" "$E" 6 3 10 11 12
+# Two arms, end to end: sweep, mechanical metrics, resource use, paired test.
+# Resumes by re-running the same command: a combination that already has a
+# response is not queued again.
+MODELS="opus fable" RESULTS=results-gate-a "$R/check.sh" "$E" words "AF Old" "AF New" 10 11 12
 
-# 2. Mechanical metrics. Free, deterministic, no model involved.
-python3 "$R/score.py" "$E/results-gate-a"
-
-# 3. Resource use: cost, wall clock, turns, tokens, cache share.
-python3 "$R/cost.py" "$E/results-gate-a"
-
-# 4. The comparison. The cell is the unit, not the response.
-python3 "$R/paired.py" "$E/results-gate-a" words "AF Old" "AF New"
-
-# 5. Only if a metric needs judgement. Mask first, and record the seed.
+# Only if a metric needs judgement. Mask first, and record the seed.
 python3 "$R/mask.py" "$E/results-gate-a" 20260901
 "$R/judge-agy.sh" "$E/results-gate-a" "$E/results-gate-a/mannerisms-gemini.csv"
+```
+
+`check.sh` takes the experiment directory, the metric the comparison reads, the two arms, then the
+cells. It runs `drive.sh`, `score.py`, `cost.py` and `paired.py` in that order and stops at the
+first failure, so an incomplete sweep never reaches the comparison. `REPS` defaults to 3 and `PAR`,
+the parallelism, to 6.
+
+The four run individually as well, which is what a comparison of more than two arms needs, since
+`paired.py` reads exactly two:
+
+```bash
+ARMS="AF Old|AF New" MODELS="opus fable" RESULTS=results-gate-a "$R/drive.sh" "$E" 6 3 10 11 12
+python3 "$R/score.py" "$E/results-gate-a"
+python3 "$R/cost.py" "$E/results-gate-a" 6
+python3 "$R/paired.py" "$E/results-gate-a" words "AF Old" "AF New"
 ```
 
 `drive.sh` takes the experiment directory, a parallelism, a repetition count, then the cells.

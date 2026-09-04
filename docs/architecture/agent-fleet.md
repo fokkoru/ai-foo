@@ -22,7 +22,7 @@ sources:
   - resource: "plugins/df/README.md"
     id: "agent-table"
     fragment: "## Subagents"
-    sha256: "aa9ad6d4926f"
+    sha256: "a776d1b2f6cf"
   - resource: "CLAUDE.md"
     id: "tiering-gotcha"
     fragment: "L116-L116"

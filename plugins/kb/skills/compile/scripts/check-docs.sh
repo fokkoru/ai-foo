@@ -192,10 +192,16 @@ fragment_text() {
     ;;
   *)
     level=$(printf '%s' "$frag" | awk '{n=0; while (substr($0,n+1,1)=="#") n++; print n}')
+    # Fence state, tracked from line 1 and toggled the way strip_code does it. A
+    # `# comment` inside a fenced block is not a heading, and without this the
+    # first one ends the fragment: the cited span then hashes a few lines of a
+    # long section and every later edit below that point reads as no drift at
+    # all. The fence line itself belongs to the fragment, so it prints.
     awk -v h="$frag" -v lvl="$level" '
-      !on && $0==h {on=1; print; next}
+      /^[[:space:]]*(```|~~~)/ {infence = !infence; if (on) print; next}
+      !on && !infence && $0==h {on=1; print; next}
       on {
-        if ($0 ~ /^#+[[:space:]]/) {
+        if (!infence && $0 ~ /^#+[[:space:]]/) {
           n=0; while (substr($0,n+1,1)=="#") n++
           if (n <= lvl) exit
         }

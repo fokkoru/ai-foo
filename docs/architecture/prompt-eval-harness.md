@@ -5,7 +5,7 @@ description: "How two variants of a shipped prompt are compared against the same
 status: stable
 generated:
   by: "kb:compile"
-  at: "2026-09-03T17:32:57-07:00"
+  at: "2026-09-03T22:54:23-07:00"
 sources:
   - resource: "scripts/eval/README.md"
     id: "eval-intro"
@@ -22,7 +22,7 @@ sources:
   - resource: "scripts/eval/README.md"
     id: "eval-running"
     fragment: "## Running one"
-    sha256: "17fbe31fe01b"
+    sha256: "42eb455b2322"
   - resource: "scripts/eval/README.md"
     id: "eval-refusals"
     fragment: "## What each script will not do"
@@ -31,6 +31,10 @@ sources:
     id: "eval-cost"
     fragment: "## Cost before you start"
     sha256: "8950df68be3f"
+  - resource: "scripts/eval/check.sh"
+    id: "check-header"
+    fragment: "L1-L13"
+    sha256: "07ada88cf8b8"
   - resource: "scripts/eval/paired.py"
     id: "paired-header"
     fragment: "L1-L28"
@@ -65,11 +69,18 @@ and a plugin directory are the five. Only the output-style path has been run aga
 other four build the arguments they claim to against a test double, so the first real use of one is
 a smoke test rather than a measurement.[^eval-inject]
 
-`drive.sh` runs the sweep, taking the experiment directory, a parallelism, a repetition count and
-then the cells. It resumes by re-running the same command, because a combination that already has a
-response is not queued again. `score.py` computes the mechanical metrics, `cost.py` reports cost,
-wall clock, turns and tokens, `paired.py` makes the comparison, and `mask.py` and `judge-agy.sh` run
-only when a metric needs judgement.[^eval-running]
+`check.sh` is the whole path for a two-arm comparison. It takes the experiment directory, the metric
+the comparison reads, the two arms and then the cells, and runs `drive.sh`, `score.py`, `cost.py` and
+`paired.py` in that order at three repetitions and parallelism 6 by default.[^eval-running] It stops
+at the first failure, so a sweep that lost a run cannot reach `paired.py` and print a difference that
+looks measured.[^check-header]
+
+The four also run individually, which is what a comparison of more than two arms needs, since
+`paired.py` reads exactly two. `drive.sh` takes the experiment directory, a parallelism, a repetition
+count and then the cells, and resumes by re-running the same command, because a combination that
+already has a response is not queued again. `score.py` computes the mechanical metrics, `cost.py`
+reports cost, wall clock, turns and tokens, `paired.py` makes the comparison, and `mask.py` and
+`judge-agy.sh` run only when a metric needs judgement.[^eval-running]
 
 Each script refuses something, and the refusals are what keep a failure from becoming a number.
 `run.sh` writes no response for a run that did not succeed, leaving the raw JSON and the cost row
@@ -121,6 +132,8 @@ step, so nothing here establishes how far a judged number is from a human one.
 [^eval-refusals]: `scripts/eval/README.md`, "What each script will not do".
 
 [^eval-cost]: `scripts/eval/README.md`, "Cost before you start".
+
+[^check-header]: `scripts/eval/check.sh`, header comment.
 
 [^paired-header]: `scripts/eval/paired.py`, module docstring.
 
