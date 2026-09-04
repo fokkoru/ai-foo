@@ -1,6 +1,6 @@
 {
   "name": "kb",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
   "author": {
     "name": "fokkoru"
