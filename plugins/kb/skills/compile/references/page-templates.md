@@ -28,9 +28,9 @@ generated:
   by: "kb:compile"
   at: "2026-08-10T11:02:33-07:00"
 sources:
-  - resource: "thoughts/research/2026-08-02_1531_code-reviewer-dispatch-and-tiering.md"
+  - resource: "CLAUDE.md"
     id: "cr-tiering"
-    fragment: "## Summary"
+    fragment: "## Gotchas"
     sha256: "3f9a1c2d4e5b"
   - resource: "plugins/df/agents/code-reviewer.md"
     id: "cr-frontmatter"
