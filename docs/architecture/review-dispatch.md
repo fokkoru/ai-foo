@@ -5,7 +5,7 @@ description: "How df reviews a run: one pass per phase, one over the whole run, 
 status: stable
 generated:
   by: "kb:compile"
-  at: "2026-09-03T17:32:57-07:00"
+  at: "2026-09-03T23:13:58-07:00"
 sources:
   - resource: "plugins/df/skills/implement/SKILL.md"
     id: "impl-gates"
@@ -29,8 +29,8 @@ sources:
     sha256: "6ab5e6062ab4"
   - resource: "CONTRIBUTING.md"
     id: "removal-rule"
-    fragment: "L139-L139"
-    sha256: "5dc75c6a9b39"
+    fragment: "## Commit Conventions"
+    sha256: "f86e9f3bad9d"
 ---
 
 # Independent review dispatch

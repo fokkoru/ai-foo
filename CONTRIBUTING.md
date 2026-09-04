@@ -93,6 +93,24 @@ The split that is easy to get backwards: `version` lives in the Codex manifest (
 
 After adding, bump the plugin version (MINOR for new features).
 
+## Changing a Shipped Prompt
+
+Applies to any prose this repository ships whose effect is on how the model behaves rather than on what a script computes: an output style body, an agent body, a skill. It does not apply to anything a checker already decides — frontmatter length, tag vocabulary, agent mirror drift and docs conformance each have a script, and a behavioural experiment is the wrong instrument for a question with a mechanical answer.
+
+What picks the rung is what the edit is expected to do, not what the diff looks like. Rewording a rule can change its scope, its strength or its exceptions, and moving one can change its salience or its precedence, so no reading of the text alone decides this.
+
+| Rung | The edit                                                                                   | What runs                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| R0   | No behavioural change is intended or claimed. Meaning, scope, strength and precedence hold | Nothing paid. The mechanical checkers in `scripts/` are the whole gate                                |
+| R1   | Output is expected to change, and what changes has a mechanical proxy                      | `scripts/eval/check.sh`: two arms, one primary metric, one cell set, all three named before the run   |
+| R2   | Output is expected to change and no mechanical proxy exists                                | Known negatives, then a floor check, then the sweep, then judging restricted to the cells with no key |
+
+The author proposes the rung from the edit's intent, and whoever ships the change confirms it. At R1 and R2 the confirmed rung is written into `thoughts/docs/prompt-change-log.md` before the run, together with the baseline, the candidate, the primary metric and the cells, all fixed in writing while the numbers are still unknown. Reading a second metric afterwards is a new question, not a second chance at the first one.
+
+Price the rung before queueing it. Run `python3 scripts/eval/cost.py` on the previous results directory and multiply its median by arms × models × cells × repetitions. No rung has a fixed price, because the cells decide it. All arms run on one Claude Code version and the writeup records it, since scores from either side of a version change are not comparable.
+
+`scripts/eval/README.md` is the runbook, and it defines arm, cell and repetition.
+
 ## Versioning (semver reference)
 
 When committing changes to a plugin, update its version in `.claude-plugin/marketplace.json` using [Semantic Versioning](https://semver.org/):
