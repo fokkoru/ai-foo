@@ -35,6 +35,8 @@ import statistics as st
 import sys
 from collections import defaultdict
 
+from ids import parse_id
+
 
 def load_metrics(exp):
     path = os.path.join(exp, "metrics.py")
@@ -54,11 +56,11 @@ def rows_for(exp, results):
     rows = []
     for path in sorted(glob.glob(os.path.join(results, "*.md"))):
         stem = os.path.basename(path)[:-3]
-        parts = stem.rsplit("_", 3)
-        if len(parts) != 4:
+        parts = parse_id(stem)
+        if parts is None:
             continue
         arm, model, cell, rep = parts
-        if not rep.isdigit() or cell in exclude:
+        if cell in exclude:
             continue
         text = open(path, encoding="utf-8").read().strip()
         row = dict(id=stem, arm=arm, model=model, cell=cell, rep=int(rep))

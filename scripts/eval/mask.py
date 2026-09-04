@@ -15,7 +15,9 @@ a `labels_masked` count per response so that leak is at least measured.
 
 Refuses to overwrite an existing `mapping.csv`: judgements are keyed by review
 id, so remapping silently invalidates every judgement already recorded. Delete
-it deliberately to re-mask.
+it deliberately to re-mask. A re-mask keeps the previous review files until the
+whole replacement set is written, then removes whatever the new set does not
+cover.
 """
 
 import csv
@@ -25,6 +27,8 @@ import os
 import random
 import re
 import sys
+
+from ids import parse_id
 
 
 def load_metrics(exp):
@@ -65,33 +69,53 @@ def main(argv):
     stems = []
     for path in sorted(glob.glob(os.path.join(results, "*.md"))):
         stem = os.path.basename(path)[:-3]
-        parts = stem.rsplit("_", 3)
-        if len(parts) == 4 and parts[3].isdigit() and parts[2] not in exclude:
+        parts = parse_id(stem)
+        if parts is not None and parts[2] not in exclude:
             stems.append(stem)
     if not stems:
         sys.exit(f"no responses under {results}")
 
-    os.makedirs(review, exist_ok=True)
     order = list(range(len(stems)))
     random.Random(seed).shuffle(order)
 
+    # Every input is read before any file is written or removed. A response or a
+    # prompt missing halfway through would otherwise leave the previous review
+    # set half overwritten and half stale, which is worse than either.
     rows = []
+    bodies = {}
     for n, i in enumerate(order, start=1):
         stem = stems[i]
-        _arm, _model, cell, _rep = stem.rsplit("_", 3)
+        _arm, _model, cell, _rep = parse_id(stem)
         text = open(os.path.join(results, stem + ".md"), encoding="utf-8").read().rstrip()
         masked, hits = token.subn("[LABEL MASKED] ", text) if token else (text, 0)
         prompt = open(os.path.join(exp, "prompts", f"{cell}.txt"), encoding="utf-8").read().strip()
         rid = f"r{n:03d}"
-        with open(os.path.join(review, f"{rid}.md"), "w", encoding="utf-8") as f:
-            f.write(f"# {rid}\n\n## Prompt\n\n{prompt}\n\n## Response\n\n{masked}\n")
+        bodies[rid] = f"# {rid}\n\n## Prompt\n\n{prompt}\n\n## Response\n\n{masked}\n"
         rows.append((rid, stem, hits))
+
+    os.makedirs(review, exist_ok=True)
+    for rid, body in bodies.items():
+        with open(os.path.join(review, f"{rid}.md"), "w", encoding="utf-8") as f:
+            f.write(body)
+
+    # A re-mask of fewer responses leaves the review files above the new count
+    # behind. judge-agy.sh would score them and return rows whose review ids are
+    # in no mapping.csv, so they go once the set that replaces them is on disk.
+    stale = [
+        p
+        for p in sorted(glob.glob(os.path.join(review, "r*.md")))
+        if os.path.basename(p)[:-3] not in bodies
+    ]
+    for p in stale:
+        os.remove(p)
 
     with open(mapping, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["review_id", "id", "labels_masked"])
         w.writerows(rows)
     print(f"{len(rows)} review files under {review}, seed {seed}; mapping in {mapping}")
+    if stale:
+        print(f"removed {len(stale)} review files left by a previous mask")
     print(f"{sum(1 for _, _, h in rows if h)} of {len(rows)} responses had a label masked")
 
 

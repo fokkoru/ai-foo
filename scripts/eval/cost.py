@@ -6,7 +6,10 @@ cost, wall clock, turns and token counts. `run.sh` writes a subset of these to
 `results/cost.tsv`, but the raw JSON carries all of it, so this script also works
 on a run whose `cost.tsv` predates that extraction.
 
-    python3 cost.py <results-dir>
+    python3 cost.py <results-dir> [parallelism]
+
+Parallelism is only used to divide the serial wall time into a projection. With
+no argument the projection is left out rather than guessed.
 """
 
 import glob
@@ -16,9 +19,16 @@ import statistics as st
 import sys
 from collections import defaultdict
 
-if len(sys.argv) < 2:
-    sys.exit("usage: cost.py <results-dir>")
+from ids import parse_id
+
+if not 2 <= len(sys.argv) <= 3:
+    sys.exit("usage: cost.py <results-dir> [parallelism]")
 D = os.path.abspath(sys.argv[1])
+PAR = None
+if len(sys.argv) == 3:
+    if not sys.argv[2].isdigit() or int(sys.argv[2]) < 1:
+        sys.exit(f"parallelism must be a positive integer, got {sys.argv[2]!r}")
+    PAR = int(sys.argv[2])
 
 FIELDS = [
     ("cost", "cost $", "{:.3f}"),
@@ -32,8 +42,8 @@ rows = []
 skipped = []
 for path in sorted(glob.glob(os.path.join(D, "*.json"))):
     name = os.path.basename(path)[:-5]
-    parts = name.split("_")
-    if len(parts) < 5:
+    parts = parse_id(name)
+    if parts is None:
         skipped.append(name)
         continue
     try:
@@ -49,9 +59,9 @@ for path in sorted(glob.glob(os.path.join(D, "*.json"))):
     usage = res.get("usage") or {}
     rows.append(
         {
-            "arm": "_".join(parts[:-3]),
-            "model": parts[-3],
-            "cell": parts[-2],
+            "arm": parts[0],
+            "model": parts[1],
+            "cell": parts[2],
             "cost": res.get("total_cost_usd", 0.0),
             "dur_s": res.get("duration_ms", 0) / 1000,
             "turns": res.get("num_turns", 0),
@@ -111,7 +121,8 @@ cr = sum(r["cache_read"] for r in rows)
 cw = sum(r["cache_write"] for r in rows)
 un = sum(r["input"] for r in rows)
 print(f"\ntotal cost: ${sum(r['cost'] for r in rows):.2f}")
-print(f"serial wall time: {serial_h:.2f} h  (at parallelism 6: {serial_h / 6:.2f} h)")
+proj = f"  (at parallelism {PAR}: {serial_h / PAR:.2f} h)" if PAR else ""
+print(f"serial wall time: {serial_h:.2f} h{proj}")
 print(
     f"input tokens: {cr:,} cache read | {cw:,} cache write | {un:,} uncached"
     f"  -> cache read share {cr / max(cr + cw + un, 1):.1%}"

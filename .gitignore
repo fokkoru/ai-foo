@@ -3,3 +3,6 @@
 
 # Claude Code
 .claude/
+
+# Python bytecode from the eval scripts importing ids.py
+__pycache__/
