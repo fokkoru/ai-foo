@@ -2,6 +2,11 @@
 
 ## 2026-09-06
 
+- **Creation**: [The knowledge compiler](architecture/knowledge-compiler.md) — considered [Independent review dispatch](architecture/review-dispatch.md) and [Prompt A/B harness](architecture/prompt-eval-harness.md), the two pages about a mechanism this repository runs over its own work; both are about df's review and evaluation machinery and neither covers the raw-to-compiled pipeline. No page mentioned `kb` at all, and the layer that writes `docs/` had no page in it.
+- **Creation**: [A page cites only what a clone carries](decisions/0008-a-page-cites-only-what-a-clone-carries.md) — considered folding the rule into [The knowledge compiler](architecture/knowledge-compiler.md), but the routing test sends a rule in effect to `decisions/` and the mechanism page would then carry both the pipeline and the rule that constrains it. `docs/WIKI.md` states the rule as schema; this page records why it holds and what it costs.
+- **Creation**: [Shipping one plugin tree to two runtimes](architecture/dual-runtime-distribution.md) — considered [Agent fleet and its tiers](architecture/agent-fleet.md), which is the closest page because both concern `plugins/df/agents/`; it is about what each agent is for and which tier it runs at, and says nothing about the `.toml` mirror, the drift rules or either catalog.
+- **Creation**: [A version bump touches two manifests and no tag](decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md) — considered [A removal names its replacement](decisions/0004-a-removal-names-its-replacement.md), the only other decision about what a commit must carry; it governs a commit body, not a release number, and no page held the two-manifest rule or the reason there are no tags.
+
 - **Update**: [The two-line status line](architecture/statusline.md) — two rationales the code and its commit body do not carry. The unobserved-cache figure prints in grey rather than not printing at all, because a blank cost group reads the same as a broken widget; `renderCache` earned a citation of its own for the silence it keeps in that state. And the worktree mark kept no fallback for a Claude Code predating `workspace.git_worktree`, the script having one installation, with the accepted cost stated as behaviour: on an older client the mark stops appearing.
 
 ## 2026-09-05
