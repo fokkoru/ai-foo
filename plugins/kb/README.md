@@ -18,10 +18,10 @@ Routing is decided by the current code, not by the genre of the note it came fro
 | `kb:capture` | Record a decision the session reached into `thoughts/captures/`, as it happens                                                    |
 | `kb:lint`    | Inspect the compiled layer under `docs/` for pages that have gone wrong, and repair what has a demonstrated failure and an oracle |
 
-`kb:capture` fires on its own when a session reaches a decision. `kb:weave` never does — invoke it yourself:
+`kb:capture` fires on its own when a session reaches a decision. `kb:weave` and `kb:lint` never do — invoke either yourself:
 
-- **Claude Code**: `/kb:weave`
-- **Codex CLI**: `$kb:weave`
+- **Claude Code**: `/kb:weave`, `/kb:lint`
+- **Codex CLI**: `$kb:weave`, `$kb:lint`
 
 The compiler leaves its output uncommitted in the working tree. Read the diff, then commit it however you normally would — by hand, or with `df:commit` if you happen to have that plugin installed.
 

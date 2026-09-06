@@ -24,7 +24,7 @@ The skill and agent tables live in `plugins/df/README.md` — that is the single
 
 ### kb (plugins/kb/)
 
-Knowledge base compiler. Three skills, `/kb:capture`, `/kb:weave` and `/kb:lint` on Claude Code or `$kb:capture`, `$kb:weave` and `$kb:lint` on Codex CLI, read markdown under `thoughts/` and write a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
+Knowledge base compiler. Three skills: `kb:capture` records a session's decisions into `thoughts/captures/`; `kb:weave` compiles `thoughts/` into a committed knowledge base under `docs/`; `kb:lint` inspects and repairs that compiled `docs/` on its own account. Invoked as `/kb:capture`, `/kb:weave` and `/kb:lint` on Claude Code or `$kb:capture`, `$kb:weave` and `$kb:lint` on Codex CLI. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
 
 The skill table lives in `plugins/kb/README.md` — that is the single copy.
 

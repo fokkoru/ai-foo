@@ -14,7 +14,7 @@ sources:
   - resource: "plugins/kb/README.md"
     id: "kb-skill-table"
     fragment: "## The skills"
-    sha256: "889a4656ee15"
+    sha256: "1babb17bdc94"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-modes"
     fragment: "L2-L26"
