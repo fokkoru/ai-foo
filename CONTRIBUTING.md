@@ -15,6 +15,7 @@ plugin-name/
 ├── agents/              # Agent definitions (optional)
 │   └── agent-name.md
 ├── skills/              # Skill definitions (optional)
+├── scripts/             # Scripts two or more skills share (optional)
 ├── hooks/               # Event handlers (optional)
 ├── .mcp.json            # MCP server configuration (optional)
 └── README.md            # Plugin documentation
@@ -92,6 +93,14 @@ The split that is easy to get backwards: `version` lives in the Codex manifest (
 **New agent:** Create _both_ `plugins/df/agents/<name>.md` and its mirror `plugins/df/codex/agents/<name>.toml`. The drift check compares the name sets first, so an `.md` without its `.toml` fails immediately. Add it to the agent table in `plugins/df/README.md`, and — if a skill spawns it — to the `<agent_selection>` table in all three of `research`, `planning`, `iterate`.
 
 After adding, bump the plugin version (MINOR for new features).
+
+## Referencing a Bundled File from a Skill
+
+A skill reaches its own `scripts/` and `references/` by a path relative to the skill's directory, and never by an absolute path or an environment variable. Both runtimes tell the skill where it is, by different means: Claude Code prepends `Base directory for this skill: <path>` to the body, and Codex wraps the body in a `<skill>` fragment carrying a `<path>` element with the absolute path to `SKILL.md`. Observed on Claude Code 2.1.261 and codex-cli 0.153.4. A relative path is the one form both resolve.
+
+Spell that out in the skill body once, the way `kb`'s does — name the directory the harness announces, say that `scripts/` and `references/` hang off it rather than off `PATH` or the working directory, and resolve both at the first step.
+
+**A script two skills share** lives at `plugins/<name>/scripts/`, reached as `../../scripts/<script>.sh`. Ownership is the reason, not convenience: a script under one skill's directory belongs to that skill, and the second skill reaching across the tree breaks when the first is renamed. The climb out of the skill directory resolves on both runtimes for the same reason a downward path does.
 
 ## Changing a Shipped Prompt
 
