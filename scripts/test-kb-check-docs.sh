@@ -158,6 +158,20 @@ else
   bad "duplicate identifier not reported: $out"
 fi
 
+out=$("$CHECKER" check "$FIX/docs-unhashed" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^unhashed-source('; then
+  pass "a sources entry with no sha256 is reported rather than skipped"
+else
+  bad "an unhashed entry was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-retired-gone" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^source-missing('; then
+  pass "retired: true no longer silences a vanished source"
+else
+  bad "a retired entry still silenced source-missing: $out"
+fi
+
 out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 2>&1)
 if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
   pass "a reference resolves by identifier"

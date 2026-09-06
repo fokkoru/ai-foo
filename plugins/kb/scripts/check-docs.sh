@@ -624,14 +624,11 @@ EOF
 }
 
 check_sources() {
-  local page="$1" raw="$2" recs idx resource fragment recorded retired text actual total end resolved
+  local page="$1" raw="$2" recs idx resource fragment recorded text actual total end resolved
   recs=$(sources_records "$page")
   [ -n "$recs" ] || return 0
 
   for idx in $(printf '%s\n' "$recs" | cut -f1 | LC_ALL=C sort -un); do
-    retired=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="retired" {print $3; exit}')
-    [ "$retired" = "true" ] && continue
-
     resource=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="resource" {print $3; exit}')
     fragment=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="fragment" {print $3; exit}')
     recorded=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="sha256" {print $3; exit}')
@@ -689,7 +686,11 @@ check_sources() {
       ;;
     esac
 
-    [ -n "$recorded" ] || continue
+    if [ -z "$recorded" ]; then
+      report unhashed-source "$page" \
+        "sources[$idx] declares no sha256, so $fragment of $resource is never compared"
+      continue
+    fi
     text=$(fragment_text "$resource" "$fragment")
     actual=$(printf '%s\n' "$text" | normalize_and_hash)
     if [ "$actual" != "$recorded" ]; then
