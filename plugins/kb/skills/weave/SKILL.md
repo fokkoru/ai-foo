@@ -94,9 +94,13 @@ Route by what the claim is, not by which document carried it. One source routine
 | A decision that a later one replaced                              | both decision pages           | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
 | A rule that no longer holds, whose replacement is not implemented | the old decision page         | `status: deprecated` with no `superseded_by`; the replacement is not compiled     |
 
-The first row has a gate: a claim reaches `architecture/` or `product/` only after you have located the behaviour at a `file:line` in the current code. That location then becomes its own `sources[]` entry beside the raw source, with `fragment: "L<start>-L<end>"`.
+The first row has a gate: a claim reaches `architecture/` or `product/` only after you have located the behaviour at a `file:line` in the current code. That location becomes the entry's `sources[]` record, with `fragment: "L<start>-L<end>"`.
 
-Cite the code, not only the note about the code. A citation recorded as a line range is drift-checked exactly like a markdown one; a claim whose only provenance is a note is the one provenance the checker cannot see moving.
+A `sources[]` entry names tracked code or checked-in config, and never an internal note. The raw root is not in a fresh clone, so a citation into it names a file the reader does not have, and a claim nobody else can check is not a fact this layer records. The checker reports one. A capture record is refused separately and for a different reason: a record sits outside the source trust order entirely, never competing for a page and never cited by one. What it does is send you to look at the code, the config and the plans.
+
+An external source is cited in the page body instead, never in `sources[]`, so the two rules never overlap. Mark the claim `[reported]` and put the URL and `retrieved YYYY-MM-DD` on the same line. External sources stay informal — no snapshot file, no drift checking, no refresh mode — and the checker reports a `[reported]` line missing either half.
+
+Where a record contradicts a stale plan and current code does not settle which is right, the contradiction stays unresolved and the run stops.
 
 Settle the whole supersession family from Step 1 before writing to any page. A page updated and then contradicted inside one run is a page whose history says two things happened when one did.
 

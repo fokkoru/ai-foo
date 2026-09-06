@@ -447,4 +447,43 @@ else
   bad "a deprecated page escaped provenance checking: $out"
 fi
 
+# --- what a page may cite --------------------------------------------------
+
+RAW="$PWD/scripts/fixtures/raw"
+
+out=$("$CHECKER" check "$FIX/docs-source-raw" "$RAW" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^source-in-raw-root('; then
+  pass "a sources entry naming a path inside the raw root is reported"
+else
+  bad "a citation into the raw layer was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-source-capture" "$RAW" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^source-is-capture('; then
+  pass "a sources entry naming a capture record is reported"
+else
+  bad "a citation of a capture record was not reported: $out"
+fi
+
+if "$CHECKER" check "$FIX/docs-external" "$RAW" >/dev/null 2>&1; then
+  pass "an external rationale with a URL and a retrieval date conforms"
+else
+  bad "a complete external rationale failed: $("$CHECKER" check "$FIX/docs-external" "$RAW" 2>&1)"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-external-incomplete" "$RAW" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^external-claim-incomplete('; then
+  pass "an external claim missing its URL and date is reported"
+else
+  bad "an unsourced external claim was not reported: $out"
+fi
+
+# The schema page displays the marker inside backticks to describe it. A page
+# writing about the vocabulary is not making the claim.
+if "$CHECKER" check docs thoughts >/dev/null 2>&1; then
+  pass "this repository's own pages still pass under the new rules"
+else
+  bad "the repository's docs failed: $("$CHECKER" check docs thoughts 2>&1)"
+fi
+
 exit "$fail"

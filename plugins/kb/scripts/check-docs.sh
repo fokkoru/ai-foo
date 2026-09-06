@@ -584,7 +584,7 @@ EOF
 }
 
 check_sources() {
-  local page="$1" recs idx resource fragment recorded retired text actual total end
+  local page="$1" raw="$2" recs idx resource fragment recorded retired text actual total end resolved
   recs=$(sources_records "$page")
   [ -n "$recs" ] || return 0
 
@@ -604,6 +604,28 @@ check_sources() {
       report source-missing "$page" "sources[$idx] names $resource, which does not exist"
       continue
     fi
+
+    # Every citation must name a file the reader's clone holds. A path inside
+    # the raw root is an internal note: a fresh clone does not have it, so the
+    # claim it supports cannot be checked by anyone but the author. A capture
+    # record is called out separately because it is not merely untracked — it
+    # sits outside the source trust order entirely, never competing for a page
+    # and never cited by one.
+    # Both sides are resolved before comparing, so a relative citation and an
+    # absolute raw root are still recognised as the same tree.
+    resolved=$(abspath "$resource")
+    # With no raw root on disk there is no tree to be inside, and an empty
+    # prefix would match any absolute path.
+    [ -n "$raw" ] && case "$resolved" in
+    "$raw"/captures/*)
+      report source-is-capture "$page" "sources[$idx] names the capture record $resource; a record is never cited by a page"
+      continue
+      ;;
+    "$raw"/*)
+      report source-in-raw-root "$page" "sources[$idx] names $resource, inside the raw root, which a fresh clone does not have"
+      continue
+      ;;
+    esac
     [ -n "$fragment" ] || fragment="(whole)"
 
     case "$fragment" in
@@ -635,6 +657,30 @@ check_sources() {
         "sources[$idx] records $recorded for $fragment of $resource, which now hashes to $actual"
     fi
   done
+}
+
+# A claim whose evidence is external is marked [reported] and carries its source
+# in the line itself rather than in sources[]. External sources stay informal —
+# no snapshot, no drift checking — so the URL and the date it was read are the
+# whole of what a later reader gets. A marker inside backticks is a page writing
+# about the vocabulary, which strip_code removes before this looks.
+check_external_claims() {
+  local page="$1" line
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    case "$line" in
+    *http://* | *https://*) ;;
+    *)
+      report external-claim-incomplete "$page" "a [reported] claim names no URL: $line"
+      continue
+      ;;
+    esac
+    if ! printf '%s' "$line" | grep -Eq 'retrieved [0-9]{4}-[0-9]{2}-[0-9]{2}'; then
+      report external-claim-incomplete "$page" "a [reported] claim names no retrieval date: $line"
+    fi
+  done <<EOF
+$(strip_code "$page" | grep -F '[reported]' || true)
+EOF
 }
 
 check_reachability() {
@@ -1144,11 +1190,14 @@ EOF
 }
 
 cmd_check() {
-  local docs="${1:-docs}" root_index page base
-  # The second argument is the raw root, accepted so the same raw root can be
-  # passed to every mode. No rule here resolves against it: a sources[].resource may cite code
-  # outside the raw layer, so resources resolve against the working directory.
-  : "${2:-thoughts}"
+  local docs="${1:-docs}" raw="${2:-thoughts}" root_index page base
+  # A sources[].resource resolves against the working directory, not against the
+  # raw root: a citation names tracked code or checked-in config, which lives
+  # anywhere in the repository. The raw root is here so the opposite can be
+  # caught — a citation that points inside it.
+  # Resolved once, so every citation compares against one spelling of the tree.
+  # An absent raw root leaves it empty, and no citation can then match it.
+  raw=$(cd "${raw%/}" 2>/dev/null && pwd -P) || raw=""
 
   if [ ! -d "$docs" ]; then
     report NO-DOCS-ROOT check "$docs is not a directory — nothing to check"
@@ -1174,7 +1223,8 @@ cmd_check() {
     [ -n "$page" ] || continue
     check_page_frontmatter "$page" "$root_index"
     check_links "$page"
-    check_sources "$page"
+    check_sources "$page" "$raw"
+    check_external_claims "$page"
     check_decision_id "$page" "$WORKDIR/decision-ids"
     check_superseded_by "$page" "$WORKDIR/superseded-by"
     base=$(basename "$page")

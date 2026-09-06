@@ -93,12 +93,12 @@ A verified claim is never silently overwritten by a lower tier.
 
 Confidence is a property of the claim, not of the document it came from. A single research file can hold one verified claim and one guess.
 
-| Marker       | Means                                              |
-| ------------ | -------------------------------------------------- |
-| _(none)_     | Verified. Requires a `sources[]` entry             |
-| `[reported]` | A secondary source says so                         |
-| `[inferred]` | Deduced rather than stated                         |
-| `[unknown]`  | The question is open; the answer is a literal TODO |
+| Marker       | Means                                                                           |
+| ------------ | ------------------------------------------------------------------------------- |
+| _(none)_     | Verified. Requires a `sources[]` entry                                          |
+| `[reported]` | A secondary source says so. The line carries the URL and `retrieved YYYY-MM-DD` |
+| `[inferred]` | Deduced rather than stated                                                      |
+| `[unknown]`  | The question is open; the answer is a literal TODO                              |
 
 The vocabulary is closed. A marker sits inline, immediately after the claim it qualifies.
 
