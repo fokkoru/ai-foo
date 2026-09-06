@@ -18,7 +18,7 @@ sources:
   - resource: "CLAUDE.md"
     id: "checks-blind"
     fragment: "## Verify Before Finishing"
-    sha256: "de8d7ad4cc94"
+    sha256: "cf8b416ab101"
 ---
 
 # The df development workflow

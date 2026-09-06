@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Regression tests for plugins/kb/skills/compile/scripts/check-docs.sh.
+# Regression tests for plugins/kb/scripts/check-docs.sh.
 #
 # Every assertion is on the checker's command line contract: its exit code, the
 # lines it prints, and the files a subcommand promises to write. Nothing here
@@ -10,7 +10,7 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 
-CHECKER="$PWD/plugins/kb/skills/compile/scripts/check-docs.sh"
+CHECKER="$PWD/plugins/kb/scripts/check-docs.sh"
 
 fail=0
 pass() { echo "ok: $1"; }

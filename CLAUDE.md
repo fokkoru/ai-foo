@@ -109,7 +109,7 @@ claude plugin validate .                  # after editing either manifest; --str
 scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/*.md body or frontmatter
 scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
 scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
-plugins/kb/skills/compile/scripts/check-docs.sh  # after any change under docs/
+plugins/kb/scripts/check-docs.sh check    # after any change under docs/
 ```
 
 These check structure, and none of them can see a lost capability. So when a change removes one — a named step, a workflow trigger, an agent dispatch, a documented behaviour — the commit body names what replaces it, or says nothing does. `CONTRIBUTING.md` carries the rule and `docs/decisions/0004-a-removal-names-its-replacement.md` carries why it exists. A skill's row in `plugins/df/README.md`'s **It's working if** table is the second place a guarantee is written down, so removing one from a skill must fail that table too.
@@ -130,6 +130,6 @@ These check structure, and none of them can see a lost capability. So when a cha
 
 `docs/` is the compiled knowledge base and the layer to read first — the one a new contributor reads instead of asking, and a later session reads instead of re-deriving. `docs/WIKI.md` is its schema: the four page types, the routing test that decides where a claim goes, and the confidence vocabulary.
 
-Every claim records what it was built from in the page's `sources[]` block, with a hash of the exact fragment, so `plugins/kb/skills/compile/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
+Every claim records what it was built from in the page's `sources[]` block, with a hash of the exact fragment, so `plugins/kb/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
 
 `/kb:compile` writes this directory and nothing else writes it by hand.

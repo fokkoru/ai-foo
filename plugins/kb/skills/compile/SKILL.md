@@ -43,7 +43,7 @@ If no sources are named, ask which ones to compile and wait for the answer. Neve
 
 ### Step 0: Seed and snapshot
 
-Everywhere below, including this step, `check-docs.sh` means `scripts/check-docs.sh` under the base directory the harness announces for this skill, not a command on `PATH` — the script is inside the installed plugin and the working directory is the project being compiled. The same goes for every `references/` path below. Resolve both once, here, and reuse them.
+Everywhere below, including this step, `check-docs.sh` means `../../scripts/check-docs.sh` relative to the base directory the harness announces for this skill, not a command on `PATH` — the checker lives in the plugin's own `scripts/` rather than this skill's, because it is shared, and the working directory is the project being compiled. Every `references/` path below hangs off the announced directory directly. Resolve both once, here, and reuse them.
 
 Run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it.
 

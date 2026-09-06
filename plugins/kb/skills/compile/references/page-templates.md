@@ -171,7 +171,7 @@ generated:
   by: "kb:compile"
   at: "2026-08-10T11:02:33-07:00"
 sources:
-  - resource: "plugins/kb/skills/compile/scripts/check-docs.sh"
+  - resource: "plugins/kb/scripts/check-docs.sh"
     id: "hash-modes"
     fragment: "L1-L5"
     sha256: "838bb8597bef"
@@ -187,7 +187,7 @@ The three modes the script ships today do not include one.[^hash-modes]
 
 ## What is not decided
 
-[^hash-modes]: `plugins/kb/skills/compile/scripts/check-docs.sh`, header.
+[^hash-modes]: `plugins/kb/scripts/check-docs.sh`, header.
 ```
 
 ## Bundle-root index.md
