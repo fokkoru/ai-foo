@@ -21,7 +21,7 @@ sources:
   - resource: "plugins/kb/skills/weave/SKILL.md"
     id: "weave-routing"
     fragment: "### Step 2: Route each claim"
-    sha256: "f631445d7524"
+    sha256: "1270ab486483"
   - resource: "plugins/kb/skills/capture/SKILL.md"
     id: "capture-not-compiled-layer"
     fragment: "L12-L12"

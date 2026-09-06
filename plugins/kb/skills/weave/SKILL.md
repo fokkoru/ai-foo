@@ -122,7 +122,7 @@ Two records superseding one target and contradicting each other halt the run whi
 
 The third row is the one that surprises: a rule rests on something, that something is reverted, a replacement is proposed and never built. The replacement is uncompileable, but the old rule is already false, and leaving the page stable tells the reader to rely on behaviour the repository removed.
 
-Deprecating a page is three edits, not a frontmatter change. The page stays linked from its index, because the checker grants a deprecated page no reachability exemption. Its body and its index description stop asserting the rule that was withdrawn. And its `sources[]` stay as they are and go on being provenance-checked — a deleted resource still gets `retired: true`, the same as anywhere else.
+Deprecating a page is three edits, not a frontmatter change. The page stays linked from its index, because the checker grants a deprecated page no reachability exemption. Its body and its index description stop asserting the rule that was withdrawn. And its `sources[]` stay as they are and go on being provenance-checked — a deleted resource goes with the prose it supported, the same as anywhere else.
 
 A source that fits no directory is not forced into one. Say so in the report and leave it uncompiled — a wrong home costs more than an absence, because the next run reads the wrong home as settled.
 
@@ -153,7 +153,7 @@ source-drift(docs/architecture/routing.md): sources[1] records unset for L10-L20
 
 Then write `3d4cea08f41a` into the entry. The checker owns the normalization — trailing whitespace, leading and trailing blank lines — so a hash produced any other way is a hash that will disagree with the tool that later checks it.
 
-An entry whose `resource` no longer exists gets `retired: true` and a `log.md` line. Do not delete it: the page keeps the record of where its claim came from.
+An entry whose `resource` no longer exists is deleted together with the prose it supported, and the deletion gets a `log.md` line. A claim whose evidence is gone is not a claim the page can still make.
 
 A new decision page also gets its `decision_id`, which is how a supersession reference names the decision across an editorial rename. Write the page with `decision_id: "unset"`, then run `check-docs.sh assign-id <page>` and write the value it prints into the key. Assign it once: a later edit to the page never reassigns it, and a substantively different decision is a new page with its own.
 

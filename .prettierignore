@@ -5,3 +5,6 @@ plugins/df/agents/
 
 # Dated research and plan artifacts — reformatting rewrites history for no gain.
 thoughts/
+
+# Working directory for task tracking — not part of the repository.
+.superpowers/

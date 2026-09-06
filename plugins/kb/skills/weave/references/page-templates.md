@@ -43,7 +43,7 @@ sources:
 
 Six keys are deliberately absent from every skeleton here: `tags`, `stale_after`, `verified`, and `sources[].author`, `sources[].last_modified`, `sources[].title`. Nothing reads any of them. Restoring one means naming what will.
 
-A `sources[]` entry whose `resource` no longer exists gains `retired: true` rather than being deleted.
+A `sources[]` entry whose `resource` no longer exists is deleted, and so is the prose it supported.
 
 ## Architecture page
 

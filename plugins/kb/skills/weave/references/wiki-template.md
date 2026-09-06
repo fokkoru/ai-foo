@@ -135,7 +135,7 @@ The reviewer defaults to opus.[^cr-frontmatter]
 
 The hash is the first 12 hex characters of the `sha256` of the fragment, after stripping trailing whitespace from every line and dropping leading and trailing blank lines. A reformat that changes nothing therefore reads as no change.
 
-When a `resource` no longer exists, add `retired: true` to that entry rather than deleting it. The page keeps the record of where its claim came from.
+When a `resource` no longer exists, delete the entry together with the prose it supported, and record the deletion in `log.md`. The page's own history is git's to keep, not the frontmatter's.
 
 ## index.md and log.md
 
