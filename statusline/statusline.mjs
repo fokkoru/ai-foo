@@ -13,11 +13,11 @@
 //
 // Usage: statusline.mjs run
 
-import { readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 
-// Published input prices, $/1M tokens. A model absent here prints no cost
-// rather than a guessed one.
+// Published prices, $/1M tokens, from
+// https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-09-05.
+// A model absent here prints no cost rather than a guessed one.
 const INPUT_RATE = {
   "claude-opus-5": 5,
   "claude-opus-4-8": 5,
@@ -32,13 +32,29 @@ const INPUT_RATE = {
   "claude-mythos-5-1": 10,
 };
 
+const OUTPUT_RATE = {
+  "claude-opus-5": 25,
+  "claude-opus-4-8": 25,
+  "claude-opus-4-7": 25,
+  "claude-opus-4-6": 25,
+  "claude-sonnet-5": 10,
+  "claude-sonnet-4-6": 15,
+  "claude-haiku-4-5": 5,
+  "claude-fable-5": 50,
+  "claude-fable-5-1": 50,
+  "claude-mythos-5": 50,
+  "claude-mythos-5-1": 50,
+};
+
 // Auto-compact does not fire at a fraction of the window: Claude Code 2.1.260
 // compacts once the context reaches the window less a fixed 13,000-token
 // buffer, so that difference is what the meter measures against.
 const AUTOCOMPACT_BUFFER = 13000;
 
-// Cache reads bill at 0.1x the input rate, except on the Fable/Mythos tier.
-const READ_MULT = (id) => (/^claude-(fable|mythos)-/.test(id) ? 0.025 : 0.1);
+// Cache reads bill at 0.1x the input rate; the pricing page names Fable 5.1 and
+// Mythos 5.1 alone as the 0.025x exception, and every other model as standard.
+const READ_MULT = (id) =>
+  /^claude-(fable|mythos)-5-1$/.test(id) ? 0.025 : 0.1;
 // Cache writes bill at 1.25x on the 5-minute TTL, 2x on the 1-hour TTL.
 const WRITE_MULT = (ttl) => (ttl === "1h" ? 2 : 1.25);
 
@@ -186,24 +202,68 @@ function renderCost(d) {
       paint("cost", C.comment) + " " + emphasise(money(spent), C.yellow),
     );
 
+  const id = modelId(d);
+  const rate = INPUT_RATE[id];
+  if (!rate) return parts.join(" ");
+  const pc = d.prompt_cache;
+  const usage = d.context_window?.current_usage;
+
+  // The request that just finished, priced from the token split the payload
+  // reports. The three input classes are disjoint, so each is charged once at
+  // its own multiplier, and contextTokens() — which sums them deliberately — is
+  // the wrong tool here. This is an estimate at published prices rather than
+  // the billed figure: the payload reports one ttl, so a request that wrote at
+  // mixed TTLs is priced at the last one.
+  const outRate = OUTPUT_RATE[id];
+  if (usage && outRate)
+    parts.push(
+      paint("last", C.comment) +
+        " " +
+        paint(
+          money(
+            ((usage.input_tokens ?? 0) * rate +
+              (usage.cache_creation_input_tokens ?? 0) *
+                rate *
+                WRITE_MULT(pc?.ttl) +
+              (usage.cache_read_input_tokens ?? 0) * rate * READ_MULT(id) +
+              (usage.output_tokens ?? 0) * outRate) /
+              1e6,
+          ),
+          C.yellow,
+        ),
+    );
+
   // The next request re-sends the whole context: at read rates while the cache
-  // is warm, at write rates once the prefix has to be rebuilt.
-  const rate = INPUT_RATE[modelId(d)];
-  if (rate) {
-    const pc = d.prompt_cache;
-    const warm = pc ? pc.warm !== false : true;
-    const tokens = warm
-      ? contextTokens(d.context_window?.current_usage)
-      : (pc?.recache_tokens_if_cold ??
-        contextTokens(d.context_window?.current_usage));
-    const mult = warm ? READ_MULT(modelId(d)) : WRITE_MULT(pc?.ttl);
-    if (tokens)
-      parts.push(
-        paint("next", C.comment) +
-          " " +
-          paint(money((tokens / 1e6) * rate * mult), warm ? C.yellow : C.red),
-      );
+  // is warm, at write rates once the prefix has to be rebuilt, and at the plain
+  // input rate where no response has reported cache tokens at all. That last
+  // state prints grey, because nothing measured the cache — printing the cold
+  // figure in red there asserts a fact the payload does not carry.
+  const context = contextTokens(usage);
+  let tokens = context;
+  let mult = 1;
+  let colour = C.comment;
+  if (pc?.caching_observed === true) {
+    if (pc.warm === false) {
+      // Documented null right after a compaction: the quantity is unknown, and
+      // substituting the last context would print a guess as a measurement.
+      if (pc.recache_tokens_if_cold == null) {
+        parts.push(paint("next", C.comment) + " " + paint("?", C.red));
+        return parts.join(" ");
+      }
+      tokens = pc.recache_tokens_if_cold;
+      mult = WRITE_MULT(pc.ttl);
+      colour = C.red;
+    } else {
+      mult = READ_MULT(id);
+      colour = C.yellow;
+    }
   }
+  if (tokens)
+    parts.push(
+      paint("next", C.comment) +
+        " " +
+        paint(money((tokens / 1e6) * rate * mult), colour),
+    );
   return parts.join(" ");
 }
 
@@ -221,39 +281,18 @@ function renderLimits(d) {
   return parts.join(" ");
 }
 
-// A linked worktree has a `.git` file rather than a `.git` directory, and that
-// file names a git dir under `worktrees/`. Reading it beats shelling out to
-// git, which would cost a second process on every render.
-function inWorktree(start) {
-  for (let dir = start; dir; dir = dirname(dir) === dir ? null : dirname(dir)) {
-    const dotGit = join(dir, ".git");
-    let st;
-    try {
-      st = statSync(dotGit);
-    } catch {
-      continue;
-    }
-    if (st.isDirectory()) return false;
-    try {
-      return /\/worktrees\//.test(readFileSync(dotGit, "utf8"));
-    } catch {
-      return false;
-    }
-  }
-  return false;
-}
-
 const data = readStdin();
 if (!data) process.exit(0);
 
 // The first line is ccstatusline's, but its worktree widget prints the word
 // "main" in an ordinary checkout, which read as a second branch name. This
 // prints a mark and only when the directory really is a linked worktree.
+// Claude Code sends `workspace.git_worktree`, the worktree's name, and omits it
+// outside a linked worktree — the exact condition, with no filesystem walk.
 if (process.argv[2] === "worktree") {
-  const cwd = data.workspace?.current_dir ?? data.cwd;
   // ccstatusline trims a widget's output, so the space that sets the mark off
   // from the path is a custom-text widget in the config, not a space here.
-  if (cwd && inWorktree(cwd)) process.stdout.write("🌿");
+  if (data.workspace?.git_worktree) process.stdout.write("🌿");
   process.exit(0);
 }
 
