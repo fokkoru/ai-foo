@@ -1,5 +1,9 @@
 # Log
 
+## 2026-09-05
+
+- **Update**: [The two-line status line](architecture/statusline.md) — the worktree mark now reads `workspace.git_worktree` from the payload instead of walking the filesystem for a `.git` file, so the paragraph recording that walk as settled no longer describes the code. The cost group gained a measured last-request figure and a third `next` state for a provider that reports no cache tokens, and the 0.025× cache-read rate is now named as Claude Fable 5.1 and Claude Mythos 5.1 alone. All six citations into `statusline/statusline.mjs` were re-anchored, and `renderCost` earned one of its own.
+
 ## 2026-09-04
 
 - **Creation**: [The two-line status line](architecture/statusline.md) — considered [Antigravity execution boundary](architecture/agy-execution-boundary.md), the only other page about wrapping a third-party CLI, which is about permission flags and not about rendering; no existing page covers the status line, and `CLAUDE.md` already names this path as where the installation instruction lives.

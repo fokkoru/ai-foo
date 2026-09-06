@@ -110,6 +110,7 @@ scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/
 scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
 scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
 plugins/kb/scripts/check-docs.sh check    # after any change under docs/
+node scripts/test-statusline.mjs          # after editing statusline/statusline.mjs
 ```
 
 These check structure, and none of them can see a lost capability. So when a change removes one — a named step, a workflow trigger, an agent dispatch, a documented behaviour — the commit body names what replaces it, or says nothing does. `CONTRIBUTING.md` carries the rule and `docs/decisions/0004-a-removal-names-its-replacement.md` carries why it exists. A skill's row in `plugins/df/README.md`'s **It's working if** table is the second place a guarantee is written down, so removing one from a skill must fail that table too.

@@ -17,24 +17,28 @@ sources:
     sha256: "c1dc73bfb32a"
   - resource: "statusline/statusline.mjs"
     id: "sl-buffer"
-    fragment: "L35-L38"
+    fragment: "L49-L52"
     sha256: "ec716fa3d24a"
   - resource: "statusline/statusline.mjs"
     id: "sl-rates"
-    fragment: "L19-L43"
-    sha256: "63495704944f"
+    fragment: "L18-L59"
+    sha256: "2ca471acaf3a"
+  - resource: "statusline/statusline.mjs"
+    id: "sl-cost"
+    fragment: "L196-L268"
+    sha256: "744b66b88c4d"
   - resource: "statusline/statusline.mjs"
     id: "sl-thresholds"
-    fragment: "L61-L66"
+    fragment: "L77-L82"
     sha256: "ea823662305d"
   - resource: "statusline/statusline.mjs"
     id: "sl-dispatch"
-    fragment: "L246-L271"
-    sha256: "cdf7ec06453f"
+    fragment: "L284-L310"
+    sha256: "5d0f3dbddf98"
   - resource: "statusline/statusline.mjs"
     id: "sl-worktree"
-    fragment: "L224-L256"
-    sha256: "fd23fe90aa32"
+    fragment: "L287-L297"
+    sha256: "dbb0e3382159"
 ---
 
 # The two-line status line
@@ -62,11 +66,24 @@ to each `custom-command` widget, so the script parses stdin and writes ANSI-colo
 of the window: Claude Code 2.1.260 compacts once the context reaches the window size less a fixed
 13,000-token buffer, so the percentage is used tokens over that difference.[^sl-buffer]
 
-**Cost.** Two figures. Session spend comes straight from the payload. The next-request figure is
-the whole context re-sent, priced from a table of published input rates: at 0.1× the input rate
-while the cache is warm, 0.025× on the Fable and Mythos tier, and at 1.25× on the five-minute TTL
-or 2× on the one-hour TTL once the prefix has to be rebuilt. A model absent from the rate table
-prints no cost rather than a guessed one.[^sl-rates]
+**Cost.** Three figures, priced from a table of published rates. Every rate below is
+[reported] (https://platform.claude.com/docs/en/about-claude/pricing, retrieved 2026-09-05).
+
+Session spend comes straight from the payload. The last-request figure prices the token split
+`context_window.current_usage` reports, charging each of its four classes once at its own rate:
+plain input, cache writes at the TTL multiplier, cache reads at the read multiplier, and output at
+the output rate. It is an estimate at published prices, not the billed figure, and a request that
+wrote at mixed TTLs is priced at the single TTL the payload reports.
+
+The next-request figure is the whole context re-sent, and it has three states. While the cache is
+warm it is priced at 0.1× the input rate, or 0.025× on Claude Fable 5.1 and Claude Mythos 5.1
+alone. Once the prefix has to be rebuilt it is priced at 1.25× on the five-minute TTL or 2× on the
+one-hour TTL, in red. Where no response has reported cache tokens at all it is priced at the plain
+input rate, in grey, because nothing has measured the cache and a red figure would assert a cold
+cache the payload does not claim. A cold cache whose recache size is null — the state right after a
+compaction — prints `next ?` rather than substituting the last context and printing a guess as a
+measurement. A model absent from the rate table prints no cost rather than a guessed
+one.[^sl-rates][^sl-cost]
 
 **Colour.** Colour encodes state, not identity. A meter is green below 60%, amber from 60%, red
 from 85% — 60% is where there is still room to act and 85% is where there is not. The cache hit
@@ -74,11 +91,11 @@ ratio is toned the other way round, since a healthy session sits high and anythi
 the prefix is being rebuilt on most requests.[^sl-thresholds]
 
 **Worktree.** The `worktree` mode prints a mark only when the current directory really is a linked
-worktree. It finds out by walking up from the working directory: a linked worktree has a `.git`
-file rather than a directory, and that file names a git dir under `worktrees/`. Reading the file
-beats shelling out to git, which would cost a second process on every render. The space that sets
-the mark off from the path lives in a `custom-text` widget in the config, because `ccstatusline`
-trims a widget's own output.[^sl-worktree]
+worktree. It reads `workspace.git_worktree`, which Claude Code sends as the worktree's name and
+omits outside a linked worktree, so the payload answers the question outright. That replaced a walk
+up from the working directory reading each `.git` it found on every render. The space that sets the
+mark off from the path lives in a `custom-text` widget in the config, because `ccstatusline` trims
+a widget's own output.[^sl-worktree]
 
 ## Why it is this way
 
@@ -238,6 +255,8 @@ TUI will not be reflected here until somebody updates this section.
 
 [^sl-thresholds]: `statusline/statusline.mjs`, the threshold helpers.
 
+[^sl-cost]: `statusline/statusline.mjs`, `renderCost`.
+
 [^sl-dispatch]: `statusline/statusline.mjs`, argument dispatch and the group join.
 
-[^sl-worktree]: `statusline/statusline.mjs`, `inWorktree` and the worktree mode.
+[^sl-worktree]: `statusline/statusline.mjs`, the worktree mode.
