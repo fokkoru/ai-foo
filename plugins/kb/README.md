@@ -42,6 +42,18 @@ The skill uses these default paths:
 
 To override either, add a one-line note to your project's `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `kb: read notes from notes/ and write the knowledge base to wiki/`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
 
+## Upgrading from 1.0.x
+
+`kb:compile` is gone and `kb:weave` replaces it. Type the new name; there is no alias.
+
+Three edits the skill will not make for you. A project already running `kb` has to make them by hand, because they are changes to your schema and your own pages, and the skill may rewrite neither:
+
+1. **The new routing row.** `docs/WIKI.md` gains a row for a rule that no longer holds whose replacement was never built: it goes to the old decision page as `status: deprecated` with no `superseded_by`, and the replacement is not compiled. Without the row there is nowhere for that case to land.
+2. **An identifier on every existing decision page**, plus the line in your decision page template. Run `check-docs.sh assign-id <page>` on each page under `docs/decisions/` and write the value into a `decision_id` key. Until you do, `check-docs.sh check` reports every one of them.
+3. **The two mentions of the old skill name in `docs/WIKI.md` prose.** Generator identity in page frontmatter stays on the old name: a renamed producer did not retroactively produce those pages.
+
+`thoughts/captures/` is written by `kb:capture` and stays untracked. Keep it out of git the way you keep the rest of `thoughts/` out.
+
 ## Installation
 
 ### Claude Code

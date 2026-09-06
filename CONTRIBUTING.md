@@ -137,6 +137,8 @@ When committing changes to a plugin, update its version in `.claude-plugin/marke
 - Changes only to README or docs → bump PATCH
 - No version bump needed for changes outside plugin folders
 
+**One recorded deviation.** `kb` 1.1.0 removed `kb:compile` and shipped `kb:weave` in its place, which the table puts at MAJOR. The owner was shown the conflict and chose MINOR: `kb` had no released consumer beyond this repository, and the release note tells an existing user the one thing they must retype. This is written down so a later reader treats it as a decision rather than an error and does not re-open it.
+
 ## Codex Distribution
 
 There is **one** canonical Codex install path: the self-hosted `.agents/plugins/marketplace.json` catalog (`codex plugin marketplace add` → `codex plugin add`) followed by the **required** `scripts/install-codex-agents.sh`. Codex plugins can bundle only skills, so all 9 subagents in `plugins/df/codex/agents/*.toml` must be copied into `~/.codex/agents/` by that script. There is no way to deliver them via `codex plugin add`.
