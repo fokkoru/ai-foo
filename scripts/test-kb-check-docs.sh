@@ -323,8 +323,12 @@ wait "$second_pid" 2>/dev/null
 
 # Nothing about the claim waits, counts down, or gives up after a while. There
 # is no measurement that would ground such a number, so none exists.
-if grep -nE 'sleep|timeout|stale.after|poll|interval|attempts' "$CHECKER" >/dev/null; then
-  bad "the checker names a duration or a repeat count: $(grep -nE 'sleep|timeout|stale.after|poll|interval|attempts' "$CHECKER")"
+# Comment lines are stripped: the claim is about what the implementation does,
+# and the comments are where the absence is explained.
+code_of_checker() { grep -vE '^[[:space:]]*#' "$CHECKER"; }
+
+if code_of_checker | grep -nE 'sleep|timeout|stale.after|poll|interval|attempts' >/dev/null; then
+  bad "the checker names a duration or a repeat count: $(code_of_checker | grep -nE 'sleep|timeout|stale.after|poll|interval|attempts')"
 else
   pass "no duration, interval or repeat count appears in the checker"
 fi
@@ -509,6 +513,79 @@ if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^log-date-format('; then
   pass "a malformed log heading is reported"
 else
   bad "a malformed log heading was not reported: $out"
+fi
+
+# --- the receipt -----------------------------------------------------------
+
+RECORDS="$FIX/records-deferred"
+RCPT="$SCRATCH/receipts"
+mkdir -p "$RCPT"
+
+# The routing distinction cannot be shown by a format check, so both schema
+# variants get a fixture. The three-directory schema has no home for a decision
+# with nothing built behind it, so it is deferred; the four-directory template
+# routes the same claim to the roadmap as a draft, so it is consumed. A deferred
+# decision is the common case for a capture, and a fixture covering only one
+# variant would test the less common path.
+for variant in three-dir four-dir; do
+  out=$("$CHECKER" receipt-commit "$RCPT/$variant.tsv" "$RECORDS" "$FIX/docs-$variant/kb-receipt.staging" 2>&1)
+  if [ $? -eq 0 ] && [ -f "$RCPT/$variant.tsv" ]; then
+    pass "a validated run under the $variant schema writes its receipt"
+  else
+    bad "receipt-commit failed for $variant: $out"
+  fi
+done
+
+if grep -q 'deferred' "$RCPT/three-dir.tsv" && grep -q 'consumed' "$RCPT/four-dir.tsv"; then
+  pass "each schema routes the unbuilt decision as its own table says"
+else
+  bad "the two variants did not route differently: $(cat "$RCPT"/*.tsv)"
+fi
+
+if "$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$RECORDS" >/dev/null 2>&1; then
+  pass "the receipt a run wrote validates"
+else
+  bad "a written receipt did not validate: $("$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$RECORDS" 2>&1)"
+fi
+
+# The receipt is not markdown, and the page enumeration only reads markdown, so
+# it needs no exemption.
+if "$CHECKER" check "$FIX/docs-three-dir" "$RAW" >/dev/null 2>&1; then
+  pass "a receipt beside the pages is invisible to the page rules"
+else
+  bad "the receipt tripped the page rules: $("$CHECKER" check "$FIX/docs-three-dir" "$RAW" 2>&1)"
+fi
+
+out=$("$CHECKER" receipt-check "$FIX/receipt-staging-malformed" "$RECORDS" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-malformed('; then
+  pass "a malformed receipt is reported"
+else
+  bad "a malformed receipt was accepted: $out"
+fi
+
+# A published record is immutable, which is what makes the stored hash sound.
+cp -R "$RECORDS" "$SCRATCH/records-edited"
+echo "an edit to a published record" >>"$SCRATCH/records-edited/r1.md"
+out=$("$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$SCRATCH/records-edited" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-record-changed('; then
+  pass "an entry whose record no longer hashes to its stored id is reported"
+else
+  bad "an edited record was not reported: $out"
+fi
+
+# Nothing is written until the whole set validates, so an interrupted run
+# leaves no entry.
+out=$("$CHECKER" receipt-commit "$RCPT/never.tsv" "$RECORDS" "$FIX/receipt-staging-malformed" 2>&1)
+if [ $? -ne 0 ] && [ ! -f "$RCPT/never.tsv" ]; then
+  pass "a run that fails validation writes no receipt at all"
+else
+  bad "a failed commit left something behind: $out"
+fi
+
+if code_of_checker | grep -nEi 'expir|deadline' >/dev/null; then
+  bad "the checker names an expiry: $(code_of_checker | grep -nEi 'expir|deadline')"
+else
+  pass "a deferred decision carries no expiry, and none exists in the checker"
 fi
 
 exit "$fail"

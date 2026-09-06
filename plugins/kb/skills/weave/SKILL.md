@@ -167,6 +167,12 @@ Fix whatever the first reports and run it again.
 
 A failure from the second is different in kind. It means this run wrote into the raw layer, which `<artifact_scope>` forbids. That is a defect in the run, not a finding to hand to the user: say so plainly, name the files, and stop.
 
+Once both pass, and not before, write the receipt. Stage one tab-separated line per decision this run touched — `<record path>\t<state>\t<decision heading>`, where the state is `consumed` or `deferred` — then run `check-docs.sh receipt-commit docs/kb-receipt.tsv <records root> <staging file>`. It computes each record's identity itself, validates the whole set, and writes nothing unless all of it validates, so a run that stops here leaves no entry.
+
+Acknowledgement is per decision, never per record: a record is routinely half compiled and half deferred, and marking the whole file done would lose the deferred half. "Offered", "confirmed" and "read for context" are not acknowledgement. A decision that routed nowhere is `deferred` and waits indefinitely — nothing expires, and only a run the owner starts returns to it.
+
+The receipt is committed alongside the pages it describes, so reverting a bad run reverts its bookkeeping too.
+
 Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is done, and also on the halt path above after reporting. Holding it through a halt buys nothing: the user has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies and then makes somebody inspect a compiled layer they already know the state of.
 
 ### Step 7: Report

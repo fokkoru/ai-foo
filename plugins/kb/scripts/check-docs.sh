@@ -14,6 +14,9 @@
 #   claim-inspect                          say who holds it and whether they are alive
 #   supersession-scan <records-root> <docs-root> <target>
 #                                          every record decision that supersedes a target
+#   receipt-commit <receipt> <records-root> <staging>
+#                                          record what a validated run consumed
+#   receipt-check <receipt> <records-root> the receipt's own format and its hashes
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -60,6 +63,8 @@ usage: $self snapshot [raw-root]
        $self claim-release <run-id>
        $self claim-inspect
        $self supersession-scan <records-root> <docs-root> <target>
+       $self receipt-commit <receipt> <records-root> <staging>
+       $self receipt-check <receipt> <records-root>
 EOF
   exit 2
 }
@@ -740,6 +745,134 @@ EOF
   done <"$WORKDIR/pages"
 }
 
+# ----------------------------------------------------------------- receipt
+
+# What a run consumed and what it left, per capture and per decision. A record
+# is routinely half compiled and half deferred, so acknowledgement is per
+# decision: marking a whole record done would lose the deferred half.
+#
+# The file is tab-separated rather than markdown, so the page enumeration never
+# sees it and it needs no exemption. It is tracked and committed alongside the
+# pages it describes, so reverting a bad run reverts its bookkeeping too — an
+# untracked receipt survives that revert and goes on claiming captures were
+# acknowledged for pages that no longer exist.
+#
+#   <record path>\t<capture id>\t<state>\t<decision heading>
+#
+# The capture id is the hash of the record's content, stored rather than
+# recomputed from a slug — the one disclosed failure in this shape was a slug
+# collision that staged hundreds of records and ingested none. It is also what
+# proves the record on disk is the one that was acknowledged: a published record
+# is immutable, so a mismatch means somebody edited one. Deriving a second hash
+# of the same bytes to hold separately would invent a distinction that is not
+# there.
+#
+# A deferred decision carries no expiry. It waits until a run returns to it, and
+# nothing here counts down.
+receipt_identity() {
+  fragment_text "$1" "(whole)" | normalize_and_hash
+}
+
+receipt_validate_line() {
+  local line="$1" root="$2" subject="$3" path id state heading actual
+  case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
+  4) ;;
+  *)
+    report receipt-malformed "$subject" "expected four tab-separated fields, got: $line"
+    return 1
+    ;;
+  esac
+  path=$(printf '%s' "$line" | cut -f1)
+  id=$(printf '%s' "$line" | cut -f2)
+  state=$(printf '%s' "$line" | cut -f3)
+  heading=$(printf '%s' "$line" | cut -f4)
+
+  case "$state" in
+  consumed | deferred) ;;
+  *)
+    report receipt-malformed "$subject" "state '$state' is neither consumed nor deferred"
+    return 1
+    ;;
+  esac
+  if [ -z "$heading" ]; then
+    report receipt-malformed "$subject" "no decision heading on the entry for $path"
+    return 1
+  fi
+  if [ ! -f "$root/$path" ]; then
+    report receipt-record-missing "$subject" "$path is not a record under $root"
+    return 1
+  fi
+  actual=$(receipt_identity "$root/$path")
+  if [ "$id" != "$actual" ]; then
+    report receipt-record-changed "$subject" \
+      "the entry for $path stores $id and the record now hashes to $actual — a published record is immutable"
+    return 1
+  fi
+  return 0
+}
+
+# The staged lines a run produces carry no identity: the checker computes it, so
+# the format has one implementation rather than a writer in prose and a reader
+# in code.
+#
+#   <record path>\t<state>\t<decision heading>
+cmd_receipt_commit() {
+  local receipt="${1:-}" root="${2:-}" staging="${3:-}" pending line path state heading
+  [ -n "$receipt" ] || usage
+  [ -n "$root" ] || usage
+  [ -n "$staging" ] || usage
+  if [ ! -f "$staging" ]; then
+    report NO-STAGING receipt-commit "$staging is not a file"
+    return 1
+  fi
+
+  pending="$WORKDIR/receipt-pending"
+  : >"$pending"
+
+  # Every staged line is expanded and validated before anything is written. A
+  # run that fails here leaves the receipt exactly as it was, which is what
+  # makes an interrupted run leave no entry.
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    path=$(printf '%s' "$line" | cut -f1)
+    state=$(printf '%s' "$line" | cut -f2)
+    heading=$(printf '%s' "$line" | cut -f3)
+    if [ ! -f "$root/$path" ]; then
+      report receipt-record-missing receipt-commit "$path is not a record under $root"
+      return 1
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$path" "$(receipt_identity "$root/$path")" "$state" "$heading" >>"$pending"
+  done <"$staging"
+
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    receipt_validate_line "$line" "$root" receipt-commit || return 1
+  done <"$pending"
+
+  cat "$pending" >>"$receipt" || {
+    report RECEIPT-FAILED receipt-commit "could not append to $receipt"
+    return 1
+  }
+  echo "receipt-commit: $(line_count "$pending") decisions recorded in $receipt"
+}
+
+cmd_receipt_check() {
+  local receipt="${1:-}" root="${2:-}" line
+  [ -n "$receipt" ] || usage
+  [ -n "$root" ] || usage
+  if [ ! -f "$receipt" ]; then
+    report NO-RECEIPT receipt-check "$receipt is not a file"
+    return 1
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    receipt_validate_line "$line" "$root" "$receipt" || true
+  done <"$receipt"
+  if [ "$fail" -eq 0 ]; then
+    echo "receipt-check: $(line_count "$receipt") entries in $receipt conform"
+  fi
+}
+
 # ------------------------------------------------------------- supersession
 
 # A reference addresses one decision, never a whole file: a record holds several
@@ -1263,6 +1396,8 @@ claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
 claim-release) cmd_claim_release "$@" || fail=1 ;;
 claim-inspect) cmd_claim_inspect "$@" || fail=1 ;;
 supersession-scan) cmd_supersession_scan "$@" || fail=$? ;;
+receipt-commit) cmd_receipt_commit "$@" || fail=1 ;;
+receipt-check) cmd_receipt_check "$@" || fail=1 ;;
 *) usage ;;
 esac
 
