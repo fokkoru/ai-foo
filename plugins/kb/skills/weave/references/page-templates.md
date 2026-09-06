@@ -125,6 +125,7 @@ type: decision
 title: "Sonnet is the floor for code-reviewer"
 description: "Why haiku is never a valid tier for a review dispatch."
 status: stable
+decision_id: "unset"
 supersedes: ""
 superseded_by: ""
 generated:

@@ -3,6 +3,7 @@ type: decision
 title: "Model tiering for dispatched work"
 description: "Judging never drops below the strong tier, effort is pinned in frontmatter rather than chosen per dispatch, and no df dispatch names a model."
 status: stable
+decision_id: "f72132740326"
 supersedes: ""
 superseded_by: ""
 generated:

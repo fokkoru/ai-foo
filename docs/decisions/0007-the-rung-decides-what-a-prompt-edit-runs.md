@@ -3,6 +3,7 @@ type: decision
 title: "The rung decides what a prompt edit runs"
 description: "A prompt edit is gated by what it is expected to do, on a three-rung ladder from no paid run to a full sweep with judging."
 status: stable
+decision_id: "529d50bf4cdd"
 supersedes: ""
 superseded_by: ""
 generated:

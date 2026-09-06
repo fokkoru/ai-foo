@@ -3,6 +3,7 @@ type: decision
 title: "The cell is the unit of analysis"
 description: "A prompt experiment is read paired at the fixed task rather than pooled over responses, and every reading is reported per pair."
 status: stable
+decision_id: "8601094aa67a"
 supersedes: ""
 superseded_by: ""
 generated:

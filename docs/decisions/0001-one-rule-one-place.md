@@ -3,6 +3,7 @@ type: decision
 title: "One rule, one place"
 description: "A behavioural rule lives at its point of use plus the hard gate, and a restatement is classified before it is removed."
 status: stable
+decision_id: "ab6dc6406208"
 supersedes: ""
 superseded_by: ""
 generated:

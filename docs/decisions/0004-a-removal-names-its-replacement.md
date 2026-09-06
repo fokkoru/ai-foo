@@ -3,6 +3,7 @@ type: decision
 title: "A removal names its replacement"
 description: "A commit that removes a capability names what replaces it in the body, or states that nothing does."
 status: stable
+decision_id: "8c4e2cdac8be"
 supersedes: ""
 superseded_by: ""
 generated:

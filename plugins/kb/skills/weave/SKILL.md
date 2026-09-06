@@ -109,6 +109,8 @@ Then write `3d4cea08f41a` into the entry. The checker owns the normalization —
 
 An entry whose `resource` no longer exists gets `retired: true` and a `log.md` line. Do not delete it: the page keeps the record of where its claim came from.
 
+A new decision page also gets its `decision_id`, which is how a supersession reference names the decision across an editorial rename. Write the page with `decision_id: "unset"`, then run `check-docs.sh assign-id <page>` and write the value it prints into the key. Assign it once: a later edit to the page never reassigns it, and a substantively different decision is a new page with its own.
+
 ### Step 5: Update index.md and log.md
 
 Every page must be reachable from `docs/index.md` by following relative links. A page written and not linked is the most common failure of this whole workflow, which is why the checker fails on it.

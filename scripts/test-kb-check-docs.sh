@@ -130,4 +130,97 @@ else
   bad "fenced ### was counted: $out"
 fi
 
+# --- decision identifiers -------------------------------------------------
+
+FIX="$PWD/scripts/fixtures"
+
+# The fixture bundles carry hand-written identifiers rather than assigned ones.
+# An assertion against a value the checker would recompute the same way could
+# never disagree with it; a stored opaque string can.
+
+if "$CHECKER" check "$FIX/docs-decisions" >/dev/null 2>&1; then
+  pass "a bundle whose decision pages carry distinct identifiers conforms"
+else
+  bad "the conforming fixture bundle did not pass: $("$CHECKER" check "$FIX/docs-decisions" 2>&1)"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-missing-id" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^decision-id-missing('; then
+  pass "a decision page with no identifier is reported"
+else
+  bad "missing identifier not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-duplicate-id" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^decision-id-duplicate('; then
+  pass "two pages sharing an identifier are reported"
+else
+  bad "duplicate identifier not reported: $out"
+fi
+
+out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 2>&1)
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
+  pass "a reference resolves by identifier"
+else
+  bad "identifier a1a1a1a1a1a1 did not resolve: $out"
+fi
+
+out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" zzzzzzzzzzzz 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^decision-ref-dangling('; then
+  pass "a reference whose identifier matches nothing is reported dangling"
+else
+  bad "dangling reference not reported: $out"
+fi
+
+# The page moved; the reference still carries the path it had. Resolution is by
+# identifier, so it succeeds, and the stale path is worth saying out loud
+# without failing the run.
+out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 decisions/0001-old-name.md 2>&1)
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q '^stale-path-hint(' &&
+  printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
+  pass "a renamed page resolves and its stale path hint is reported as a hint"
+else
+  bad "stale path hint not handled: $out"
+fi
+
+# The path is still occupied, by a different decision. Resolving by path would
+# succeed and be wrong; resolving by identifier reports the truth.
+out=$("$CHECKER" resolve-decision "$FIX/docs-reused-path" a1a1a1a1a1a1 decisions/0001-alpha.md 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^decision-ref-dangling('; then
+  pass "a reused path holding a different decision does not resolve the old one"
+else
+  bad "a reused path resolved to the wrong decision: $out"
+fi
+
+# --- identifier assignment ------------------------------------------------
+
+ASSIGN="$SCRATCH/assign"
+mkdir -p "$ASSIGN"
+cp "$FIX/docs-decisions/decisions/0001-alpha.md" "$ASSIGN/page.md"
+
+id_one=$("$CHECKER" assign-id "$ASSIGN/page.md")
+id_again=$("$CHECKER" assign-id "$ASSIGN/page.md")
+if [ -n "$id_one" ] && [ "$id_one" = "$id_again" ]; then
+  pass "assign-id returns the same identifier for the same page"
+else
+  bad "assign-id returned '$id_one' then '$id_again'"
+fi
+
+# An editorial rename is a new filename and a new title. Neither is the
+# decision, so neither may change its name.
+sed 's/title: "Alpha"/title: "Alpha, restated"/' "$ASSIGN/page.md" >"$ASSIGN/renamed-page.md"
+id_renamed=$("$CHECKER" assign-id "$ASSIGN/renamed-page.md")
+if [ "$id_one" = "$id_renamed" ]; then
+  pass "an editorial rename does not change the identifier"
+else
+  bad "rename changed the identifier: $id_one vs $id_renamed"
+fi
+
+id_other=$("$CHECKER" assign-id "$FIX/docs-decisions/decisions/0002-beta.md")
+if [ "$id_one" != "$id_other" ]; then
+  pass "a different decision gets a different identifier"
+else
+  bad "two different decisions were assigned $id_one"
+fi
+
 exit "$fail"

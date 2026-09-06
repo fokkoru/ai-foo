@@ -6,6 +6,9 @@
 #   verify-sources <manifest> [raw-root]   prove the raw layer did not change during a run
 #   check [docs-root] [raw-root]           every conformance rule over the compiled tree
 #   check-capture <record>                 the format rules for one capture record
+#   assign-id <page>                       an identifier for a new decision page
+#   resolve-decision <docs-root> <id> [path-hint]
+#                                          the page an identifier names
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -46,6 +49,8 @@ usage: $self snapshot [raw-root]
        $self verify-sources <manifest> [raw-root]
        $self check [docs-root] [raw-root]
        $self check-capture <record>
+       $self assign-id <page>
+       $self resolve-decision <docs-root> <id> [path-hint]
 EOF
   exit 2
 }
@@ -53,6 +58,13 @@ EOF
 report() {
   echo "$1($2): $3"
   fail=1
+}
+
+# The same shape as report, for something the reader should see that does not
+# make the run wrong. It goes to stderr so a mode whose stdout is a value stays
+# usable in a command substitution.
+note() {
+  echo "$1($2): $3" >&2
 }
 
 if command -v shasum >/dev/null 2>&1; then
@@ -673,6 +685,98 @@ EOF
   done <"$WORKDIR/pages"
 }
 
+# ------------------------------------------------------- decision identifiers
+
+# A decision page's name, derived from its body and then stored. Deriving it
+# from content rather than from a date is what lets two machines share one
+# compiled layer while each keeps its own untracked raw layer: a date-keyed name
+# collides across them. The frontmatter is not part of the derivation, so
+# writing the identifier into the page does not change it, and neither does an
+# editorial rename of the title.
+#
+# The identifier is assigned once and stored. It is never recomputed and
+# compared: a page whose prose was tightened is the same decision, and a
+# substantively new decision gets a new page and a new assignment.
+cmd_assign_id() {
+  local page="${1:-}"
+  [ -n "$page" ] || usage
+  if [ ! -f "$page" ]; then
+    report NO-PAGE assign-id "$page is not a file"
+    return 1
+  fi
+  fragment_text "$page" "(whole)" | normalize_and_hash
+}
+
+# Identifiers seen so far, id<TAB>page. A page carrying none is reported as it
+# is checked; duplicates need the whole set, so they wait for the loop to end.
+check_decision_id() {
+  local page="$1" ids="$2" id
+  [ "$(fm_value "$page" type)" = "decision" ] || return 0
+  id=$(fm_value "$page" decision_id)
+  if [ -z "$id" ]; then
+    report decision-id-missing "$page" "a decision page carries no decision_id, so no reference can name it across a rename"
+    return 0
+  fi
+  printf '%s\t%s\n' "$id" "$page" >>"$ids"
+}
+
+check_decision_id_unique() {
+  local ids="$1" dup pages
+  [ -s "$ids" ] || return 0
+  while IFS= read -r dup; do
+    [ -n "$dup" ] || continue
+    pages=$(awk -F'\t' -v i="$dup" '$1 == i {printf "%s ", $2}' "$ids")
+    report decision-id-duplicate "$dup" "carried by more than one page: ${pages% }"
+  done <<EOF
+$(cut -f1 "$ids" | LC_ALL=C sort | uniq -d)
+EOF
+}
+
+# The page an identifier names. A path hint is a location, never the reference:
+# a renamed page still resolves, and a path reoccupied by a different decision
+# does not resolve the old one. That second case is the reason the identifier
+# exists — a rename produces an observable miss somebody notices, while a reused
+# path resolves successfully to the wrong decision and nothing reports it.
+cmd_resolve_decision() {
+  local docs="${1:-}" id="${2:-}" hint="${3:-}" matches page count
+  [ -n "$docs" ] || usage
+  [ -n "$id" ] || usage
+  if [ ! -d "$docs" ]; then
+    report NO-DOCS-ROOT resolve-decision "$docs is not a directory"
+    return 1
+  fi
+
+  matches="$WORKDIR/resolve"
+  : >"$matches"
+  while IFS= read -r page; do
+    [ -n "$page" ] || continue
+    if [ "$(fm_value "$page" decision_id)" = "$id" ]; then
+      printf '%s\n' "$page" >>"$matches" || {
+        report RESOLVE-FAILED "$id" "could not record a match under $WORKDIR"
+        return 1
+      }
+    fi
+  done <<EOF
+$(find "$docs" -type f -name '*.md' -print | LC_ALL=C sort)
+EOF
+
+  count=$(line_count "$matches")
+  if [ "$count" -eq 0 ]; then
+    report decision-ref-dangling "$id" "no page under $docs carries this decision_id"
+    return 1
+  fi
+  if [ "$count" -gt 1 ]; then
+    report decision-id-duplicate "$id" "carried by more than one page: $(tr '\n' ' ' <"$matches")"
+    return 1
+  fi
+
+  page=$(awk 'NR==1' "$matches")
+  if [ -n "$hint" ] && [ "$hint" != "${page#"$docs"/}" ]; then
+    note stale-path-hint "$id" "the reference points at $hint; the decision now lives at ${page#"$docs"/}"
+  fi
+  printf '%s\n' "$page"
+}
+
 cmd_check() {
   local docs="${1:-docs}" root_index page base
   # The second argument is the raw root, accepted so the same raw root can be
@@ -697,17 +801,21 @@ cmd_check() {
 
   check_root_index "$root_index"
 
+  : >"$WORKDIR/decision-ids"
+
   while IFS= read -r page; do
     [ -n "$page" ] || continue
     check_page_frontmatter "$page" "$root_index"
     check_links "$page"
     check_sources "$page"
+    check_decision_id "$page" "$WORKDIR/decision-ids"
     base=$(basename "$page")
     if [ "$base" = "log.md" ]; then
       check_log "$page"
     fi
   done <"$WORKDIR/pages"
 
+  check_decision_id_unique "$WORKDIR/decision-ids"
   check_reachability "$docs" "$root_index"
 
   if [ "$fail" -eq 0 ]; then
@@ -730,6 +838,8 @@ snapshot) cmd_snapshot "$@" || fail=1 ;;
 verify-sources) cmd_verify_sources "$@" || fail=1 ;;
 check) cmd_check "$@" || fail=1 ;;
 check-capture) cmd_check_capture "$@" || fail=1 ;;
+assign-id) cmd_assign_id "$@" || fail=1 ;;
+resolve-decision) cmd_resolve_decision "$@" || fail=1 ;;
 *) usage ;;
 esac
 

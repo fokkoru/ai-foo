@@ -3,6 +3,7 @@ type: decision
 title: "Antigravity runs under accept-edits"
 description: "Delegated runs get file edits and no shell; consultations get no permission flag at all."
 status: stable
+decision_id: "f8348da78424"
 supersedes: ""
 superseded_by: ""
 generated:
