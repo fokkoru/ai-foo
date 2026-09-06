@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "kb — Knowledge Base",
     "shortDescription": "Capture decisions, and weave notes into a knowledge base",
-    "longDescription": "Two skills. $kb:capture records a decision a session reached — what was chosen, what was rejected, why, and the evidence — into thoughts/captures/ while the session is still running; it fires on its own. $kb:weave reads the raw corpus under thoughts/ and writes a durable knowledge base under docs/ in Open Knowledge Format v0.2, with per-source provenance hashes so drift is detectable; invoke it manually, it never auto-triggers. The plugin ships no subagents, so there is no install script to run. It requires no other plugin.",
+    "longDescription": "Three skills. $kb:capture records a decision a session reached — what was chosen, what was rejected, why, and the evidence — into thoughts/captures/ while the session is still running; it fires on its own. $kb:weave reads the raw corpus under thoughts/ and writes a durable knowledge base under docs/ in Open Knowledge Format v0.2, with per-source provenance hashes so drift is detectable; invoke it manually, it never auto-triggers. $kb:lint inspects the compiled knowledge base under docs/ for pages that have gone wrong and repairs what has a demonstrated failure and an oracle; invoke it manually, it never auto-triggers. The plugin ships no subagents, so there is no install script to run. It requires no other plugin.",
     "developerName": "fokkoru",
     "category": "Coding",
     "capabilities": ["Read", "Write"],
