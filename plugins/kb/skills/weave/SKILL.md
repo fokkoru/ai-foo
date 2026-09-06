@@ -28,6 +28,10 @@ If sources are named, begin at Step 0.
 
 If no sources are named, ask which ones to compile and wait for the answer. Never default to the whole corpus — a first run over everything produces a tree nobody reviews.
 
+`weave captures` names a class rather than filenames: the pending capture records, whichever they turn out to be. `check-docs.sh captures-eligible <records root> docs/kb-receipt.tsv` computes that class from the receipt and the records on disk. An invocation naming unrelated files absorbs no captures, and a bare invocation still asks and waits.
+
+`weave reconsider` is the pass that returns to what an earlier run deferred: `check-docs.sh captures-deferred <records root> docs/kb-receipt.tsv` lists those decisions, and the run re-examines each against current evidence and consumes any that now route. A deferred decision does not wake on its own — nothing schedules this pass, and reaching a deferred decision takes a run somebody starts.
+
 0. Claim, seed and snapshot
 1. Read the sources and scan for supersession
 2. Route each claim
@@ -179,6 +183,8 @@ Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is don
 
 Report:
 
+- the captures consumed, and separately the eligible records left alone — a model-chosen scope is not reproducible from the invocation and the repository state, only from being written down
+- any record opened for context, named as such: a contextual read is not intake and produces no receipt entry
 - pages created, and for each, the one sentence from Step 3
 - pages updated
 - sources consumed, and any source that found no home
@@ -207,6 +213,7 @@ Close by saying that `docs/` is ready to be committed on its own.
 - Promoting a plan to `architecture/` because the plan exists
 - Deleting a conflicting claim instead of flagging it on the page that won
 - Compiling the whole corpus when the user named a few sources
+- Following a reference out of the named class into the rest of the raw corpus. A record naming a plan does not put that plan in scope
 
 </anti_patterns>
 

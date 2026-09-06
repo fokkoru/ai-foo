@@ -616,4 +616,39 @@ else
   bad "an errant write to the compiled layer went unreported: $out"
 fi
 
+# --- which captures a run may take in --------------------------------------
+
+ELIG="$FIX/records-eligible"
+elig_receipt="$SCRATCH/eligible.tsv"
+printf 'r1.md\t%s\tconsumed\tThe first decision, already compiled\n' \
+  "$("$CHECKER" assign-id "$ELIG/r1.md" 2>/dev/null)" >"$elig_receipt"
+printf 'r1.md\t%s\tdeferred\tThe second decision, routed nowhere yet\n' \
+  "$("$CHECKER" assign-id "$ELIG/r1.md" 2>/dev/null)" >>"$elig_receipt"
+
+out=$("$CHECKER" captures-eligible "$ELIG" "$elig_receipt" 2>&1)
+if [ $? -eq 0 ] &&
+  ! printf '%s\n' "$out" | grep -q 'The first decision' &&
+  printf '%s\n' "$out" | grep -q 'The second decision' &&
+  printf '%s\n' "$out" | grep -q 'A decision nobody has seen'; then
+  pass "eligibility is the decisions no run has consumed, computed rather than chosen"
+else
+  bad "eligibility was wrong: $out"
+fi
+
+out=$("$CHECKER" captures-eligible "$ELIG" 2>&1)
+if [ "$(printf '%s\n' "$out" | grep -c '###\|decision')" -ge 3 ]; then
+  pass "with no receipt every decision is eligible"
+else
+  bad "an absent receipt did not make everything eligible: $out"
+fi
+
+out=$("$CHECKER" captures-deferred "$ELIG" "$elig_receipt" 2>&1)
+if [ $? -eq 0 ] &&
+  printf '%s\n' "$out" | grep -q 'The second decision' &&
+  ! printf '%s\n' "$out" | grep -q 'A decision nobody has seen'; then
+  pass "the deferred set is what a run looked at and left, not what it never saw"
+else
+  bad "the deferred set was wrong: $out"
+fi
+
 exit "$fail"

@@ -17,6 +17,10 @@
 #   receipt-commit <receipt> <records-root> <staging>
 #                                          record what a validated run consumed
 #   receipt-check <receipt> <records-root> the receipt's own format and its hashes
+#   captures-eligible <records-root> [receipt]
+#                                          decisions no run has consumed yet
+#   captures-deferred <records-root> <receipt>
+#                                          decisions a run looked at and left
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -65,6 +69,8 @@ usage: $self snapshot [raw-root]
        $self supersession-scan <records-root> <docs-root> <target>
        $self receipt-commit <receipt> <records-root> <staging>
        $self receipt-check <receipt> <records-root>
+       $self captures-eligible <records-root> [receipt]
+       $self captures-deferred <records-root> <receipt>
 EOF
   exit 2
 }
@@ -745,6 +751,63 @@ EOF
   done <"$WORKDIR/pages"
 }
 
+# --------------------------------------------------------- capture selection
+
+# Every decision in every record under a root, as path<TAB>heading.
+capture_decisions_all() {
+  local root="$1" rec rel index
+  index="$WORKDIR/select-index"
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    rel=${rec#"$root"/}
+    capture_decision_index "$rec" >"$index" || return 1
+    awk -F'\t' -v p="$rel" '$1 == "DEC" {print p "\t" $3}' "$index"
+  done <<EOF
+$(find "$root" -type f -name '*.md' -print | LC_ALL=C sort)
+EOF
+}
+
+# What a run may still take in. Eligibility is mechanical — it is the decisions
+# the receipt does not record as consumed — while which of them a run actually
+# takes is the model's choice, and the run's report is the only place that
+# choice is written down. Detecting that a record is eligible therefore does not
+# guarantee it was examined.
+cmd_captures_eligible() {
+  local root="${1:-}" receipt="${2:-}" line path heading
+  [ -n "$root" ] || usage
+  if [ ! -d "$root" ]; then
+    report NO-RECORDS-ROOT captures-eligible "$root is not a directory"
+    return 1
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    path=$(printf '%s' "$line" | cut -f1)
+    heading=$(printf '%s' "$line" | cut -f2)
+    if [ -n "$receipt" ] && [ -f "$receipt" ] &&
+      awk -F'\t' -v p="$path" -v h="$heading" \
+        '$1 == p && $3 == "consumed" && $4 == h {found = 1} END {exit found ? 0 : 1}' "$receipt"; then
+      continue
+    fi
+    printf '%s\t%s\n' "$path" "$heading"
+  done <<EOF
+$(capture_decisions_all "$root")
+EOF
+}
+
+# The decisions a run looked at and left. A deferred decision waits indefinitely
+# rather than expiring, so something has to come back to it, and that something
+# is a pass the owner starts. Nothing here wakes it.
+cmd_captures_deferred() {
+  local root="${1:-}" receipt="${2:-}"
+  [ -n "$root" ] || usage
+  [ -n "$receipt" ] || usage
+  if [ ! -f "$receipt" ]; then
+    report NO-RECEIPT captures-deferred "$receipt is not a file"
+    return 1
+  fi
+  awk -F'\t' '$3 == "deferred" {print $1 "\t" $4}' "$receipt" | LC_ALL=C sort -u
+}
+
 # ----------------------------------------------------------------- receipt
 
 # What a run consumed and what it left, per capture and per decision. A record
@@ -1398,6 +1461,8 @@ claim-inspect) cmd_claim_inspect "$@" || fail=1 ;;
 supersession-scan) cmd_supersession_scan "$@" || fail=$? ;;
 receipt-commit) cmd_receipt_commit "$@" || fail=1 ;;
 receipt-check) cmd_receipt_check "$@" || fail=1 ;;
+captures-eligible) cmd_captures_eligible "$@" || fail=1 ;;
+captures-deferred) cmd_captures_deferred "$@" || fail=1 ;;
 *) usage ;;
 esac
 
