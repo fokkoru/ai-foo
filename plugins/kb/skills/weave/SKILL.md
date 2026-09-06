@@ -41,11 +41,17 @@ If no sources are named, ask which ones to compile and wait for the answer. Neve
 
 <workflow>
 
-### Step 0: Seed and snapshot
+### Step 0: Claim, seed and snapshot
 
 Everywhere below, including this step, `check-docs.sh` means `../../scripts/check-docs.sh` relative to the base directory the harness announces for this skill, not a command on `PATH` — the checker lives in the plugin's own `scripts/` rather than this skill's, because it is shared, and the working directory is the project being compiled. Every `references/` path below hangs off the announced directory directly. Resolve both once, here, and reuse them.
 
-Run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it.
+Take the run's claim first, before anything else, with `check-docs.sh claim-acquire "$CLAUDE_SESSION_ID" $PPID`. Keep the run id it prints. One claim covers the whole run rather than the snapshot and the verification separately: a capture publishes into the raw layer during a live session, so a gap in the middle is a gap another writer can use, and this run edits the compiled layer in that middle with nothing staged and nothing to roll back.
+
+`$PPID` inside a shell the harness starts for you is the harness process itself, observed on Claude Code 2.1.261. That process is what the claim names as its owner, which is what lets a later run tell an abandoned claim from a live one.
+
+If the claim is refused, stop and report what `claim-acquire` printed. A live owner means another run is going; an abandoned one means a run died, and somebody has to look at what it left in `docs/` before the claim is released by hand.
+
+Then run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it.
 
 Then settle what `docs/` already is:
 
@@ -124,6 +130,8 @@ Run `check-docs.sh check`, then `check-docs.sh verify-sources <manifest>` with t
 Fix whatever the first reports and run it again.
 
 A failure from the second is different in kind. It means this run wrote into the raw layer, which `<artifact_scope>` forbids. That is a defect in the run, not a finding to hand to the user: say so plainly, name the files, and stop.
+
+Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is done, and also on the halt path above after reporting. Holding it through a halt buys nothing: the user has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies and then makes somebody inspect a compiled layer they already know the state of.
 
 ### Step 7: Report
 

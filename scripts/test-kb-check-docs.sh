@@ -223,4 +223,110 @@ else
   bad "two different decisions were assigned $id_one"
 fi
 
+# --- the whole-run claim ---------------------------------------------------
+
+# A real repository, because the claim is repository-local and lives beside the
+# git directory.
+REPO="$SCRATCH/claim-repo"
+mkdir -p "$REPO"
+git -C "$REPO" init -q
+
+# A live contender. Every refusal below is followed by the acquisition attempt
+# it should still be refusing: a test that only reads the refusal line would
+# pass an implementation that reports the refusal and drops the claim anyway.
+tail -f /dev/null &
+owner_pid=$!
+
+run_id=$(cd "$REPO" && "$CHECKER" claim-acquire session-one "$owner_pid" 2>/dev/null)
+if [ -n "$run_id" ]; then
+  pass "claim-acquire returns a run id"
+else
+  bad "claim-acquire returned nothing"
+fi
+
+out=$(cd "$REPO" && "$CHECKER" claim-acquire session-two "$owner_pid" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^claim-held('; then
+  pass "a second run is refused while the owner is alive"
+else
+  bad "the second acquisition was not refused: $out"
+fi
+
+out=$(cd "$REPO" && "$CHECKER" claim-inspect 2>&1)
+if printf '%s\n' "$out" | grep -q "$run_id"; then
+  pass "the claim still stands after the refusal"
+else
+  bad "the claim did not survive the refused acquisition: $out"
+fi
+
+out=$(cd "$REPO" && "$CHECKER" claim-release deadbeef0000 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^claim-not-owner('; then
+  pass "a release by a run that does not own the claim is refused"
+else
+  bad "a foreign release was not refused: $out"
+fi
+
+out=$(cd "$REPO" && "$CHECKER" claim-inspect 2>&1)
+if printf '%s\n' "$out" | grep -q "$run_id"; then
+  pass "the claim still stands after the refused release"
+else
+  bad "the claim did not survive the refused release: $out"
+fi
+
+if (cd "$REPO" && "$CHECKER" claim-release "$run_id" >/dev/null 2>&1); then
+  pass "the owner releases its own claim"
+else
+  bad "the owner could not release its claim"
+fi
+
+next_id=$(cd "$REPO" && "$CHECKER" claim-acquire session-three "$owner_pid" 2>/dev/null)
+if [ -n "$next_id" ] && [ "$next_id" != "$run_id" ]; then
+  pass "a legitimate release permits the next acquisition"
+else
+  bad "the next acquisition returned '$next_id'"
+fi
+
+# --- an owner that died ----------------------------------------------------
+
+kill "$owner_pid" 2>/dev/null
+wait "$owner_pid" 2>/dev/null
+
+out=$(cd "$REPO" && "$CHECKER" claim-inspect 2>&1)
+if printf '%s\n' "$out" | grep -q '^claim-abandoned('; then
+  pass "a terminated owner leaves the claim reported as abandoned"
+else
+  bad "a dead owner was not reported: $out"
+fi
+
+tail -f /dev/null &
+second_pid=$!
+
+out=$(cd "$REPO" && "$CHECKER" claim-acquire session-four "$second_pid" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^claim-abandoned('; then
+  pass "an abandoned claim is not taken over automatically"
+else
+  bad "an abandoned claim was taken over: $out"
+fi
+
+# Recovery is the operator reading the run id out of claim-inspect and
+# releasing it by hand, after looking at what the dead run left behind.
+(cd "$REPO" && "$CHECKER" claim-release "$next_id" >/dev/null 2>&1)
+recovered=$(cd "$REPO" && "$CHECKER" claim-acquire session-five "$second_pid" 2>/dev/null)
+if [ -n "$recovered" ]; then
+  pass "an explicitly released abandoned claim permits the next acquisition"
+else
+  bad "the abandoned claim could not be recovered by an explicit release"
+fi
+
+(cd "$REPO" && "$CHECKER" claim-release "$recovered" >/dev/null 2>&1)
+kill "$second_pid" 2>/dev/null
+wait "$second_pid" 2>/dev/null
+
+# Nothing about the claim waits, counts down, or gives up after a while. There
+# is no measurement that would ground such a number, so none exists.
+if grep -nE 'sleep|timeout|stale.after|poll|interval|attempts' "$CHECKER" >/dev/null; then
+  bad "the checker names a duration or a repeat count: $(grep -nE 'sleep|timeout|stale.after|poll|interval|attempts' "$CHECKER")"
+else
+  pass "no duration, interval or repeat count appears in the checker"
+fi
+
 exit "$fail"

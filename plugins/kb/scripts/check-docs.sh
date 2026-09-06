@@ -9,6 +9,9 @@
 #   assign-id <page>                       an identifier for a new decision page
 #   resolve-decision <docs-root> <id> [path-hint]
 #                                          the page an identifier names
+#   claim-acquire <session-id> <pid>       take the whole-run claim, print its run id
+#   claim-release <run-id>                 give it back
+#   claim-inspect                          say who holds it and whether they are alive
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -51,6 +54,9 @@ usage: $self snapshot [raw-root]
        $self check-capture <record>
        $self assign-id <page>
        $self resolve-decision <docs-root> <id> [path-hint]
+       $self claim-acquire <session-id> <pid>
+       $self claim-release <run-id>
+       $self claim-inspect
 EOF
   exit 2
 }
@@ -685,6 +691,177 @@ EOF
   done <"$WORKDIR/pages"
 }
 
+# ----------------------------------------------------------- the run claim
+
+# One claim covers a whole run, from its first action to its last, rather than
+# the snapshot and the verification separately. A publisher writing the raw
+# layer during a live session is what makes the gap matter: a claim held only
+# across the two ends leaves the middle open, and the run edits the compiled
+# layer in that middle with no staged output and nothing to roll back.
+#
+# It is repository-local and lives beside the git directory, so it is outside
+# every snapshot and never reaches a commit. A linked worktree gets its own,
+# which is the right scope: each worktree has its own compiled layer.
+claim_dir() {
+  local gd
+  gd=$(git rev-parse --absolute-git-dir 2>/dev/null) || return 1
+  [ -n "$gd" ] || return 1
+  printf '%s/kb-claim\n' "$gd"
+}
+
+# Identity of the current boot. A machine that rebooted did not carry the
+# owning process across, whatever its pid says now.
+boot_identity() {
+  if [ -r /proc/sys/kernel/random/boot_id ]; then
+    cat /proc/sys/kernel/random/boot_id
+  elif sysctl -n kern.boottime >/dev/null 2>&1; then
+    sysctl -n kern.boottime
+  else
+    echo unknown
+  fi
+}
+
+# When a process started, empty when it is not running. A pid alone is not an
+# identity: the number is reused, and a reused number belongs to a different
+# process than the one that took the claim.
+process_start() {
+  ps -o lstart= -p "$1" 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+claim_record() {
+  find "$1" -maxdepth 1 -type f 2>/dev/null | LC_ALL=C sort | awk 'NR==1'
+}
+
+claim_field() {
+  awk -v k="$2" 'index($0, k ": ") == 1 {sub(/^[^:]*:[[:space:]]*/, ""); print; exit}' "$1"
+}
+
+# held, abandoned, or unknown. Three facts each establish that the owner is
+# gone: no such process, a process that started at a different moment, and a
+# machine that has rebooted since. The converse does not follow — a live
+# process is not proof the run is still going — so a live owner is never
+# assumed finished and always needs an explicit release.
+claim_state() {
+  local rec="$1" pid started
+  [ -n "$rec" ] && [ -f "$rec" ] || {
+    echo unknown
+    return 0
+  }
+  if [ "$(claim_field "$rec" boot)" != "$(boot_identity)" ]; then
+    echo abandoned
+    return 0
+  fi
+  pid=$(claim_field "$rec" pid)
+  started=$(process_start "$pid")
+  if [ -z "$started" ] || [ "$started" != "$(claim_field "$rec" started)" ]; then
+    echo abandoned
+    return 0
+  fi
+  echo held
+}
+
+# The state of an existing claim, reported. Shared by acquire, which refuses on
+# it, and inspect, which exists to print it.
+claim_report() {
+  local dir="$1" mode="$2" rec state
+  rec=$(claim_record "$dir")
+  state=$(claim_state "$rec")
+  case "$state" in
+  held)
+    report claim-held "$mode" \
+      "run $(claim_field "$rec" run) holds the claim, its process $(claim_field "$rec" pid) is alive, and only that run may release it"
+    ;;
+  abandoned)
+    report claim-abandoned "$mode" \
+      "run $(claim_field "$rec" run) held the claim and its process is gone — look at what it left in the compiled layer, then release run $(claim_field "$rec" run) by hand"
+    ;;
+  *)
+    report claim-held "$mode" \
+      "a claim exists at $dir with no owner record — look at what is there before releasing it"
+    ;;
+  esac
+}
+
+cmd_claim_acquire() {
+  local session="${1:-}" pid="${2:-}" dir runid started
+  [ -n "$pid" ] || usage
+  dir=$(claim_dir) || {
+    report NO-GIT-DIR claim-acquire "not inside a git repository, and the claim is repository-local"
+    return 1
+  }
+  started=$(process_start "$pid")
+  if [ -z "$started" ]; then
+    report NO-SUCH-PROCESS claim-acquire "process $pid is not running, so it cannot own a claim"
+    return 1
+  fi
+
+  # mkdir is the whole of the exclusion: it either creates the directory or
+  # fails because someone else already did, in one step nothing can interleave.
+  if ! mkdir "$dir" 2>/dev/null; then
+    claim_report "$dir" claim-acquire
+    return 1
+  fi
+
+  runid=$(od -An -N6 -tx1 /dev/urandom | tr -d ' \n')
+  {
+    echo "run: $runid"
+    echo "tree: $(git rev-parse --show-toplevel)"
+    echo "session: ${session:-missing}"
+    echo "host: $(hostname)"
+    echo "boot: $(boot_identity)"
+    echo "pid: $pid"
+    echo "started: $started"
+  } >"$dir/$runid" || {
+    rm -f "$dir/$runid"
+    rmdir "$dir" 2>/dev/null
+    report CLAIM-FAILED claim-acquire "could not write the owner record under $dir"
+    return 1
+  }
+  echo "claim-acquire: run $runid holds the claim for $(git rev-parse --show-toplevel)" >&2
+  printf '%s\n' "$runid"
+}
+
+cmd_claim_release() {
+  local runid="${1:-}" dir
+  [ -n "$runid" ] || usage
+  dir=$(claim_dir) || {
+    report NO-GIT-DIR claim-release "not inside a git repository, and the claim is repository-local"
+    return 1
+  }
+  if [ ! -d "$dir" ]; then
+    report claim-absent claim-release "there is no claim to release"
+    return 1
+  fi
+  # The run id is in the path, so removing the file is the ownership check.
+  # Checking first and then removing a fixed name would let a second operator
+  # delete a claim taken between their check and their delete.
+  if ! rm "$dir/$runid" 2>/dev/null; then
+    report claim-not-owner claim-release "run $runid does not hold the claim"
+    return 1
+  fi
+  rmdir "$dir" 2>/dev/null || {
+    report CLAIM-FAILED claim-release "released run $runid, but $dir still holds something — look at what"
+    return 1
+  }
+  echo "claim-release: run $runid released the claim"
+}
+
+cmd_claim_inspect() {
+  local dir rec
+  dir=$(claim_dir) || {
+    report NO-GIT-DIR claim-inspect "not inside a git repository, and the claim is repository-local"
+    return 1
+  }
+  if [ ! -d "$dir" ]; then
+    echo "claim-inspect: no claim is held"
+    return 0
+  fi
+  rec=$(claim_record "$dir")
+  [ -n "$rec" ] && cat "$rec"
+  claim_report "$dir" claim-inspect
+  return 1
+}
+
 # ------------------------------------------------------- decision identifiers
 
 # A decision page's name, derived from its body and then stored. Deriving it
@@ -840,6 +1017,9 @@ check) cmd_check "$@" || fail=1 ;;
 check-capture) cmd_check_capture "$@" || fail=1 ;;
 assign-id) cmd_assign_id "$@" || fail=1 ;;
 resolve-decision) cmd_resolve_decision "$@" || fail=1 ;;
+claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
+claim-release) cmd_claim_release "$@" || fail=1 ;;
+claim-inspect) cmd_claim_inspect "$@" || fail=1 ;;
 *) usage ;;
 esac
 
