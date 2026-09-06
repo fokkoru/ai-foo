@@ -16,6 +16,7 @@
     "capture"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
   "interface": {
     "displayName": "kb — Knowledge Base",
     "shortDescription": "Capture decisions, and weave notes into a knowledge base",

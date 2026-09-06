@@ -1,7 +1,7 @@
 ---
 name: capture
 description: Record a decision this session reached — what was chosen, what was rejected, and why — into thoughts/captures/ before the session ends. Use when a session settles a question, picks between options, changes its mind, or finishes a design discussion.
-allowed-tools: Read, Write, Grep, Glob, LS, Bash(date:*), Bash(git status:*), Bash(git log:*), Bash(git rev-parse:*), Bash(mkdir:*), Bash(mv:*), Bash(*check-docs.sh*)
+allowed-tools: Read, Write, Grep, Glob, LS, Bash(date:*), Bash(git status:*), Bash(git log:*), Bash(git rev-parse:*), Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Bash(*check-docs.sh*)
 ---
 
 <objective>
@@ -17,6 +17,7 @@ It never writes the compiled layer. A second writer there would bypass routing, 
 
 Everywhere below, `check-docs.sh` means `../../scripts/check-docs.sh` relative to the base directory the harness announces for this skill — the checker lives in the plugin's own `scripts/`, not this skill's. Resolve it once, here.
 
+0. Lift anything a previous session left behind
 1. Decide whether there is a decision to record
 2. Write the record to the staging directory
 3. Try the claim, and publish if it is free
@@ -25,6 +26,21 @@ Everywhere below, `check-docs.sh` means `../../scripts/check-docs.sh` relative t
 </quick_start>
 
 <workflow>
+
+### Step 0: Lift anything a previous session left behind
+
+Look under `.git/kb-capture-markers/` and `.git/kb-staged/`. A marker names a record a previous session prepared and never published — because the session ended, or because the claim was held. The session-end hook writes those markers and nothing else: it has under two seconds, enough to append a line and nowhere near enough to reach a model, which is why it points at a record rather than writing one.
+
+Show the owner what is stuck and let them decide, one item at a time. There is no queue, no ordering and no automatic retry.
+
+| The owner says | Do this                                                                     |
+| -------------- | --------------------------------------------------------------------------- |
+| retry          | take the staged record through Step 3, publishing it if the claim is free   |
+| dismiss        | delete the staged record and its marker, and say in the report that you did |
+
+An unprocessed item never blocks a newer one. Both objects behave the same way here: a stuck marker and a stuck record each wait on their own.
+
+If you cannot tell what decision a staged record was meant to hold, leave it where it is and say so. An unresolved item is a better outcome than a record invented to close it.
 
 ### Step 1: Decide whether there is a decision to record
 
@@ -121,6 +137,7 @@ Then offer a weave run naming the published record, and stop. The owner confirms
 - Never compile an unpublished staging file, and never offer one for compilation
 - Never treat the absence of an implementation as a reason to refuse a record
 - Never write "could not capture" as "concluded nothing"
+- Never retry a stuck item on your own. Retry and dismiss are the owner's words, and dismissal is what deletes something
 
 </constraints>
 

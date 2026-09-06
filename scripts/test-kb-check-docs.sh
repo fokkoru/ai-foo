@@ -651,4 +651,64 @@ else
   bad "the deferred set was wrong: $out"
 fi
 
+# --- the session-end marker ------------------------------------------------
+
+HOOK="$PWD/plugins/kb/hooks/mark-unpublished-capture.sh"
+HREPO="$SCRATCH/hook-repo"
+mkdir -p "$HREPO/thoughts/captures" "$HREPO/docs"
+git -C "$HREPO" init -q
+hgit=$(git -C "$HREPO" rev-parse --absolute-git-dir)
+mkdir -p "$hgit/kb-staged"
+echo "# Capture: prepared and never published" >"$hgit/kb-staged/s1-1.md"
+
+(cd "$HREPO" && printf '{"session_id":"s1"}' | "$HOOK")
+marker="$hgit/kb-capture-markers/s1"
+if [ -f "$marker" ] && grep -q 'kb-staged/s1-1.md' "$marker"; then
+  pass "the hook leaves a marker pointing at the staged record"
+else
+  bad "no marker was written"
+fi
+
+before=$(cat "$marker")
+(cd "$HREPO" && printf '{"session_id":"s1"}' | "$HOOK")
+if [ "$(cat "$marker")" = "$before" ]; then
+  pass "a second fire for one session overwrites the marker rather than appending"
+else
+  bad "the marker grew on the second fire: $(cat "$marker")"
+fi
+
+# The marker lives under the git directory, so neither a snapshot of the raw
+# layer nor git status can see it.
+hook_manifest=$(cd "$HREPO" && "$CHECKER" snapshot thoughts)
+(cd "$HREPO" && printf '{"session_id":"s2"}' | "$HOOK")
+if (cd "$HREPO" && "$CHECKER" verify-sources "$hook_manifest" thoughts >/dev/null 2>&1) &&
+  [ -z "$(git -C "$HREPO" status --porcelain)" ]; then
+  pass "the marker appears in no snapshot and in no git status"
+else
+  bad "the marker leaked into the working tree"
+fi
+
+# The hook writes no record: it points at one the skill already wrote.
+if [ -z "$(find "$HREPO/thoughts" "$HREPO/docs" -type f)" ]; then
+  pass "the hook writes no record and touches neither layer"
+else
+  bad "the hook wrote into a layer: $(find "$HREPO/thoughts" "$HREPO/docs" -type f)"
+fi
+
+# Nothing retries on its own. Two stuck items are two files, with no ordering
+# between them and no count anywhere.
+echo "# Capture: a second prepared record" >"$hgit/kb-staged/s3-1.md"
+(cd "$HREPO" && printf '{"session_id":"s3"}' | "$HOOK")
+if [ -f "$hgit/kb-capture-markers/s1" ] && [ -f "$hgit/kb-capture-markers/s3" ]; then
+  pass "two stuck items neither order nor block each other"
+else
+  bad "one stuck item displaced the other"
+fi
+
+if grep -vE '^[[:space:]]*#' "$HOOK" | grep -nEi 'sleep|retry|attempt|expir|timeout' >/dev/null; then
+  bad "the hook schedules or counts something: $(grep -vE '^[[:space:]]*#' "$HOOK" | grep -nEi 'sleep|retry|attempt|expir|timeout')"
+else
+  pass "nothing in the hook retries, counts down or expires"
+fi
+
 exit "$fail"
