@@ -710,6 +710,19 @@ EOF
   return 0
 }
 
+# A marker the schema sanctions as a literal TODO. Advisory: a page that admits
+# it does not know something is not malformed, and failing the gate on it would
+# make a legitimate state break the build. [inferred] is not included — it marks
+# a deduction the schema allows, not a gap.
+check_open_markers() {
+  local page="$1" n
+  n=$(strip_code "$page" | { grep -c '\[unknown\]' || true; })
+  if [ "$n" -gt 0 ]; then
+    note open-marker "$page" "$n line(s) carry [unknown], an answer the page is still missing"
+  fi
+  return 0
+}
+
 check_sources() {
   local page="$1" raw="$2" recs idx resource fragment recorded text actual total end resolved
   recs=$(sources_records "$page")
@@ -1581,6 +1594,7 @@ cmd_check() {
     check_page_frontmatter "$page" "$root_index"
     check_links "$page"
     check_anchors "$page"
+    check_open_markers "$page"
     check_sources "$page" "$raw"
     check_external_claims "$page"
     check_decision_id "$page" "$WORKDIR/decision-ids"

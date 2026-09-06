@@ -186,6 +186,20 @@ else
   bad "the slug rule produced a false failure: $out"
 fi
 
+out=$("$CHECKER" check "$FIX/docs-open-marker" 2>&1)
+if printf '%s\n' "$out" | grep -q '^open-marker(' &&
+  ! printf '%s\n' "$out" | grep -q 'inferred'; then
+  pass "an [unknown] marker is noted and [inferred] is left alone"
+else
+  bad "the open-marker rule did not behave: $out"
+fi
+
+if "$CHECKER" check "$FIX/docs-open-marker" >/dev/null 2>&1; then
+  pass "an [unknown] marker does not fail the run"
+else
+  bad "an advisory finding set a non-zero exit: $("$CHECKER" check "$FIX/docs-open-marker" 2>&1)"
+fi
+
 out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 2>&1)
 if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
   pass "a reference resolves by identifier"
