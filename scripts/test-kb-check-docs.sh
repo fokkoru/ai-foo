@@ -486,4 +486,29 @@ else
   bad "the repository's docs failed: $("$CHECKER" check docs thoughts 2>&1)"
 fi
 
+# --- the log ---------------------------------------------------------------
+
+# Compiling twice in a day is the ordinary case once capture starts offering a
+# run after each published record. Two entries under one date is what that
+# looks like, and it passes.
+if "$CHECKER" check "$FIX/docs-log-ok" "$RAW" >/dev/null 2>&1; then
+  pass "a log with two entries under one date passes"
+else
+  bad "a same-day append failed: $("$CHECKER" check "$FIX/docs-log-ok" "$RAW" 2>&1)"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-log-duplicate-date" "$RAW" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^log-date-order('; then
+  pass "a log with two sections for one date is reported"
+else
+  bad "a duplicated date section was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-log-malformed" "$RAW" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^log-date-format('; then
+  pass "a malformed log heading is reported"
+else
+  bad "a malformed log heading was not reported: $out"
+fi
+
 exit "$fail"

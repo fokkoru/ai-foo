@@ -157,7 +157,7 @@ A new decision page also gets its `decision_id`, which is how a supersession ref
 
 Every page must be reachable from `docs/index.md` by following relative links. A page written and not linked is the most common failure of this whole workflow, which is why the checker fails on it.
 
-Add exactly one dated `log.md` section per run, newest first, holding `**Creation**`, `**Update**`, and `**Deprecation**` bullets that link the pages they affected.
+`log.md` carries one section per day, newest first, holding `**Creation**`, `**Update**`, and `**Deprecation**` bullets that link the pages they affected. If a section for today already exists, append this run's bullets to it rather than opening a second one — two runs in a day is the ordinary case, not a failure, and the checker reports two sections carrying one date.
 
 ### Step 6: Check
 
