@@ -8,3 +8,4 @@
 - [0007 The rung decides what a prompt edit runs](0007-the-rung-decides-what-a-prompt-edit-runs.md) - A prompt edit is gated by what it is expected to do, on a three-rung ladder from no paid run to a full sweep with judging.
 - [0008 A page cites only what a clone carries](0008-a-page-cites-only-what-a-clone-carries.md) - Every sources[] entry names a tracked file; a path inside the raw root is refused, and a capture record is refused on separate grounds.
 - [0009 A version bump touches two manifests and no tag](0009-a-version-bump-touches-two-manifests-and-no-tag.md) - A plugin's version lives in its marketplace entry and its Codex manifest, bumped to the same value in one commit; the Codex catalog tracks main, so there is nothing to tag.
+- [0010 A vanished source deletes its entry](0010-a-vanished-source-deletes-its-entry.md) - A sources[] entry whose resource no longer exists is removed together with the prose it supported, never flagged and kept.

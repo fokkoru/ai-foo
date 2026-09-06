@@ -39,6 +39,22 @@ sources:
     id: "capture-staging"
     fragment: "### Step 2: Write the record to the staging directory"
     sha256: "fcf30c0174f1"
+  - resource: "plugins/kb/scripts/check-docs.sh"
+    id: "lint-rules"
+    fragment: "L692-L756"
+    sha256: "933b5af6828e"
+  - resource: "plugins/kb/scripts/check-docs.sh"
+    id: "lint-unhashed"
+    fragment: "L821-L825"
+    sha256: "c4ffbe4d5454"
+  - resource: "plugins/kb/skills/lint/SKILL.md"
+    id: "lint-candidates"
+    fragment: "### Step 2: Collect candidates"
+    sha256: "6ac99378b032"
+  - resource: "plugins/kb/skills/lint/SKILL.md"
+    id: "lint-verdicts"
+    fragment: "### Step 3: Decide a verdict per finding"
+    sha256: "aef52cbad1ed"
 ---
 
 # The knowledge compiler
@@ -82,6 +98,21 @@ What a run consumed is written to a tab-separated receipt, one line per decision
 path, a hash of the record's content, the state, and the decision heading. The receipt is tracked and
 committed alongside the pages it describes.[^checker-receipt]
 
+`kb:lint` works over the union of two sets: `M`, the candidates `check-docs.sh check` reports and
+notes across `docs/`, and `H`, whichever pages the invocation names.[^lint-candidates] Five of
+`check`'s rules feed `M` directly — a dead intra-page anchor, a body citation no `sources[]` entry
+declares, an entry declaring no `sha256`,[^lint-rules][^lint-unhashed] a literal `[unknown]` marker,
+and a `sources[]` entry no citation uses — the first three fail the run, the last two are
+advisory.[^lint-rules]
+
+For each candidate, one pass attaches evidence — a `file:line`, a conflicting line on another page,
+or the checker record that raised it — and a finding with none attached is dropped before a second
+pass ever sees it. That second pass settles each finding as one of four things: the page is wrong
+and gets a named correction; the claim still holds but its citation moved, so the `sources[]` entry
+is re-anchored and its hash rewritten with the prose untouched; the page is right and the finding is
+dismissed, written nowhere; or the answer cannot be settled from the repository, and it is reported
+and left for the next run.[^lint-verdicts]
+
 ## Why it is this way
 
 One claim covers a whole run rather than the snapshot and the verification separately. A publisher
@@ -106,6 +137,12 @@ disclosed failure in this shape was a slug collision that staged hundreds of rec
 none, and the stored hash is also what proves the record on disk is the one that was acknowledged: a
 published record is immutable, so a mismatch means somebody edited one.[^checker-receipt]
 
+The two lint passes stay separate because a moved citation and a false claim are different
+failures with different fixes. A `source-drift` record proves the cited fragment changed; it does
+not prove the prose built on it is wrong, and conflating the two would either re-anchor a citation
+for a page that is actually mistaken, or rewrite a page whose only fault is a stale line
+number.[^lint-verdicts]
+
 [^kb-two-layers]: `plugins/kb/README.md`, opening section.
 
 [^kb-skill-table]: `plugins/kb/README.md`, The skills.
@@ -121,3 +158,11 @@ published record is immutable, so a mismatch means somebody edited one.[^checker
 [^capture-claim-step]: `plugins/kb/skills/capture/SKILL.md`, Step 3.
 
 [^capture-staging]: `plugins/kb/skills/capture/SKILL.md`, Step 2.
+
+[^lint-rules]: `plugins/kb/scripts/check-docs.sh`, the anchor, marker and footnote-join checks.
+
+[^lint-unhashed]: `plugins/kb/scripts/check-docs.sh`, the unhashed-source report.
+
+[^lint-candidates]: `plugins/kb/skills/lint/SKILL.md`, Step 2.
+
+[^lint-verdicts]: `plugins/kb/skills/lint/SKILL.md`, Step 3.
