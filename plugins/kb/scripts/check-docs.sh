@@ -5,6 +5,7 @@
 #   snapshot [raw-root]                    hash every raw source, print the manifest path
 #   verify-sources <manifest> [raw-root]   prove the raw layer did not change during a run
 #   check [docs-root] [raw-root]           every conformance rule over the compiled tree
+#   check-capture <record>                 the format rules for one capture record
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -44,6 +45,7 @@ usage() {
 usage: $self snapshot [raw-root]
        $self verify-sources <manifest> [raw-root]
        $self check [docs-root] [raw-root]
+       $self check-capture <record>
 EOF
   exit 2
 }
@@ -349,6 +351,123 @@ cmd_verify_sources() {
   echo "verify-sources: $(line_count "$now") files under $raw unchanged since the snapshot"
 }
 
+# -------------------------------------------------------------- capture record
+
+# The decisions in a capture record, one DEC<TAB>line<TAB>heading per decision,
+# followed by END<TAB>line for the last line of the ## Decisions section.
+#
+# Only the immediate ### headings inside ## Decisions are decisions. A #### is
+# not one, and neither is a ### inside a fenced block: a record quotes the shape
+# it follows, and reading that quotation as a decision would enumerate an
+# imposter that no session ever decided. Fence state is tracked from line 1, the
+# way strip_code does it.
+capture_decision_index() {
+  awk '
+    /^[[:space:]]*(```|~~~)/ {fence = !fence; next}
+    fence {next}
+    /^## / {
+      if (ind) {print "END\t" NR - 1; ind = 0}
+      if ($0 == "## Decisions") ind = 1
+      next
+    }
+    ind && /^### / {print "DEC\t" NR "\t" substr($0, 5)}
+    END {if (ind) print "END\t" NR}
+  ' "$1"
+}
+
+# The value of a decision field, empty when the line is absent or carries
+# nothing after the colon.
+capture_field() {
+  awk -v key="$2" '
+    index($0, key ":") == 1 {
+      sub(/^[^:]*:[[:space:]]*/, "")
+      sub(/[[:space:]]+$/, "")
+      print
+      exit
+    }' "$1"
+}
+
+cmd_check_capture() {
+  local rec="${1:-}" index body start end nxt heading total n secend value dupe
+  [ -n "$rec" ] || usage
+  if [ ! -f "$rec" ]; then
+    report NO-CAPTURE check-capture "$rec is not a file"
+    return 1
+  fi
+
+  # A record carries no frontmatter. The one key an earlier shape kept moved
+  # onto the decision itself, so a block here holds nothing anything reads.
+  if [ "$(head -1 "$rec")" = "---" ]; then
+    report capture-frontmatter "$rec" "a capture record carries no frontmatter, and this one opens with ---"
+  fi
+
+  index="$WORKDIR/capture-index"
+  capture_decision_index "$rec" >"$index" || {
+    report CAPTURE-FAILED "$rec" "could not scan the record for decisions"
+    return 1
+  }
+
+  total=$(awk -F'\t' '$1 == "DEC" {n++} END {print n + 0}' "$index")
+  secend=$(awk -F'\t' '$1 == "END" {print $2; exit}' "$index")
+
+  if [ "$total" -eq 0 ]; then
+    report capture-no-decisions "$rec" \
+      "no ### decision under a ## Decisions section — a session that reached no decision writes no record"
+    return 1
+  fi
+
+  # Every loop that reports reads from a heredoc rather than a pipe, for the
+  # reason check_log gives: a report inside a pipeline sets fail=1 in a subshell
+  # and throws it away.
+  while IFS= read -r dupe; do
+    [ -n "$dupe" ] || continue
+    report capture-decision-duplicate "$rec" \
+      "the decision heading '$dupe' appears more than once, so a reference to it names two decisions"
+  done <<EOF
+$(awk -F'\t' '$1 == "DEC" {print $3}' "$index" | LC_ALL=C sort | uniq -d)
+EOF
+
+  body="$WORKDIR/capture-body"
+  n=0
+  while [ "$n" -lt "$total" ]; do
+    n=$((n + 1))
+    start=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i) {print $2; exit}}' "$index")
+    heading=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i) {print $3; exit}}' "$index")
+    nxt=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i + 1) {print $2; exit}}' "$index")
+    if [ -n "$nxt" ]; then
+      end=$((nxt - 1))
+    else
+      end="$secend"
+    fi
+    awk -v s="$start" -v e="$end" 'NR > s && NR <= e' "$rec" >"$body" || {
+      report CAPTURE-FAILED "$rec" "could not read the body of decision '$heading'"
+      return 1
+    }
+
+    for field in Rejected Because Evidence; do
+      if ! grep -q "^$field:" "$body"; then
+        report capture-field-missing "$rec" "decision '$heading' carries no $field: line"
+      fi
+    done
+
+    # An absent Evidence: line is already reported above. A present one that
+    # says nothing is the case this catches: the writer meant to fill it in and
+    # did not, which is different from writing `none` to mark that no durable
+    # source exists.
+    if grep -q '^Evidence:' "$body"; then
+      value=$(capture_field "$body" Evidence)
+      if [ -z "$value" ]; then
+        report capture-evidence-empty "$rec" \
+          "decision '$heading' has an empty Evidence: — write 'none' to mark that no durable source exists"
+      fi
+    fi
+  done
+
+  if [ "$fail" -eq 0 ]; then
+    echo "check-capture: $total decisions in $rec conform"
+  fi
+}
+
 # ---------------------------------------------------------------------- check
 
 check_page_frontmatter() {
@@ -610,6 +729,7 @@ case "$mode" in
 snapshot) cmd_snapshot "$@" || fail=1 ;;
 verify-sources) cmd_verify_sources "$@" || fail=1 ;;
 check) cmd_check "$@" || fail=1 ;;
+check-capture) cmd_check_capture "$@" || fail=1 ;;
 *) usage ;;
 esac
 

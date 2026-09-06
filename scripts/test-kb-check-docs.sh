@@ -73,4 +73,61 @@ else
   bad "an edited raw file did not produce SOURCE-CHANGED: $out"
 fi
 
+# --- capture record format -----------------------------------------------
+
+CAPTURES="$PWD/scripts/fixtures/captures"
+
+# Run check-capture over a fixture and report whether it exited as expected and
+# printed the rule asked for. The rule name is matched at the start of a line,
+# so a report line is identified by its rule rather than by its position.
+expect_capture() {
+  local want_exit="$1" fixture="$2" rule="$3" out status
+  out=$("$CHECKER" check-capture "$CAPTURES/$fixture" 2>&1)
+  status=$?
+  if [ "$status" -ne "$want_exit" ]; then
+    bad "$fixture exited $status, expected $want_exit: $out"
+    return
+  fi
+  if [ -n "$rule" ] && ! printf '%s\n' "$out" | grep -q "^$rule("; then
+    bad "$fixture did not report $rule: $out"
+    return
+  fi
+  pass "$fixture ${rule:-conforms}"
+}
+
+expect_capture 0 conforming.md ""
+expect_capture 1 with-frontmatter.md capture-frontmatter
+expect_capture 1 duplicate-decision.md capture-decision-duplicate
+expect_capture 1 missing-fields.md capture-field-missing
+expect_capture 1 empty-evidence.md capture-evidence-empty
+expect_capture 1 no-decisions.md capture-no-decisions
+expect_capture 0 fenced-heading.md ""
+
+# The three missing fields are three separate findings, one per decision, not
+# one finding for the record.
+out=$("$CHECKER" check-capture "$CAPTURES/missing-fields.md" 2>&1)
+if [ "$(printf '%s\n' "$out" | grep -c '^capture-field-missing(')" -eq 3 ]; then
+  pass "each decision missing a field is reported on its own"
+else
+  bad "expected three capture-field-missing lines: $out"
+fi
+
+# `Evidence: none` is the explicit mark that no durable source exists, and it
+# is accepted; an empty field is not.
+out=$("$CHECKER" check-capture "$CAPTURES/conforming.md" 2>&1)
+if [ $? -eq 0 ] && ! printf '%s\n' "$out" | grep -q 'capture-evidence-empty'; then
+  pass "an explicitly marked absence of evidence is accepted"
+else
+  bad "Evidence: none was reported as empty: $out"
+fi
+
+# A ### inside a fenced block is prose about the format, not a decision. The
+# fixture holds one real decision and one fenced imposter.
+out=$("$CHECKER" check-capture "$CAPTURES/fenced-heading.md" 2>&1)
+if printf '%s\n' "$out" | grep -q '1 decision'; then
+  pass "a ### inside a fence is not counted as a decision"
+else
+  bad "fenced ### was counted: $out"
+fi
+
 exit "$fail"
