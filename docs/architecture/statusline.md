@@ -5,7 +5,7 @@ description: "How the Claude Code status line is assembled from ccstatusline's g
 status: stable
 generated:
   by: "kb:compile"
-  at: "2026-09-04T13:18:49-07:00"
+  at: "2026-09-06T00:00:11-07:00"
 sources:
   - resource: "CLAUDE.md"
     id: "sl-not-a-plugin"
@@ -23,6 +23,10 @@ sources:
     id: "sl-rates"
     fragment: "L18-L59"
     sha256: "2ca471acaf3a"
+  - resource: "statusline/statusline.mjs"
+    id: "sl-cache"
+    fragment: "L174-L194"
+    sha256: "a51da5b9ddfa"
   - resource: "statusline/statusline.mjs"
     id: "sl-cost"
     fragment: "L196-L268"
@@ -80,7 +84,11 @@ warm it is priced at 0.1× the input rate, or 0.025× on Claude Fable 5.1 and Cl
 alone. Once the prefix has to be rebuilt it is priced at 1.25× on the five-minute TTL or 2× on the
 one-hour TTL, in red. Where no response has reported cache tokens at all it is priced at the plain
 input rate, in grey, because nothing has measured the cache and a red figure would assert a cold
-cache the payload does not claim. A cold cache whose recache size is null — the state right after a
+cache the payload does not claim. Printing nothing there was the alternative, and it is what the
+cache group itself does in the same state: `renderCache` returns early unless a response has
+reported cache tokens.[^sl-cache] The cost group prints the figure anyway, because a blank cost
+group cannot be told apart from a widget that broke, while a grey figure says both what an uncached
+request would cost and that the cache state is unknown. A cold cache whose recache size is null — the state right after a
 compaction — prints `next ?` rather than substituting the last context and printing a guess as a
 measurement. A model absent from the rate table prints no cost rather than a guessed
 one.[^sl-rates][^sl-cost]
@@ -93,7 +101,11 @@ the prefix is being rebuilt on most requests.[^sl-thresholds]
 **Worktree.** The `worktree` mode prints a mark only when the current directory really is a linked
 worktree. It reads `workspace.git_worktree`, which Claude Code sends as the worktree's name and
 omits outside a linked worktree, so the payload answers the question outright. That replaced a walk
-up from the working directory reading each `.git` it found on every render. The space that sets the
+up from the working directory reading each `.git` it found on every render, and nothing was kept
+behind as a fallback for a Claude Code that predates the field: the script has exactly one
+installation,[^sl-not-a-plugin] so a second path would be a branch nothing here ever runs. The cost
+of that is a behaviour, not a risk — on an older Claude Code the mark stops appearing, and nothing
+else on either line changes.[^sl-worktree] The space that sets the
 mark off from the path lives in a `custom-text` widget in the config, because `ccstatusline` trims
 a widget's own output.[^sl-worktree]
 
@@ -252,6 +264,8 @@ TUI will not be reflected here until somebody updates this section.
 [^sl-buffer]: `statusline/statusline.mjs`, the auto-compact buffer constant.
 
 [^sl-rates]: `statusline/statusline.mjs`, the cache-rate multipliers.
+
+[^sl-cache]: `statusline/statusline.mjs`, `renderCache`.
 
 [^sl-thresholds]: `statusline/statusline.mjs`, the threshold helpers.
 

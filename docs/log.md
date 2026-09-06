@@ -1,5 +1,9 @@
 # Log
 
+## 2026-09-06
+
+- **Update**: [The two-line status line](architecture/statusline.md) — two rationales the code and its commit body do not carry. The unobserved-cache figure prints in grey rather than not printing at all, because a blank cost group reads the same as a broken widget; `renderCache` earned a citation of its own for the silence it keeps in that state. And the worktree mark kept no fallback for a Claude Code predating `workspace.git_worktree`, the script having one installation, with the accepted cost stated as behaviour: on an older client the mark stops appearing.
+
 ## 2026-09-05
 
 - **Update**: [The two-line status line](architecture/statusline.md) — the worktree mark now reads `workspace.git_worktree` from the payload instead of walking the filesystem for a `.git` file, so the paragraph recording that walk as settled no longer describes the code. The cost group gained a measured last-request figure and a third `next` state for a provider that reports no cache tokens, and the 0.025× cache-read rate is now named as Claude Fable 5.1 and Claude Mythos 5.1 alone. All six citations into `statusline/statusline.mjs` were re-anchored, and `renderCost` earned one of its own.
