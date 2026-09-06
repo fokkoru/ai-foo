@@ -723,6 +723,38 @@ check_open_markers() {
   return 0
 }
 
+# The page-local join between [^slug] citations in a body and sources[].id. Both
+# directions come from one pass. A slug declared on another page satisfies
+# neither rule: attribution resolves through the entry on the citing page, and a
+# join that reached across pages would report nothing while proving nothing.
+#
+# A [^slug]: line at the start of a line defines the footnote, it does not cite
+# it, so definitions are excluded from the citation side.
+check_footnote_join() {
+  local page="$1" recs ids cites slug
+  recs=$(sources_records "$page")
+  ids=$(printf '%s\n' "$recs" | awk -F'\t' '$2=="id" {print $3}' | LC_ALL=C sort -u)
+  cites=$(strip_code "$page" |
+    grep -v '^\[\^[^]]*\]:' |
+    { grep -oE '\[\^[^]]+\]' || true; } |
+    sed -e 's/^\[\^//' -e 's/\]$//' | LC_ALL=C sort -u)
+
+  for slug in $cites; do
+    if ! printf '%s\n' "$ids" | grep -Fxq -- "$slug"; then
+      report unjoined-footnote "$page" \
+        "the body cites [^$slug], which no sources[] entry on this page declares as its id"
+    fi
+  done
+
+  for slug in $ids; do
+    if ! printf '%s\n' "$cites" | grep -Fxq -- "$slug"; then
+      note unused-source "$page" \
+        "sources[] declares the id $slug, which no [^$slug] in the body cites"
+    fi
+  done
+  return 0
+}
+
 check_sources() {
   local page="$1" raw="$2" recs idx resource fragment recorded text actual total end resolved
   recs=$(sources_records "$page")
@@ -1595,6 +1627,7 @@ cmd_check() {
     check_links "$page"
     check_anchors "$page"
     check_open_markers "$page"
+    check_footnote_join "$page"
     check_sources "$page" "$raw"
     check_external_claims "$page"
     check_decision_id "$page" "$WORKDIR/decision-ids"

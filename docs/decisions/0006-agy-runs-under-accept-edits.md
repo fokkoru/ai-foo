@@ -68,7 +68,7 @@ tests.[^delegate-why-subagent]
 That relocated noise is why a delegation runs inside a subagent while a consultation does not. A
 consultation's deliverable is the answer, which belongs in the main context; a delegation's is "the
 edits landed and the tests pass", and the diff and test output around reaching that verdict do
-not.[^agy-decisions]
+not.[^delegate-why-subagent]
 
 Both skills are model-invocable and gated on the user having asked by their own descriptions,
 because no available mode permits invocation on request while forbidding it

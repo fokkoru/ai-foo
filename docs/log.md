@@ -8,6 +8,7 @@
 - **Creation**: [A version bump touches two manifests and no tag](decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md) — considered [A removal names its replacement](decisions/0004-a-removal-names-its-replacement.md), the only other decision about what a commit must carry; it governs a commit body, not a release number, and no page held the two-manifest rule or the reason there are no tags.
 
 - **Update**: [The two-line status line](architecture/statusline.md) — two rationales the code and its commit body do not carry. The unobserved-cache figure prints in grey rather than not printing at all, because a blank cost group reads the same as a broken widget; `renderCache` earned a citation of its own for the silence it keeps in that state. And the worktree mark kept no fallback for a Claude Code predating `workspace.git_worktree`, the script having one installation, with the accepted cost stated as behaviour: on an older client the mark stops appearing.
+- **Update**: [Antigravity runs under accept-edits](decisions/0006-agy-runs-under-accept-edits.md) — `[^agy-decisions]` cited no `sources[]` entry on the page. The sentence it closed makes the same claim as the one before it, already sourced as `[^delegate-why-subagent]`, so the citation retargets rather than adding evidence. No prose changed, no `sources[]` entry changed.
 
 ## 2026-09-05
 

@@ -200,6 +200,27 @@ else
   bad "an advisory finding set a non-zero exit: $("$CHECKER" check "$FIX/docs-open-marker" 2>&1)"
 fi
 
+out=$("$CHECKER" check "$FIX/docs-footnote" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^unjoined-footnote(.*dangling'; then
+  pass "a citation no sources entry declares is reported"
+else
+  bad "a dangling citation was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-footnote" 2>&1)
+if printf '%s\n' "$out" | grep -q '^unused-source(.*spare'; then
+  pass "a sources entry nothing cites is noted"
+else
+  bad "an uncited entry was not noted: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-footnote" 2>&1)
+if ! printf '%s\n' "$out" | grep -qE '(unjoined-footnote|unused-source)\(.*(joined|example)'; then
+  pass "a joined citation, a fenced one and a definition line are left alone"
+else
+  bad "the footnote join produced a false failure: $out"
+fi
+
 out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 2>&1)
 if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
   pass "a reference resolves by identifier"
