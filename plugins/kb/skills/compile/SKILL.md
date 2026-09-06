@@ -45,7 +45,7 @@ If no sources are named, ask which ones to compile and wait for the answer. Neve
 
 Everywhere below, including this step, `check-docs.sh` means `scripts/check-docs.sh` under the base directory the harness announces for this skill, not a command on `PATH` — the script is inside the installed plugin and the working directory is the project being compiled. The same goes for every `references/` path below. Resolve both once, here, and reuse them.
 
-Run `check-docs.sh snapshot`. It records a hash of every file under the raw root, which is what Step 6 compares against.
+Run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it.
 
 Then settle what `docs/` already is:
 
@@ -117,7 +117,7 @@ Add exactly one dated `log.md` section per run, newest first, holding `**Creatio
 
 ### Step 6: Check
 
-Run `check-docs.sh check`, then `check-docs.sh verify-sources`.
+Run `check-docs.sh check`, then `check-docs.sh verify-sources <manifest>` with the manifest path Step 0 printed.
 
 Fix whatever the first reports and run it again.
 

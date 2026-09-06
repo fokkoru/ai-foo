@@ -2,12 +2,20 @@
 # Conformance, reachability, provenance, and raw-source immutability checks for
 # a knowledge base compiled by kb:compile.
 #
-#   snapshot [raw-root]            hash every raw source and remember the result
-#   verify-sources [raw-root]      prove the raw layer did not change during a run
-#   check [docs-root] [raw-root]   every conformance rule over the compiled tree
+#   snapshot [raw-root]                    hash every raw source, print the manifest path
+#   verify-sources <manifest> [raw-root]   prove the raw layer did not change during a run
+#   check [docs-root] [raw-root]           every conformance rule over the compiled tree
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
+#
+# The manifest is created fresh per snapshot and named by the caller from then
+# on. Two compile runs — two repositories, or two sessions on one repository —
+# can share a TMPDIR, and a manifest at a fixed path would let one run's
+# snapshot stand in for the other's. That produces a false failure when the two
+# trees differ and a false pass when they happen to share relative paths.
+# snapshot writes the path to stdout so the caller can hold it; everything else
+# it prints goes to stderr.
 #
 # The script derives no path from its own location. A plugin-bundled script is
 # invoked by absolute path from whatever project is being compiled, so both
@@ -20,7 +28,6 @@
 # sets are files and queues are line-indexed.
 set -euo pipefail
 
-MANIFEST="${TMPDIR:-/tmp}/df-compile-sources.sha256"
 fail=0
 
 # One scratch directory for the whole run, cleaned on exit. Per-function temp
@@ -35,7 +42,7 @@ self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
 usage() {
   cat >&2 <<EOF
 usage: $self snapshot [raw-root]
-       $self verify-sources [raw-root]
+       $self verify-sources <manifest> [raw-root]
        $self check [docs-root] [raw-root]
 EOF
   exit 2
@@ -276,31 +283,40 @@ hash_tree() {
 }
 
 cmd_snapshot() {
-  local raw="${1:-thoughts}"
+  local raw="${1:-thoughts}" manifest
   if [ ! -d "$raw" ]; then
     report NO-RAW-ROOT snapshot "$raw is not a directory"
     return 1
   fi
+  # The template ends in X's with no suffix after them: BSD mktemp, which is the
+  # one a clean macOS carries, accepts no trailing characters.
+  manifest=$(mktemp "${TMPDIR:-/tmp}/kb-compile-sources.XXXXXXXX") || {
+    report SNAPSHOT-FAILED snapshot "could not create a manifest under ${TMPDIR:-/tmp}"
+    return 1
+  }
   # Every I/O failure below is reported rather than left to set -e. A function
   # invoked as the left operand of || runs with errexit ignored for its whole
   # body, so a failed redirect here would otherwise fall through to the success
   # line and the script would exit 0 having recorded nothing.
-  hash_tree "$raw" >"$MANIFEST" || {
-    report SNAPSHOT-FAILED snapshot "could not hash every file under $raw, or could not write the manifest to $MANIFEST"
+  hash_tree "$raw" >"$manifest" || {
+    rm -f "$manifest"
+    report SNAPSHOT-FAILED snapshot "could not hash every file under $raw, or could not write the manifest to $manifest"
     return 1
   }
-  echo "snapshot: $(line_count "$MANIFEST") files under $raw recorded in $MANIFEST"
+  echo "snapshot: $(line_count "$manifest") files under $raw recorded in $manifest" >&2
+  echo "$manifest"
 }
 
 cmd_verify_sources() {
-  local raw="${1:-thoughts}" now findings
+  local manifest="${1:-}" raw="${2:-thoughts}" now findings
+  [ -n "$manifest" ] || usage
   if [ ! -d "$raw" ]; then
     report NO-RAW-ROOT verify-sources "$raw is not a directory"
     return 1
   fi
-  if [ ! -f "$MANIFEST" ]; then
+  if [ ! -f "$manifest" ]; then
     report NO-SNAPSHOT verify-sources \
-      "no manifest at $MANIFEST — a run that never snapshotted cannot claim it left the raw layer alone"
+      "no manifest at $manifest — a run that never snapshotted cannot claim it left the raw layer alone"
     return 1
   fi
 
@@ -320,7 +336,7 @@ cmd_verify_sources() {
         else if (old[p] != new[p]) print "SOURCE-CHANGED(" p "): content differs from the snapshot"
       }
       for (p in old) if (!(p in new)) print "SOURCE-REMOVED(" p "): present when the run started, gone now"
-    }' "$MANIFEST" "$now" | LC_ALL=C sort >"$findings" || {
+    }' "$manifest" "$now" | LC_ALL=C sort >"$findings" || {
     report VERIFY-FAILED verify-sources "could not compare the manifest against the current tree"
     return 1
   }
@@ -540,8 +556,8 @@ EOF
 
 cmd_check() {
   local docs="${1:-docs}" root_index page base
-  # The second argument is the raw root, accepted so every mode takes the same
-  # pair. No rule here resolves against it: a sources[].resource may cite code
+  # The second argument is the raw root, accepted so the same raw root can be
+  # passed to every mode. No rule here resolves against it: a sources[].resource may cite code
   # outside the raw layer, so resources resolve against the working directory.
   : "${2:-thoughts}"
 
