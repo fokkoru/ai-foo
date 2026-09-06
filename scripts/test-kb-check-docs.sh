@@ -412,4 +412,39 @@ else
   bad "a record superseding a compiled page was not found: $out"
 fi
 
+# --- deprecation -----------------------------------------------------------
+
+# The three rows of the deprecation table, as page shapes. Whether a rule still
+# holds and whether its replacement is implemented are judgements the run makes;
+# what the checker can settle is that each verdict produced a page the schema
+# allows.
+if "$CHECKER" check "$FIX/docs-deprecation" >/dev/null 2>&1; then
+  pass "stable, deprecated-with-successor and deprecated-without all conform"
+else
+  bad "the deprecation bundle failed: $("$CHECKER" check "$FIX/docs-deprecation" 2>&1)"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-deprecation-dangling" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^superseded-by-dangling('; then
+  pass "a superseded_by naming no page is reported"
+else
+  bad "a dangling successor was not reported: $out"
+fi
+
+# A deprecated page is kept for links and history, so the checker grants it no
+# reachability exemption.
+out=$("$CHECKER" check "$FIX/docs-deprecation-unreachable" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^unreachable(.*0002-orphan'; then
+  pass "a deprecated page still has to be reachable from the index"
+else
+  bad "an unlinked deprecated page was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-deprecation-drift" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^source-drift('; then
+  pass "a deprecated page's sources are still provenance-checked"
+else
+  bad "a deprecated page escaped provenance checking: $out"
+fi
+
 exit "$fail"

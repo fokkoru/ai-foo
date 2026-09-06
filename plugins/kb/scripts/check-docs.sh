@@ -1061,6 +1061,31 @@ check_decision_id() {
   printf '%s\t%s\n' "$id" "$page" >>"$ids"
 }
 
+# A deprecated page keeps its links and its history, and where a replacement
+# was built it names it. The link is by identifier, so it survives the
+# replacement being renamed; a value naming nothing is a promise of a successor
+# that does not exist, which is worse than the third row's honest silence.
+check_superseded_by() {
+  local page="$1" refs="$2" id
+  id=$(fm_value "$page" superseded_by)
+  [ -n "$id" ] || return 0
+  printf '%s\t%s\n' "$id" "$page" >>"$refs"
+}
+
+check_superseded_by_resolves() {
+  local refs="$1" ids="$2" id page
+  [ -s "$refs" ] || return 0
+  while IFS= read -r id; do
+    [ -n "$id" ] || continue
+    if ! cut -f1 "$ids" | grep -Fxq -- "${id%%\t*}"; then
+      page=$(awk -F'\t' -v i="${id%%\t*}" '$1 == i {print $2; exit}' "$refs")
+      report superseded-by-dangling "$page" "superseded_by names ${id%%\t*}, which no page carries"
+    fi
+  done <<EOF
+$(cut -f1 "$refs" | LC_ALL=C sort -u)
+EOF
+}
+
 check_decision_id_unique() {
   local ids="$1" dup pages
   [ -s "$ids" ] || return 0
@@ -1143,6 +1168,7 @@ cmd_check() {
   check_root_index "$root_index"
 
   : >"$WORKDIR/decision-ids"
+  : >"$WORKDIR/superseded-by"
 
   while IFS= read -r page; do
     [ -n "$page" ] || continue
@@ -1150,6 +1176,7 @@ cmd_check() {
     check_links "$page"
     check_sources "$page"
     check_decision_id "$page" "$WORKDIR/decision-ids"
+    check_superseded_by "$page" "$WORKDIR/superseded-by"
     base=$(basename "$page")
     if [ "$base" = "log.md" ]; then
       check_log "$page"
@@ -1157,6 +1184,7 @@ cmd_check() {
   done <"$WORKDIR/pages"
 
   check_decision_id_unique "$WORKDIR/decision-ids"
+  check_superseded_by_resolves "$WORKDIR/superseded-by" "$WORKDIR/decision-ids"
   check_reachability "$docs" "$root_index"
 
   if [ "$fail" -eq 0 ]; then

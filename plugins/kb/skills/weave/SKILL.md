@@ -86,16 +86,35 @@ Supersession is terminal. If B superseded A and C later supersedes B, A does not
 
 Route by what the claim is, not by which document carried it. One source routinely produces claims for more than one directory.
 
-| The claim is                                                    | It goes to                    | With                                                                              |
-| --------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
-| A statement about current behaviour, located at a `file:line`   | `architecture/` or `product/` | `status: stable`                                                                  |
-| A rule in effect, evidenced in code or in a checked-in config   | `decisions/`                  | `status: stable`                                                                  |
-| Anything else, including a plan whose change is not in the code | `roadmap/`                    | `status: draft`                                                                   |
-| A decision that a later one replaced                            | both decision pages           | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
+| The claim is                                                      | It goes to                    | With                                                                              |
+| ----------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
+| A statement about current behaviour, located at a `file:line`     | `architecture/` or `product/` | `status: stable`                                                                  |
+| A rule in effect, evidenced in code or in a checked-in config     | `decisions/`                  | `status: stable`                                                                  |
+| Anything else, including a plan whose change is not in the code   | `roadmap/`                    | `status: draft`                                                                   |
+| A decision that a later one replaced                              | both decision pages           | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
+| A rule that no longer holds, whose replacement is not implemented | the old decision page         | `status: deprecated` with no `superseded_by`; the replacement is not compiled     |
 
 The first row has a gate: a claim reaches `architecture/` or `product/` only after you have located the behaviour at a `file:line` in the current code. That location then becomes its own `sources[]` entry beside the raw source, with `fragment: "L<start>-L<end>"`.
 
 Cite the code, not only the note about the code. A citation recorded as a line range is drift-checked exactly like a markdown one; a claim whose only provenance is a note is the one provenance the checker cannot see moving.
+
+Settle the whole supersession family from Step 1 before writing to any page. A page updated and then contradicted inside one run is a page whose history says two things happened when one did.
+
+What supersession buys is exactly one thing: the contradiction gate does not halt the run for the conflict the record itself declares. It certifies nothing else. It does not say the intention was implemented, it does not say the rationale is factual, and any unrelated contradiction still halts the run.
+
+Two records superseding one target and contradicting each other halt the run while the conflict is unresolved. Establishing from current code which behaviour is implemented does not settle it: that answers what the code does, and the dispute is over what was intended. An open dispute over intent halts the run.
+
+**Deprecation takes two independent tests, and a record never flips a page on its own:**
+
+| Old rule still holds | Replacement implemented | The old page                                   |
+| -------------------- | ----------------------- | ---------------------------------------------- |
+| yes                  | no                      | stays stable; the new decision is not compiled |
+| no                   | yes                     | deprecated, plus a `superseded_by` link        |
+| no                   | no                      | deprecated, with no `superseded_by`            |
+
+The third row is the one that surprises: a rule rests on something, that something is reverted, a replacement is proposed and never built. The replacement is uncompileable, but the old rule is already false, and leaving the page stable tells the reader to rely on behaviour the repository removed.
+
+Deprecating a page is three edits, not a frontmatter change. The page stays linked from its index, because the checker grants a deprecated page no reachability exemption. Its body and its index description stop asserting the rule that was withdrawn. And its `sources[]` stay as they are and go on being provenance-checked — a deleted resource still gets `retired: true`, the same as anywhere else.
 
 A source that fits no directory is not forced into one. Say so in the report and leave it uncompiled — a wrong home costs more than an absence, because the next run reads the wrong home as settled.
 
