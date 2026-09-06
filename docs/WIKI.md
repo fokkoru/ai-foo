@@ -7,7 +7,7 @@ template_version: "1"
 
 # Knowledge Base Schema
 
-This file is the schema for the knowledge base under `docs/`. It is written for a person, and it is also the document `kb:compile` treats as authoritative: where this file and the skill disagree, this file wins.
+This file is the schema for the knowledge base under `docs/`. It is written for a person, and it is also the document `kb:weave` treats as authoritative: where this file and the skill disagree, this file wins.
 
 ## Contents
 
@@ -40,11 +40,11 @@ OKF §11 requires nothing beyond `type` and makes every optional family independ
 
 Three keys are absent on purpose:
 
-| Key           | Why it is not here                                                                                                                                                   |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tags`        | Nothing reads it. Search reads the body                                                                                                                              |
-| `stale_after` | It guesses a date at write time. `sources[].sha256` measures whether the source actually changed, which is the question the guess stood in for                       |
-| `verified`    | It records a confirmation event, which is a different act from generation. `kb:compile` never performs one, so the key would always be a claim about work nobody did |
+| Key           | Why it is not here                                                                                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tags`        | Nothing reads it. Search reads the body                                                                                                                            |
+| `stale_after` | It guesses a date at write time. `sources[].sha256` measures whether the source actually changed, which is the question the guess stood in for                     |
+| `verified`    | It records a confirmation event, which is a different act from generation. `kb:weave` never performs one, so the key would always be a claim about work nobody did |
 
 Adding one back is allowed. Name what reads it first.
 
@@ -66,6 +66,7 @@ Route a claim by what it is, not by which document it arrived in. One source oft
 | A rule in effect, evidenced in code or in `CLAUDE.md`, `CONTRIBUTING.md`, or config | `decisions/`                  | `status: stable`                                                                  |
 | Anything else, including any plan whose change is not present in the code           | not compiled                  | named in the report as a source with no home                                      |
 | A decision that a later one replaced                                                | both pages                    | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
+| A rule that no longer holds, whose replacement is not implemented                   | the old page                  | `status: deprecated` with no `superseded_by`; the replacement is not compiled     |
 
 ## What adopted means
 

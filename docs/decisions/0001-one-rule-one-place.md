@@ -12,7 +12,7 @@ sources:
   - resource: "CLAUDE.md"
     id: "orop-rule"
     fragment: "## Gotchas"
-    sha256: "36e3c18a58b3"
+    sha256: "0e90536983a8"
 ---
 
 # One rule, one place

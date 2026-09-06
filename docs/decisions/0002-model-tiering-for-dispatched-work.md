@@ -12,7 +12,7 @@ sources:
   - resource: "CLAUDE.md"
     id: "tiering-gotcha"
     fragment: "## Gotchas"
-    sha256: "36e3c18a58b3"
+    sha256: "0e90536983a8"
   - resource: "plugins/df/agents/code-reviewer.md"
     id: "cr-frontmatter"
     fragment: "L1-L7"

@@ -67,6 +67,7 @@ Route a claim by what it is, not by which document it arrived in. One source oft
 | A rule in effect, evidenced in code or in `CLAUDE.md`, `CONTRIBUTING.md`, or config | `decisions/`                  | `status: stable`                                                                  |
 | Anything else, including any plan whose change is not present in the code           | `roadmap/`                    | `status: draft`                                                                   |
 | A decision that a later one replaced                                                | both pages                    | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
+| A rule that no longer holds, whose replacement is not implemented                   | the old page                  | `status: deprecated` with no `superseded_by`; the replacement is not compiled     |
 
 ## What adopted means
 
