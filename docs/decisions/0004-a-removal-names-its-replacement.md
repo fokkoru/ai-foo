@@ -17,7 +17,7 @@ sources:
   - resource: "CLAUDE.md"
     id: "checks-blind"
     fragment: "## Verify Before Finishing"
-    sha256: "d6b7af547498"
+    sha256: "f6107b0487d9"
 ---
 
 # A removal names its replacement

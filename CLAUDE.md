@@ -24,7 +24,7 @@ The skill and agent tables live in `plugins/df/README.md` — that is the single
 
 ### kb (plugins/kb/)
 
-Knowledge base compiler. One skill, `/kb:weave` on Claude Code or `$kb:weave` on Codex CLI, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
+Knowledge base compiler. Three skills, `/kb:capture`, `/kb:weave` and `/kb:lint` on Claude Code or `$kb:capture`, `$kb:weave` and `$kb:lint` on Codex CLI, read markdown under `thoughts/` and write a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
 
 The skill table lives in `plugins/kb/README.md` — that is the single copy.
 
@@ -110,6 +110,7 @@ scripts/check-codex-agent-drift.sh        # after editing any plugins/df/agents/
 scripts/check-agent-selection-drift.sh    # after editing an <agent_selection> table
 scripts/check-skill-description-length.sh # after editing any skill's frontmatter description
 plugins/kb/scripts/check-docs.sh check    # after any change under docs/
+scripts/test-kb-check-docs.sh             # after editing plugins/kb/scripts/check-docs.sh
 node scripts/test-statusline.mjs          # after editing statusline/statusline.mjs
 ```
 
@@ -133,4 +134,4 @@ These check structure, and none of them can see a lost capability. So when a cha
 
 Every claim records what it was built from in the page's `sources[]` block, with a hash of the exact fragment, so `plugins/kb/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
 
-`/kb:weave` writes this directory and nothing else writes it by hand.
+`/kb:weave` and `/kb:lint` write this directory. Nothing else writes it by hand, `docs/WIKI.md` excepted — it is the schema, and neither skill writes it.
