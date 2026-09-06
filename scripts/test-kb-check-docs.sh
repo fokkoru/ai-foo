@@ -172,6 +172,20 @@ else
   bad "a retired entry still silenced source-missing: $out"
 fi
 
+out=$("$CHECKER" check "$FIX/docs-anchor" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^dead-anchor(.*no-such-heading'; then
+  pass "an anchor matching no heading is reported"
+else
+  bad "a dead anchor was not reported: $out"
+fi
+
+out=$("$CHECKER" check "$FIX/docs-anchor" 2>&1)
+if ! printf '%s\n' "$out" | grep -qE 'dead-anchor\(.*(the-rule|okf-v02-pinned|never-checked)'; then
+  pass "live, duplicate-suffixed, punctuated and fenced anchors are not reported"
+else
+  bad "the slug rule produced a false failure: $out"
+fi
+
 out=$("$CHECKER" resolve-decision "$FIX/docs-decisions" a1a1a1a1a1a1 2>&1)
 if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'decisions/0001-alpha.md'; then
   pass "a reference resolves by identifier"

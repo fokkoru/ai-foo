@@ -321,6 +321,69 @@ page_link_targets() {
       /\.md$/ {print}'
 }
 
+# Every link on a page that carries an anchor, as anchor<TAB>target. The target
+# is empty for a same-page link, and the anchor leads for that reason: a tab is
+# IFS whitespace, so `read` strips a leading empty field and a same-page link
+# read as target<TAB>anchor arrives with the anchor in the target variable and
+# nothing in the anchor — which silently skips every same-page link, the only
+# kind this repository's pages actually use.
+#
+# page_link_targets deliberately drops the anchor because reachability does not
+# need it, so this is a second extractor rather than a change to that one.
+page_anchor_links() {
+  { strip_code "$1" | grep -oE '\]\([^)]*\)' || true; } |
+    sed -e 's/^](//' -e 's/)$//' |
+    awk -F'#' '
+      NF < 2 {next}
+      $2 == "" {next}
+      $1 ~ /^[a-zA-Z][a-zA-Z0-9+.-]*:/ {next}
+      $1 ~ /^\// {next}
+      $1 != "" && $1 !~ /\.md$/ {next}
+      {print $2 "\t" $1}'
+}
+
+# GitHub's heading slugs for a file, in document order. Inline markup loses its
+# marker characters and keeps its text, then the text is lowercased, spaces
+# become hyphens, and everything that is not alphanumeric, hyphen or underscore
+# is dropped — so "OKF v0.2, pinned" is okf-v02-pinned rather than
+# okf-v0-2-pinned, and check_sources keeps its underscore. A slug already seen
+# takes the -1, -2 suffix GitHub appends to a repeated heading. Without all
+# three the rule reports a false failure on a correct link, and it is a gate.
+#
+# This skips fences with AWK_FENCE directly rather than piping through
+# strip_code, because strip_code deletes an inline span along with its text:
+# "## The `sources[]` block" would arrive as "## The  block" and slug to
+# the-block, where GitHub drops only the backticks and slugs the-sources-block.
+#
+# Frontmatter is skipped: a YAML comment is a # followed by a space, which is
+# also the heading pattern.
+heading_slugs() {
+  awk "$AWK_FENCE"'
+    fence_line($0) {next}
+    infence {next}
+    NR==1 && $0=="---" {infm=1; next}
+    infm && $0=="---" {infm=0; next}
+    infm {next}
+    /^#+[[:space:]]/ {
+      s = $0
+      sub(/^#+[[:space:]]*/, "", s)
+      sub(/[[:space:]]+$/, "", s)
+      gsub(/[`*~]/, "", s)
+      while (match(s, /\[[^]]*\]\([^)]*\)/)) {
+        pre = substr(s, 1, RSTART - 1)
+        inner = substr(s, RSTART + 1, RLENGTH - 1)
+        sub(/\].*$/, "", inner)
+        s = pre inner substr(s, RSTART + RLENGTH)
+      }
+      s = tolower(s)
+      gsub(/[[:space:]]/, "-", s)
+      gsub(/[^a-z0-9_-]/, "", s)
+      if (s == "") next
+      if (s in seen) { n = seen[s]++; print s "-" n }
+      else { seen[s] = 1; print s }
+    }' "$1"
+}
+
 # ------------------------------------------------------------------- snapshot
 
 hash_tree() {
@@ -621,6 +684,30 @@ check_links() {
   done <<EOF
 $(page_link_targets "$page")
 EOF
+}
+
+# A link into a heading that no longer exists. A target file that does not exist
+# is valid-links' finding, not this one, so a missing file is skipped rather
+# than reported twice.
+check_anchors() {
+  local page="$1" dir target anchor file
+  dir=$(dirname "$page")
+  while IFS="$(printf '\t')" read -r anchor target; do
+    [ -n "$anchor" ] || continue
+    if [ -z "$target" ]; then
+      file="$page"
+    else
+      file="$dir/$target"
+      [ -f "$file" ] || continue
+    fi
+    if ! heading_slugs "$file" | grep -Fxq -- "$anchor"; then
+      report dead-anchor "$page" \
+        "link target #$anchor matches no heading in ${target:-this page}"
+    fi
+  done <<EOF
+$(page_anchor_links "$page")
+EOF
+  return 0
 }
 
 check_sources() {
@@ -1493,6 +1580,7 @@ cmd_check() {
     [ -n "$page" ] || continue
     check_page_frontmatter "$page" "$root_index"
     check_links "$page"
+    check_anchors "$page"
     check_sources "$page" "$raw"
     check_external_claims "$page"
     check_decision_id "$page" "$WORKDIR/decision-ids"

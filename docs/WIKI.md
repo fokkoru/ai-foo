@@ -14,7 +14,7 @@ This file is the schema for the knowledge base under `docs/`. It is written for 
 - [Editing this file is expected](#editing-this-file-is-expected)
 - [OKF v0.2, pinned](#okf-v02-pinned)
 - [A key is carried only when something reads it](#a-key-is-carried-only-when-something-reads-it)
-- [The four directories](#the-four-directories)
+- [The three directories](#the-three-directories)
 - [The routing test](#the-routing-test)
 - [What adopted means](#what-adopted-means)
 - [Source trust order](#source-trust-order)
@@ -24,7 +24,7 @@ This file is the schema for the knowledge base under `docs/`. It is written for 
 
 ## Editing this file is expected
 
-This is a starting point, not a contract. A project that outgrows the four directories, the routing test, or the confidence vocabulary edits this file, and nothing complains — no drift check compares it against the copy the plugin ships.
+This is a starting point, not a contract. A project that outgrows the three directories, the routing test, or the confidence vocabulary edits this file, and nothing complains — no drift check compares it against the copy the plugin ships.
 
 `template_version` is how a later release tells you the shipped template has moved on. It reports; it never gates. Your edits stay.
 
