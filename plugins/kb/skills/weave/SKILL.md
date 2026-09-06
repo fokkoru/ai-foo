@@ -28,8 +28,8 @@ If sources are named, begin at Step 0.
 
 If no sources are named, ask which ones to compile and wait for the answer. Never default to the whole corpus — a first run over everything produces a tree nobody reviews.
 
-0. Seed and snapshot
-1. Read the sources
+0. Claim, seed and snapshot
+1. Read the sources and scan for supersession
 2. Route each claim
 3. Produce updates, not siblings
 4. Write provenance
@@ -63,11 +63,24 @@ Then settle what `docs/` already is:
 
 The third row is a hand-written documentation tree, not a knowledge base with a missing file. Overwriting one is the single most expensive mistake this skill can make.
 
-### Step 1: Read the sources
+### Step 1: Read the sources and scan for supersession
 
 Read every named source completely. A source is the unit the user named; reading half of one produces a page that cites a fragment nobody checked.
 
 Then read `docs/index.md` and, for every topic the sources touch, the pages it names. You cannot update a page you have not read, and Step 3 turns on knowing which pages already exist.
+
+Before anything is routed, run `check-docs.sh supersession-scan <records root> docs "<target>"` for every decision the run is about to touch — each capture decision it read, and each compiled decision page it is about to update. The scan runs after the claim is taken, so a cooperating publisher cannot change the set of records while it runs.
+
+A reference names one decision, never a whole file, in one of two forms:
+
+```
+Supersedes: decision <decision_id>
+Supersedes: record <path> ### <the literal heading line>
+```
+
+Exit 3 means the scan is incomplete: a record does not conform, so the edges it holds could not be read. Stop the run and report which record. An incomplete scan is never reported as "nothing supersedes this" — the difference between the two is the whole reason the scan has its own exit code.
+
+Supersession is terminal. If B superseded A and C later supersedes B, A does not come back; re-adopting A takes a new record asserting it.
 
 ### Step 2: Route each claim
 

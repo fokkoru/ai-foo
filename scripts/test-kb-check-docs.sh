@@ -329,4 +329,87 @@ else
   pass "no duration, interval or repeat count appears in the checker"
 fi
 
+# --- supersession scan -----------------------------------------------------
+
+DOCS_OK="$FIX/docs-decisions"
+
+scan() {
+  "$CHECKER" supersession-scan "$FIX/$1" "$DOCS_OK" "$2" 2>&1
+}
+
+out=$(scan records-chain "record r1.md ### The manifest lives at a fixed path")
+if [ $? -eq 0 ] &&
+  printf '%s\n' "$out" | grep -q 'r2.md ### The manifest is named per run' &&
+  printf '%s\n' "$out" | grep -q 'r3.md ### The manifest is passed explicitly'; then
+  pass "the scan expands transitively rather than stopping at one hop"
+else
+  bad "transitive expansion missing: $out"
+fi
+
+# The first decision in a three-record chain stays superseded. Re-adopting it
+# would take a new record asserting it, not the disappearance of an edge.
+out=$(scan records-chain "record r2.md ### The manifest is named per run")
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'r3.md'; then
+  pass "a later displacement does not revive what the middle record displaced"
+else
+  bad "the chain's middle target resolved wrongly: $out"
+fi
+
+# r1.md carries a line that looks exactly like the field, in its narration
+# section rather than on a decision. Only a field on a decision is an edge.
+out=$(scan records-chain "record r3.md ### The manifest is passed explicitly from snapshot to verify")
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q '^supersession-scan: nothing supersedes'; then
+  pass "a Supersedes line outside a decision is not an edge"
+else
+  bad "a line outside a decision was read as an edge: $out"
+fi
+
+out=$(scan records-two "record r1.md ### The checker lives under the skill")
+if [ $? -eq 0 ] &&
+  printf '%s\n' "$out" | grep -q 'r2.md' && printf '%s\n' "$out" | grep -q 'r3.md'; then
+  pass "two records superseding one target both appear"
+else
+  bad "a second superseder was dropped: $out"
+fi
+
+out=$(scan records-dangling "record r1.md ### A decision displacing something absent")
+if printf '%s\n' "$out" | grep -q '^supersession-dangling('; then
+  pass "a reference to a target that does not exist is reported dangling"
+else
+  bad "dangling reference not reported: $out"
+fi
+
+out=$(scan records-cycle "record r1.md ### Alpha displaces Beta")
+if printf '%s\n' "$out" | grep -q '^supersession-cycle('; then
+  pass "a cycle among references is reported rather than looping"
+else
+  bad "cycle not reported: $out"
+fi
+
+# A malformed record makes the scan incomplete, which is a different outcome
+# from finding nothing. An incomplete scan is never reported as "no
+# supersession".
+out=$(scan records-malformed "record r1.md ### A sound decision")
+status=$?
+if [ "$status" -eq 3 ] && printf '%s\n' "$out" | grep -q '^scan-incomplete('; then
+  pass "a malformed record makes the scan report itself incomplete"
+else
+  bad "malformed record produced exit $status: $out"
+fi
+
+out=$(scan records-two "record r2.md ### The checker lives in the plugin's scripts")
+status=$?
+if [ "$status" -eq 0 ] && ! printf '%s\n' "$out" | grep -q '^scan-incomplete('; then
+  pass "finding no supersession exits differently from an incomplete scan"
+else
+  bad "a clean scan with no result exited $status: $out"
+fi
+
+out=$(scan records-page "decision a1a1a1a1a1a1")
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q 'r1.md ### Alpha no longer holds'; then
+  pass "a compiled decision page is a valid supersession target"
+else
+  bad "a record superseding a compiled page was not found: $out"
+fi
+
 exit "$fail"

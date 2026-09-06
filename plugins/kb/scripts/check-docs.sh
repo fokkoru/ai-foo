@@ -12,6 +12,8 @@
 #   claim-acquire <session-id> <pid>       take the whole-run claim, print its run id
 #   claim-release <run-id>                 give it back
 #   claim-inspect                          say who holds it and whether they are alive
+#   supersession-scan <records-root> <docs-root> <target>
+#                                          every record decision that supersedes a target
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -57,6 +59,7 @@ usage: $self snapshot [raw-root]
        $self claim-acquire <session-id> <pid>
        $self claim-release <run-id>
        $self claim-inspect
+       $self supersession-scan <records-root> <docs-root> <target>
 EOF
   exit 2
 }
@@ -691,6 +694,167 @@ EOF
   done <"$WORKDIR/pages"
 }
 
+# ------------------------------------------------------------- supersession
+
+# A reference addresses one decision, never a whole file: a record holds several
+# independent decisions, and a file-level reference invalidates the ones nobody
+# touched. Two forms, both carrying a literal heading line rather than an anchor
+# or a slug, because nothing here generates or resolves either:
+#
+#   decision <decision_id>                  a compiled decision page
+#   record <path> ### <heading>             a decision inside an earlier record
+#
+# The path is relative to the records root. Whitespace is squeezed so two
+# spellings of one reference compare equal.
+supersession_normalize() {
+  awk '{$1 = $1; print}'
+}
+
+# Every edge among the records under a root, as target<TAB>superseder. Both
+# sides are normalized references, so an edge's endpoints are comparable with
+# the target a caller names.
+supersession_edges() {
+  local root="$1" rec rel index total n start end nxt heading body ref
+  index="$WORKDIR/edge-index"
+  body="$WORKDIR/edge-body"
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    rel=${rec#"$root"/}
+    capture_decision_index "$rec" >"$index" || return 1
+    total=$(awk -F'\t' '$1 == "DEC" {n++} END {print n + 0}' "$index")
+    end=$(awk -F'\t' '$1 == "END" {print $2; exit}' "$index")
+    n=0
+    while [ "$n" -lt "$total" ]; do
+      n=$((n + 1))
+      start=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i) {print $2; exit}}' "$index")
+      heading=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i) {print $3; exit}}' "$index")
+      nxt=$(awk -F'\t' -v i="$n" '$1 == "DEC" {c++; if (c == i + 1) {print $2; exit}}' "$index")
+      if [ -n "$nxt" ]; then
+        awk -v s="$start" -v e="$((nxt - 1))" 'NR > s && NR <= e' "$rec" >"$body" || return 1
+      else
+        awk -v s="$start" -v e="$end" 'NR > s && NR <= e' "$rec" >"$body" || return 1
+      fi
+      # Only a Supersedes: field at the start of a line is an edge. The word in
+      # prose is somebody talking about supersession, not declaring one.
+      while IFS= read -r ref; do
+        [ -n "$ref" ] || continue
+        printf '%s\trecord %s ### %s\n' \
+          "$(printf '%s' "$ref" | supersession_normalize)" "$rel" "$heading"
+      done <<EOF
+$(awk 'index($0, "Supersedes: ") == 1 {sub(/^Supersedes:[[:space:]]*/, ""); print}' "$body")
+EOF
+    done
+  done <<EOF
+$(find "$root" -type f -name '*.md' -print | LC_ALL=C sort)
+EOF
+}
+
+# Whether a reference names something that exists.
+supersession_resolves() {
+  local ref="$1" root="$2" docs="$3" path heading page
+  case "$ref" in
+  "decision "*)
+    cmd_resolve_decision "$docs" "${ref#decision }" >/dev/null 2>&1
+    return $?
+    ;;
+  "record "*" ### "*)
+    path=${ref#record }
+    path=${path%% \#\#\# *}
+    heading=${ref#*" ### "}
+    [ -f "$root/$path" ] || return 1
+    capture_decision_index "$root/$path" |
+      awk -F'\t' -v h="$heading" '$1 == "DEC" && $3 == h {found = 1} END {exit found ? 0 : 1}'
+    return $?
+    ;;
+  esac
+  return 1
+}
+
+cmd_supersession_scan() {
+  local root="${1:-}" docs="${2:-}" target="${3:-}" edges seen queue rec n cur sup
+  [ -n "$root" ] || usage
+  [ -n "$docs" ] || usage
+  [ -n "$target" ] || usage
+  if [ ! -d "$root" ]; then
+    report NO-RECORDS-ROOT supersession-scan "$root is not a directory"
+    return 1
+  fi
+
+  # A record the format check rejects cannot be parsed for edges, so the scan
+  # over this root is incomplete. An incomplete scan is never reported as "no
+  # supersession found": it exits 3, which is neither the clean 0 nor the 1 a
+  # dangling reference or a cycle produces.
+  while IFS= read -r rec; do
+    [ -n "$rec" ] || continue
+    if ! "$self" check-capture "$rec" >/dev/null 2>&1; then
+      report scan-incomplete "$rec" \
+        "this record does not conform, so the supersession scan over $root cannot be complete"
+      fail=3
+      return 3
+    fi
+  done <<EOF
+$(find "$root" -type f -name '*.md' -print | LC_ALL=C sort)
+EOF
+
+  edges="$WORKDIR/edges"
+  supersession_edges "$root" >"$edges" || {
+    report SCAN-FAILED supersession-scan "could not read the records under $root"
+    return 1
+  }
+
+  # Every reference must name something. A dangling one is a claim about a
+  # decision nobody wrote, and leaving it unreported would let the scan look
+  # complete while missing whatever the reference meant.
+  while IFS= read -r sup; do
+    [ -n "$sup" ] || continue
+    if ! supersession_resolves "$sup" "$root" "$docs"; then
+      report supersession-dangling "$sup" "no decision under $root or $docs answers to this reference"
+    fi
+  done <<EOF
+$(cut -f1 "$edges" | LC_ALL=C sort -u)
+EOF
+  [ "$fail" -eq 0 ] || return 1
+
+  seen="$WORKDIR/scan-seen"
+  queue="$WORKDIR/scan-queue"
+  printf '%s\n' "$(printf '%s' "$target" | supersession_normalize)" >"$queue"
+  : >"$seen"
+
+  n=0
+  while [ "$n" -lt "$(line_count "$queue")" ]; do
+    n=$((n + 1))
+    cur=$(awk -v i="$n" 'NR==i' "$queue")
+    while IFS= read -r sup; do
+      [ -n "$sup" ] || continue
+      # Reaching the target again means the references run in a circle. Stop
+      # rather than walk it: supersession is terminal, and a loop is a
+      # malformed set of records rather than a longer chain.
+      if [ "$sup" = "$(awk 'NR==1' "$queue")" ]; then
+        report supersession-cycle "$sup" "the references run in a circle back to the target"
+        return 1
+      fi
+      if ! grep -Fxq -- "$sup" "$seen"; then
+        printf '%s\n' "$sup" >>"$seen" || {
+          report SCAN-FAILED supersession-scan "could not extend the result set under $WORKDIR"
+          return 1
+        }
+        printf '%s\n' "$sup" >>"$queue" || {
+          report SCAN-FAILED supersession-scan "could not extend the queue under $WORKDIR"
+          return 1
+        }
+      fi
+    done <<EOF
+$(awk -F'\t' -v t="$cur" '$1 == t {print $2}' "$edges")
+EOF
+  done
+
+  if [ ! -s "$seen" ]; then
+    echo "supersession-scan: nothing supersedes $target"
+    return 0
+  fi
+  LC_ALL=C sort "$seen"
+}
+
 # ----------------------------------------------------------- the run claim
 
 # One claim covers a whole run, from its first action to its last, rather than
@@ -1020,6 +1184,7 @@ resolve-decision) cmd_resolve_decision "$@" || fail=1 ;;
 claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
 claim-release) cmd_claim_release "$@" || fail=1 ;;
 claim-inspect) cmd_claim_inspect "$@" || fail=1 ;;
+supersession-scan) cmd_supersession_scan "$@" || fail=$? ;;
 *) usage ;;
 esac
 
