@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/mark-unpublished-capture.sh"
+            "command": "sh -c 'for r in \"${CLAUDE_PLUGIN_ROOT}\" \"${PLUGIN_ROOT}\"; do h=\"$r/hooks/mark-unpublished-capture.sh\"; [ -x \"$h\" ] && exec \"$h\"; done; exit 0'"
           }
         ]
       }

@@ -98,7 +98,7 @@ Then run `check-docs.sh check-capture <staged file>` and fix whatever it reports
 
 Snapshot the compiled layer first: `check-docs.sh snapshot docs`. Keep the manifest path.
 
-Try the claim once: `check-docs.sh claim-acquire "$CLAUDE_SESSION_ID" $PPID`. Once — not again, and never in a loop.
+Try the claim once: `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Once — not again, and never in a loop.
 
 If the claim is refused, leave the record where it is, marked unpublished, and continue the session with no delay. Nothing waits for the claim to free up.
 

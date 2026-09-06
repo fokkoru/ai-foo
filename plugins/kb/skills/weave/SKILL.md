@@ -49,7 +49,7 @@ If no sources are named, ask which ones to compile and wait for the answer. Neve
 
 Everywhere below, including this step, `check-docs.sh` means `../../scripts/check-docs.sh` relative to the base directory the harness announces for this skill, not a command on `PATH` — the checker lives in the plugin's own `scripts/` rather than this skill's, because it is shared, and the working directory is the project being compiled. Every `references/` path below hangs off the announced directory directly. Resolve both once, here, and reuse them.
 
-Take the run's claim first, before anything else, with `check-docs.sh claim-acquire "$CLAUDE_SESSION_ID" $PPID`. Keep the run id it prints. One claim covers the whole run rather than the snapshot and the verification separately: a capture publishes into the raw layer during a live session, so a gap in the middle is a gap another writer can use, and this run edits the compiled layer in that middle with nothing staged and nothing to roll back.
+Take the run's claim first, before anything else, with `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Keep the run id it prints. One claim covers the whole run rather than the snapshot and the verification separately: a capture publishes into the raw layer during a live session, so a gap in the middle is a gap another writer can use, and this run edits the compiled layer in that middle with nothing staged and nothing to roll back.
 
 `$PPID` inside a shell the harness starts for you is the harness process itself, observed on Claude Code 2.1.261. That process is what the claim names as its owner, which is what lets a later run tell an abandoned claim from a live one.
 

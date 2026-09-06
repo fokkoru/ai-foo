@@ -705,6 +705,32 @@ else
   bad "one stuck item displaced the other"
 fi
 
+# The two runtimes name the plugin root differently — Claude Code substitutes
+# ${CLAUDE_PLUGIN_ROOT} and Codex substitutes ${PLUGIN_ROOT} — so the command
+# tries both spellings and runs whichever one resolves to a real script. The
+# other resolves to nothing, whether the runtime substitutes it textually or
+# exports it, and the -x test skips it.
+hook_command=$(sed -n 's/.*"command": "\(.*\)"$/\1/p' "$PWD/plugins/kb/hooks/hooks.json" |
+  sed -e 's/\\"/"/g')
+run_hook_command() {
+  out=$(CLAUDE_PLUGIN_ROOT="$1" PLUGIN_ROOT="$2" \
+    sh -c "cd '$HREPO' && printf '{\"session_id\":\"$3\"}' | $hook_command" 2>&1)
+  [ $? -eq 0 ] || bad "the hook command exited non-zero for $3: $out"
+}
+run_hook_command "$PWD/plugins/kb" "" s4
+run_hook_command "" "$PWD/plugins/kb" s5
+run_hook_command "" "" s6
+if [ -f "$hgit/kb-capture-markers/s4" ] && [ -f "$hgit/kb-capture-markers/s5" ]; then
+  pass "the hook command resolves the plugin root under either runtime's spelling"
+else
+  bad "one spelling of the plugin root did not run the hook"
+fi
+if [ ! -f "$hgit/kb-capture-markers/s6" ]; then
+  pass "with neither spelling set the hook does nothing and still exits clean"
+else
+  bad "the hook ran with no plugin root"
+fi
+
 if grep -vE '^[[:space:]]*#' "$HOOK" | grep -nEi 'sleep|retry|attempt|expir|timeout' >/dev/null; then
   bad "the hook schedules or counts something: $(grep -vE '^[[:space:]]*#' "$HOOK" | grep -nEi 'sleep|retry|attempt|expir|timeout')"
 else
