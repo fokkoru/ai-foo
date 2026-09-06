@@ -76,16 +76,37 @@ EOF
 }
 
 report() {
-  echo "$1($2): $3"
+  echo "$1($2): $3" >&2
   fail=1
 }
 
 # The same shape as report, for something the reader should see that does not
-# make the run wrong. It goes to stderr so a mode whose stdout is a value stays
-# usable in a command substitution.
+# make the run wrong. Both go to stderr, so a mode whose stdout is a value —
+# assign-id, claim-acquire, snapshot, resolve-decision — hands a caller the
+# value alone even when it also has something to say.
 note() {
   echo "$1($2): $3" >&2
 }
+
+# One place decides what opens and closes a fenced block, because four scans ask
+# the same question. A fence closes only on the character it opened with, at
+# least as many of them, so a ~~~ line inside a ``` block is content. Toggling
+# on any marker instead inverts the state: the quoted text is read as page and
+# the page after it as quotation.
+AWK_FENCE='
+function fence_line(line,   s, ch, n) {
+  s = line
+  sub(/^[ \t]*/, "", s)
+  ch = substr(s, 1, 1)
+  if (ch != "`" && ch != "~") return 0
+  n = 0
+  while (substr(s, n + 1, 1) == ch) n++
+  if (n < 3) return 0
+  if (!infence) { infence = 1; fence_ch = ch; fence_n = n; return 1 }
+  if (ch == fence_ch && n >= fence_n) { infence = 0; return 1 }
+  return 0
+}
+'
 
 if command -v shasum >/dev/null 2>&1; then
   SHA_TOOL=shasum
@@ -238,8 +259,8 @@ fragment_text() {
     # first one ends the fragment: the cited span then hashes a few lines of a
     # long section and every later edit below that point reads as no drift at
     # all. The fence line itself belongs to the fragment, so it prints.
-    awk -v h="$frag" -v lvl="$level" '
-      /^[[:space:]]*(```|~~~)/ {infence = !infence; if (on) print; next}
+    awk -v h="$frag" -v lvl="$level" "$AWK_FENCE"'
+      fence_line($0) {if (on) print; next}
       !on && !infence && $0==h {on=1; print; next}
       on {
         if (!infence && $0 ~ /^#+[[:space:]]/) {
@@ -281,8 +302,8 @@ normalize_and_hash() {
 # inline span whose line carries an odd number of backticks. Both are rare in a
 # compiled page, and covering them costs a real markdown parser.
 strip_code() {
-  awk '
-    /^[[:space:]]*(```|~~~)/ {infence = !infence; next}
+  awk "$AWK_FENCE"'
+    fence_line($0) {next}
     infence {next}
     {gsub(/`[^`]*`/, ""); print}' "$1"
 }
@@ -312,7 +333,7 @@ hash_tree() {
     # which the callers' guards catch.
     h=$(sha256_file "$f") || exit 1
     [ -n "$h" ] || exit 1
-    printf '%s  %s\n' "$h" "$f"
+    printf '%s\t%s\n' "$h" "$f"
   done
 }
 
@@ -361,7 +382,7 @@ cmd_verify_sources() {
     return 1
   }
 
-  awk -F'  ' '
+  awk -F'\t' '
     NR==FNR {old[$2] = $1; next}
     {new[$2] = $1}
     END {
@@ -394,9 +415,9 @@ cmd_verify_sources() {
 # imposter that no session ever decided. Fence state is tracked from line 1, the
 # way strip_code does it.
 capture_decision_index() {
-  awk '
-    /^[[:space:]]*(```|~~~)/ {fence = !fence; next}
-    fence {next}
+  awk "$AWK_FENCE"'
+    fence_line($0) {next}
+    infence {next}
     /^## / {
       if (ind) {print "END\t" NR - 1; ind = 0}
       if ($0 == "## Decisions") ind = 1
@@ -405,6 +426,14 @@ capture_decision_index() {
     ind && /^### / {print "DEC\t" NR "\t" substr($0, 5)}
     END {if (ind) print "END\t" NR}
   ' "$1"
+}
+
+# Whether a record holds a decision under exactly this heading. A reference and
+# a receipt entry both name one, and both are wrong in the same way when the
+# heading was retyped rather than copied.
+record_has_heading() {
+  capture_decision_index "$1" |
+    awk -F'\t' -v h="$2" '$1 == "DEC" && $3 == h {found = 1} END {exit found ? 0 : 1}'
 }
 
 # The value of a decision field, empty when the line is absent or carries
@@ -865,6 +894,11 @@ receipt_validate_line() {
     report receipt-record-missing "$subject" "$path is not a record under $root"
     return 1
   fi
+  if ! record_has_heading "$root/$path" "$heading"; then
+    report receipt-heading-missing "$subject" \
+      "$path holds no decision headed '$heading' — the entry marks nothing consumed"
+    return 1
+  fi
   actual=$(receipt_identity "$root/$path")
   if [ "$id" != "$actual" ]; then
     report receipt-record-changed "$subject" \
@@ -895,8 +929,18 @@ cmd_receipt_commit() {
   # Every staged line is expanded and validated before anything is written. A
   # run that fails here leaves the receipt exactly as it was, which is what
   # makes an interrupted run leave no entry.
-  while IFS= read -r line; do
+  # `read` returns non-zero on a last line with no newline after it, and the
+  # line is still in the variable: without the second test the whole entry is
+  # dropped and the run reports a success that recorded nothing.
+  while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
+    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
+    3) ;;
+    *)
+      report staging-malformed receipt-commit "expected three tab-separated fields, got: $line"
+      return 1
+      ;;
+    esac
     path=$(printf '%s' "$line" | cut -f1)
     state=$(printf '%s' "$line" | cut -f2)
     heading=$(printf '%s' "$line" | cut -f3)
@@ -907,7 +951,7 @@ cmd_receipt_commit() {
     printf '%s\t%s\t%s\t%s\n' "$path" "$(receipt_identity "$root/$path")" "$state" "$heading" >>"$pending"
   done <"$staging"
 
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
     receipt_validate_line "$line" "$root" receipt-commit || return 1
   done <"$pending"
@@ -927,7 +971,7 @@ cmd_receipt_check() {
     report NO-RECEIPT receipt-check "$receipt is not a file"
     return 1
   fi
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
     receipt_validate_line "$line" "$root" "$receipt" || true
   done <"$receipt"
@@ -983,7 +1027,10 @@ supersession_edges() {
         printf '%s\trecord %s ### %s\n' \
           "$(printf '%s' "$ref" | supersession_normalize)" "$rel" "$heading"
       done <<EOF
-$(awk 'index($0, "Supersedes: ") == 1 {sub(/^Supersedes:[[:space:]]*/, ""); print}' "$body")
+$(awk "$AWK_FENCE"'
+  fence_line($0) {next}
+  infence {next}
+  index($0, "Supersedes: ") == 1 {sub(/^Supersedes:[[:space:]]*/, ""); print}' "$body")
 EOF
     done
   done <<EOF
@@ -1004,8 +1051,7 @@ supersession_resolves() {
     path=${path%% \#\#\# *}
     heading=${ref#*" ### "}
     [ -f "$root/$path" ] || return 1
-    capture_decision_index "$root/$path" |
-      awk -F'\t' -v h="$heading" '$1 == "DEC" && $3 == h {found = 1} END {exit found ? 0 : 1}'
+    record_has_heading "$root/$path" "$heading"
     return $?
     ;;
   esac
@@ -1013,7 +1059,7 @@ supersession_resolves() {
 }
 
 cmd_supersession_scan() {
-  local root="${1:-}" docs="${2:-}" target="${3:-}" edges seen queue rec n cur sup
+  local root="${1:-}" docs="${2:-}" target="${3:-}" edges seen queue nodes circle rec n cur sup
   [ -n "$root" ] || usage
   [ -n "$docs" ] || usage
   [ -n "$target" ] || usage
@@ -1068,13 +1114,6 @@ EOF
     cur=$(awk -v i="$n" 'NR==i' "$queue")
     while IFS= read -r sup; do
       [ -n "$sup" ] || continue
-      # Reaching the target again means the references run in a circle. Stop
-      # rather than walk it: supersession is terminal, and a loop is a
-      # malformed set of records rather than a longer chain.
-      if [ "$sup" = "$(awk 'NR==1' "$queue")" ]; then
-        report supersession-cycle "$sup" "the references run in a circle back to the target"
-        return 1
-      fi
       if ! grep -Fxq -- "$sup" "$seen"; then
         printf '%s\n' "$sup" >>"$seen" || {
           report SCAN-FAILED supersession-scan "could not extend the result set under $WORKDIR"
@@ -1089,6 +1128,40 @@ EOF
 $(awk -F'\t' -v t="$cur" '$1 == t {print $2}' "$edges")
 EOF
   done
+
+  # Supersession is terminal, so the family the walk reached must be an order:
+  # something first, something last. Peeling every decision that nothing in the
+  # family supersedes leaves exactly the ones that sit in a circle. Asking only
+  # whether the walk returned to the target misses a circle further out, and
+  # calling any second visit a circle would reject a decision two others both
+  # lead to, which is an order and not a loop.
+  nodes="$WORKDIR/scan-nodes"
+  { printf '%s\n' "$(printf '%s' "$target" | supersession_normalize)"; cat "$seen"; } |
+    LC_ALL=C sort -u >"$nodes"
+  circle=$(awk -F'\t' '
+    NR == FNR {node[$0] = 1; total++; next}
+    ($1 in node) && ($2 in node) {from[++m] = $1; to[m] = $2; indeg[$2]++}
+    END {
+      changed = 1
+      while (changed) {
+        changed = 0
+        for (n in node) {
+          if (gone[n] || indeg[n] + 0 > 0) continue
+          gone[n] = 1
+          changed = 1
+          for (i = 1; i <= m; i++) if (!cut[i] && from[i] == n) {cut[i] = 1; indeg[to[i]]--}
+        }
+      }
+      for (n in node) if (!gone[n]) print n
+    }' "$nodes" "$edges" | LC_ALL=C sort)
+  if [ -n "$circle" ]; then
+    while IFS= read -r cur; do
+      report supersession-cycle "$cur" "this decision sits in a circle of references reachable from $target"
+    done <<EOF
+$circle
+EOF
+    return 1
+  fi
 
   if [ ! -s "$seen" ]; then
     echo "supersession-scan: nothing supersedes $target"

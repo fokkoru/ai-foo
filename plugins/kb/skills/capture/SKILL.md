@@ -29,7 +29,7 @@ Everywhere below, `check-docs.sh` means `../../scripts/check-docs.sh` relative t
 
 ### Step 0: Lift anything a previous session left behind
 
-Look under `.git/kb-capture-markers/` and `.git/kb-staged/`. A marker names a record a previous session prepared and never published — because the session ended, or because the claim was held. The session-end hook writes those markers and nothing else: it has under two seconds, enough to append a line and nowhere near enough to reach a model, which is why it points at a record rather than writing one.
+Resolve the git directory once with `git rev-parse --absolute-git-dir` and call it `<git dir>`; in a linked worktree `.git` is a file rather than a directory, and writing under the literal path fails there. Look under `<git dir>/kb-capture-markers/` and `<git dir>/kb-staged/`. A marker names a record a previous session prepared and never published — because the session ended, or because the claim was held. The session-end hook writes those markers and nothing else: it has under two seconds, enough to append a line and nowhere near enough to reach a model, which is why it points at a record rather than writing one.
 
 Show the owner what is stuck and let them decide, one item at a time. There is no queue, no ordering and no automatic retry.
 
@@ -56,7 +56,7 @@ The number of records a session produces is yours to decide. It is not one per s
 
 ### Step 2: Write the record to the staging directory
 
-Write to `.git/kb-staged/<session id>-<n>.md`, outside the raw layer and outside every snapshot, so nothing exists in `thoughts/` until publication.
+Write to `<git dir>/kb-staged/<session id>-<n>.md`, outside the raw layer and outside every snapshot, so nothing exists in `thoughts/` until publication.
 
 ```markdown
 # Capture: <topic>
@@ -98,7 +98,7 @@ Then run `check-docs.sh check-capture <staged file>` and fix whatever it reports
 
 Snapshot the compiled layer first: `check-docs.sh snapshot docs`. Keep the manifest path.
 
-Try the claim once: `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Once — not again, and never in a loop.
+Try the claim once: `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Keep the run id it prints. Once — not again, and never in a loop.
 
 If the claim is refused, leave the record where it is, marked unpublished, and continue the session with no delay. Nothing waits for the claim to free up.
 
@@ -106,7 +106,7 @@ If the claim is held, publish: create `thoughts/captures/` if it is absent and m
 
 Then verify what you touched: `check-docs.sh verify-sources <manifest> docs`. It proves the compiled layer did not move while you wrote, which `git status` cannot do — a project may hide a directory from git, and a write into it then shows up nowhere.
 
-Release the claim: `check-docs.sh claim-release <run id>`.
+Release the claim with `check-docs.sh claim-release <run id>` — after a clean verification, and equally after a failed one, once you have reported what `verify-sources` said. A claim left behind blocks every later capture and every weave run until this session's process dies.
 
 ### Step 4: Report, and offer a run
 
@@ -124,7 +124,7 @@ Then offer a weave run naming the published record, and stop. The owner confirms
 
 <artifact_scope>
 
-- Writes `.git/kb-staged/` and `thoughts/captures/`, and nothing else
+- Writes `<git dir>/kb-staged/` and `thoughts/captures/`, and nothing else
 - Never writes anything under the compiled layer, verified after the write rather than inspected in `git status`
 - Never edits or deletes a published record
 - Never runs `git add`, `git commit`, or any other git write

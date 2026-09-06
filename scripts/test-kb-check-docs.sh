@@ -737,4 +737,101 @@ else
   pass "nothing in the hook retries, counts down or expires"
 fi
 
+# --- what a fence encloses is quotation, not record --------------------------
+
+# A record quotes the shape it follows, and the quotation opens with a fence
+# marker of the other character. A fence closes only on the character it opened
+# with, so everything after that marker is still inside the block.
+out=$("$CHECKER" captures-eligible "$FIX/records-fenced" 2>&1)
+if [ "$out" = "$(printf 'a.md\tAlpha\nb.md\tBeta\nb.md\tGamma')" ]; then
+  pass "a quoted heading is not a decision, and the real one after it still is"
+else
+  bad "the fenced record enumerated the wrong decisions: $out"
+fi
+
+out=$("$CHECKER" supersession-scan "$FIX/records-fenced" "$FIX/docs-decisions" \
+  "record a.md ### Alpha" 2>&1)
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q '^supersession-scan: nothing supersedes'; then
+  pass "a quoted Supersedes: line declares nothing"
+else
+  bad "a quoted reference was read as an edge: $out"
+fi
+
+# Two records superseded by one later record is an order, not a loop: the walk
+# reaches the last one twice and must still call the family terminal.
+out=$("$CHECKER" supersession-scan "$FIX/records-diamond" "$FIX/docs-decisions" \
+  "record t.md ### T" 2>&1)
+if [ $? -eq 0 ] && [ "$(printf '%s\n' "$out" | grep -c '^record ')" -eq 3 ]; then
+  pass "two paths meeting at one superseder is a family, not a circle"
+else
+  bad "a converging family was rejected: $out"
+fi
+
+# The circle here never returns to the target, so a check that compares each
+# superseder against the target alone hands weave a loop to deprecate from.
+out=$("$CHECKER" supersession-scan "$FIX/records-cycle-reachable" "$FIX/docs-decisions" \
+  "record a.md ### A" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^supersession-cycle('; then
+  pass "a circle past the target is still a circle"
+else
+  bad "a circle beyond the target was reported as a chain: $out"
+fi
+
+# --- the staged lines a run hands to the receipt -----------------------------
+
+STAGE="$SCRATCH/staging"
+mkdir -p "$STAGE"
+
+# An editor that writes no final newline is the ordinary case, not a corruption.
+printf 'a.md\tconsumed\tAlpha' >"$STAGE/no-newline"
+out=$("$CHECKER" receipt-commit "$STAGE/r1.tsv" "$FIX/records-fenced" "$STAGE/no-newline" 2>&1)
+if [ $? -eq 0 ] && [ "$(grep -c . "$STAGE/r1.tsv")" -eq 1 ]; then
+  pass "a staged line with no newline after it is still recorded"
+else
+  bad "the last staged line was dropped: $out"
+fi
+
+printf 'a.md\tconsumed\tno such heading\n' >"$STAGE/wrong-heading"
+out=$("$CHECKER" receipt-commit "$STAGE/r2.tsv" "$FIX/records-fenced" "$STAGE/wrong-heading" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-heading-missing('; then
+  pass "an entry naming a heading the record does not hold is reported"
+else
+  bad "a heading that marks nothing consumed was accepted: $out"
+fi
+
+printf 'a.md\tconsumed\tAlpha\textra\n' >"$STAGE/four-fields"
+out=$("$CHECKER" receipt-commit "$STAGE/r3.tsv" "$FIX/records-fenced" "$STAGE/four-fields" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^staging-malformed('; then
+  pass "a staged line carrying a fourth field is reported, not truncated"
+else
+  bad "a fourth staged field was discarded in silence: $out"
+fi
+
+# --- a value on stdout, everything else on stderr ----------------------------
+
+# Two consecutive spaces in a path is the case a whitespace-split manifest
+# cannot tell apart, and catching a write git cannot see is the whole point of
+# the manifest.
+SPACED="$SCRATCH/spaced"
+mkdir -p "$SPACED/raw"
+printf 'one\n' >"$SPACED/raw/a  one"
+printf 'two\n' >"$SPACED/raw/a  two"
+spaced_manifest=$(cd "$SPACED" && "$CHECKER" snapshot raw 2>/dev/null)
+printf 'edited\n' >"$SPACED/raw/a  one"
+out=$(cd "$SPACED" && "$CHECKER" verify-sources "$spaced_manifest" raw 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^SOURCE-CHANGED'; then
+  pass "two paths differing only past a double space are two files"
+else
+  bad "a double-space path collapsed onto its neighbour: $out"
+fi
+
+# assign-id, claim-acquire and snapshot are read in a command substitution, so
+# a finding on stdout is read as the value.
+out=$("$CHECKER" assign-id "$SCRATCH/no-such-page.md" 2>/dev/null)
+if [ $? -ne 0 ] && [ -z "$out" ]; then
+  pass "a mode whose stdout is a value prints no finding on it"
+else
+  bad "a finding reached the stream a caller reads the value from: $out"
+fi
+
 exit "$fail"
