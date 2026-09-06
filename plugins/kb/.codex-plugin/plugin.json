@@ -1,22 +1,29 @@
 {
   "name": "kb",
   "version": "1.0.2",
-  "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+  "description": "Capture the decisions a session reaches, and weave a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
   "author": {
     "name": "fokkoru"
   },
   "repository": "https://github.com/fokkoru/ai-foo",
   "license": "MIT",
-  "keywords": ["knowledge-base", "documentation", "okf", "provenance", "weave"],
+  "keywords": [
+    "knowledge-base",
+    "documentation",
+    "okf",
+    "provenance",
+    "weave",
+    "capture"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "kb — Knowledge Base",
-    "shortDescription": "Compile raw notes into a committed knowledge base",
-    "longDescription": "kb:weave reads the raw corpus under thoughts/ and writes a durable knowledge base under docs/ in Open Knowledge Format v0.2, with per-source provenance hashes so drift is detectable. Invoke it manually as $kb:weave; it never auto-triggers. The plugin ships no subagents, so there is no install script to run. It requires no other plugin.",
+    "shortDescription": "Capture decisions, and weave notes into a knowledge base",
+    "longDescription": "Two skills. $kb:capture records a decision a session reached — what was chosen, what was rejected, why, and the evidence — into thoughts/captures/ while the session is still running; it fires on its own. $kb:weave reads the raw corpus under thoughts/ and writes a durable knowledge base under docs/ in Open Knowledge Format v0.2, with per-source provenance hashes so drift is detectable; invoke it manually, it never auto-triggers. The plugin ships no subagents, so there is no install script to run. It requires no other plugin.",
     "developerName": "fokkoru",
     "category": "Coding",
     "capabilities": ["Read", "Write"],
     "websiteURL": "https://github.com/fokkoru/ai-foo",
-    "defaultPrompt": ["Compile my notes into the knowledge base"]
+    "defaultPrompt": ["Weave my notes into the knowledge base"]
   }
 }

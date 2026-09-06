@@ -20,7 +20,7 @@
     {
       "name": "kb",
       "source": "./plugins/kb",
-      "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+      "description": "Capture the decisions a session reaches, and weave a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
       "version": "1.0.2",
       "author": {
         "name": "fokkoru"
@@ -31,7 +31,8 @@
         "documentation",
         "okf",
         "provenance",
-        "weave"
+        "weave",
+        "capture"
       ]
     },
     {

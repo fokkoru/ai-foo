@@ -9,7 +9,7 @@ generated:
 sources:
   - resource: ".claude-plugin/marketplace.json"
     id: "style-version"
-    fragment: "L66-L75"
+    fragment: "L67-L76"
     sha256: "a0713bbf5be4"
   - resource: "plugins/style/output-styles/answer-first.md"
     id: "style-head"

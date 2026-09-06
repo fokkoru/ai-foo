@@ -1,0 +1,5 @@
+interface:
+  display_name: "Capture"
+  short_description: "Record a decision the session reached into thoughts/captures/"
+policy:
+  allow_implicit_invocation: true

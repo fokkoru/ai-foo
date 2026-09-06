@@ -588,4 +588,32 @@ else
   pass "a deferred decision carries no expiry, and none exists in the checker"
 fi
 
+# --- what capture writes ---------------------------------------------------
+
+expect_capture 0 as-capture-writes.md ""
+
+# Capture never writes the compiled layer, and it proves that after the write
+# rather than by reading `git status` — a project may hide a directory from git,
+# and a write into it then shows up nowhere.
+SCOPE="$SCRATCH/scope"
+mkdir -p "$SCOPE/docs" "$SCOPE/thoughts/captures" "$SCOPE/staged"
+echo "a page" >"$SCOPE/docs/page.md"
+
+scope_manifest=$(cd "$SCOPE" && "$CHECKER" snapshot docs)
+echo "a staged record" >"$SCOPE/staged/rec.md"
+mv "$SCOPE/staged/rec.md" "$SCOPE/thoughts/captures/rec.md"
+if (cd "$SCOPE" && "$CHECKER" verify-sources "$scope_manifest" docs >/dev/null 2>&1); then
+  pass "publishing a record leaves the compiled layer untouched"
+else
+  bad "publishing was seen as a write to the compiled layer"
+fi
+
+echo "an errant write" >>"$SCOPE/docs/page.md"
+out=$(cd "$SCOPE" && "$CHECKER" verify-sources "$scope_manifest" docs 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^SOURCE-CHANGED'; then
+  pass "a write into the compiled layer is caught by the scope check"
+else
+  bad "an errant write to the compiled layer went unreported: $out"
+fi
+
 exit "$fail"

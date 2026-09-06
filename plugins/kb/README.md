@@ -10,13 +10,14 @@ Routing is decided by the current code, not by the genre of the note it came fro
 
 `kb` is installable and usable on its own. It depends on no other plugin's skills, subagents, or artifacts, and it reads `thoughts/` as plain markdown — frontmatter is an optional fast path, never a requirement, so a corpus of hand-written notes compiles as readily as a generated one.
 
-## The skill
+## The skills
 
-| Skill      | Description                                                             |
-| ---------- | ----------------------------------------------------------------------- |
-| `kb:weave` | Weave the raw corpus under `thoughts/` into a knowledge base in `docs/` |
+| Skill        | Description                                                                    |
+| ------------ | ------------------------------------------------------------------------------ |
+| `kb:weave`   | Weave the raw corpus under `thoughts/` into a knowledge base in `docs/`        |
+| `kb:capture` | Record a decision the session reached into `thoughts/captures/`, as it happens |
 
-Invoke it yourself — it never triggers on its own:
+`kb:capture` fires on its own when a session reaches a decision. `kb:weave` never does — invoke it yourself:
 
 - **Claude Code**: `/kb:weave`
 - **Codex CLI**: `$kb:weave`
@@ -27,9 +28,10 @@ The compiler leaves its output uncommitted in the working tree. Read the diff, t
 
 What the skill guarantees, stated so you can check it from your own working copy and the run in front of you — no need to open a `SKILL.md`. A run that does not produce its row is a bug worth reporting, and a change that removes a row has to say so here first.
 
-| Skill      | You know it worked when                                                                                                                                                     |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kb:weave` | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
+| Skill        | You know it worked when                                                                                                                                                     |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kb:capture` | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                     |
+| `kb:weave`   | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
 
 ## Customize paths (optional)
 

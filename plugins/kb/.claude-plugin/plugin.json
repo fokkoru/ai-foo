@@ -1,9 +1,16 @@
 {
   "name": "kb",
-  "description": "Compile a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+  "description": "Capture the decisions a session reaches, and weave a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
   "author": {
     "name": "fokkoru"
   },
   "repository": "https://github.com/fokkoru/ai-foo",
-  "keywords": ["knowledge-base", "documentation", "okf", "provenance", "weave"]
+  "keywords": [
+    "knowledge-base",
+    "documentation",
+    "okf",
+    "provenance",
+    "weave",
+    "capture"
+  ]
 }
