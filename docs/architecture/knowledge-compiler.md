@@ -10,11 +10,11 @@ sources:
   - resource: "plugins/kb/README.md"
     id: "kb-two-layers"
     fragment: "L3-L7"
-    sha256: "d9261cdbb73e"
+    sha256: "3248dc37db9c"
   - resource: "plugins/kb/README.md"
     id: "kb-skill-table"
     fragment: "## The skills"
-    sha256: "8b4431c3834e"
+    sha256: "889a4656ee15"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-modes"
     fragment: "L2-L26"
@@ -46,12 +46,14 @@ sources:
 ## What it does
 
 `kb` has two layers. The raw corpus under `thoughts/` is input and is never written to; the compiled
-layer under `docs/` is output, committed, and conformant to Open Knowledge Format v0.2, so its schema
-is adopted rather than invented.[^kb-two-layers]
+layer under `docs/` is output, committed, and shaped by Open Knowledge Format v0.2, whose page layout,
+`sources[]` block and footnote-as-join-key it follows.[^kb-two-layers]
 
 Two skills move material between them. `kb:capture` records a decision a session reached into
 `thoughts/captures/` and fires on its own; `kb:weave` compiles the raw corpus into `docs/` and never
-fires on its own.[^kb-skill-table]
+fires on its own. A third, `kb:lint`, moves nothing between the layers: it inspects the compiled
+layer on its own account and repairs what has a demonstrated failure and an oracle, and it never
+fires on its own either.[^kb-skill-table]
 
 Routing is decided by the current code rather than by the genre of the note a claim arrived in. A
 claim about present behaviour reaches a fact page only once the compiler located it at a live

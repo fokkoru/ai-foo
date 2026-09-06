@@ -2,7 +2,7 @@
 
 `kb` compiles the raw notes a project accumulates — research, plans, handoffs, loose markdown — into a durable knowledge base that lives in the repository and is reviewed like code.
 
-The raw corpus under `thoughts/` is the input and is never written to. The compiled layer under `docs/` is the output: committed, readable by a person, and conformant to [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog) v0.2, so its schema is adopted rather than invented. Every compiled page records where each claim came from, together with a hash of the exact fragment it was built from, so drift between a page and its source is something a script reports rather than something you discover by reading.
+The raw corpus under `thoughts/` is the input and is never written to. The compiled layer under `docs/` is the output: committed, readable by a person, and shaped by Open Knowledge Format v0.2, whose page layout, `sources[]` block and footnote-as-join-key it follows. Every compiled page records where each claim came from, together with a hash of the exact fragment it was built from — a field the format does not define and this plugin adds — so drift between a page and its source is something a script reports rather than something you discover by reading.
 
 Routing is decided by the current code, not by the genre of the note it came from. A claim about how the system behaves today reaches a fact page only when the compiler verified it against a live `file:line`. Everything else — a recommendation, an option, a plan whose change is not in the code — lands in the roadmap marked as a proposal.
 
@@ -12,10 +12,11 @@ Routing is decided by the current code, not by the genre of the note it came fro
 
 ## The skills
 
-| Skill        | Description                                                                    |
-| ------------ | ------------------------------------------------------------------------------ |
-| `kb:weave`   | Weave the raw corpus under `thoughts/` into a knowledge base in `docs/`        |
-| `kb:capture` | Record a decision the session reached into `thoughts/captures/`, as it happens |
+| Skill        | Description                                                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `kb:weave`   | Weave the raw corpus under `thoughts/` into a knowledge base in `docs/`                                                           |
+| `kb:capture` | Record a decision the session reached into `thoughts/captures/`, as it happens                                                    |
+| `kb:lint`    | Inspect the compiled layer under `docs/` for pages that have gone wrong, and repair what has a demonstrated failure and an oracle |
 
 `kb:capture` fires on its own when a session reaches a decision. `kb:weave` never does — invoke it yourself:
 
@@ -32,6 +33,7 @@ What the skill guarantees, stated so you can check it from your own working copy
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `kb:capture` | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                     |
 | `kb:weave`   | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
+| `kb:lint`    | `docs/` changed and `thoughts/` did not, and every page the run edited traces to a finding that named its evidence                                                          |
 
 ## Customize paths (optional)
 
