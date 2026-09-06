@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Conformance, reachability, provenance, and raw-source immutability checks for
-# a knowledge base compiled by kb:compile.
+# a knowledge base compiled by kb:weave.
 #
 #   snapshot [raw-root]                    hash every raw source, print the manifest path
 #   verify-sources <manifest> [raw-root]   prove the raw layer did not change during a run
@@ -290,7 +290,7 @@ cmd_snapshot() {
   fi
   # The template ends in X's with no suffix after them: BSD mktemp, which is the
   # one a clean macOS carries, accepts no trailing characters.
-  manifest=$(mktemp "${TMPDIR:-/tmp}/kb-compile-sources.XXXXXXXX") || {
+  manifest=$(mktemp "${TMPDIR:-/tmp}/kb-weave-sources.XXXXXXXX") || {
     report SNAPSHOT-FAILED snapshot "could not create a manifest under ${TMPDIR:-/tmp}"
     return 1
   }

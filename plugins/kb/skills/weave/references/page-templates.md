@@ -25,7 +25,7 @@ title: "Human-readable display name"
 description: "One sentence."
 status: stable
 generated:
-  by: "kb:compile"
+  by: "kb:weave"
   at: "2026-08-10T11:02:33-07:00"
 sources:
   - resource: "CLAUDE.md"
@@ -54,7 +54,7 @@ title: "Wave review dispatch"
 description: "How a wave is reviewed and each finding gated."
 status: stable
 generated:
-  by: "kb:compile"
+  by: "kb:weave"
   at: "2026-08-10T11:02:33-07:00"
 sources:
   - resource: "plugins/df/agents/code-reviewer.md"
@@ -93,7 +93,7 @@ title: "Continuous mode"
 description: "Phases run back to back, stopping only for a blocking manual check."
 status: stable
 generated:
-  by: "kb:compile"
+  by: "kb:weave"
   at: "2026-08-10T11:02:33-07:00"
 sources:
   - resource: "plugins/df/skills/implement/SKILL.md"
@@ -128,7 +128,7 @@ status: stable
 supersedes: ""
 superseded_by: ""
 generated:
-  by: "kb:compile"
+  by: "kb:weave"
   at: "2026-08-10T11:02:33-07:00"
 sources:
   - resource: "CLAUDE.md"
@@ -168,7 +168,7 @@ title: "Fragment hashing as a script mode"
 description: "Exposing the hash the compiler has to write."
 status: draft
 generated:
-  by: "kb:compile"
+  by: "kb:weave"
   at: "2026-08-10T11:02:33-07:00"
 sources:
   - resource: "plugins/kb/scripts/check-docs.sh"

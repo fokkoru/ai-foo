@@ -5,11 +5,5 @@
     "name": "fokkoru"
   },
   "repository": "https://github.com/fokkoru/ai-foo",
-  "keywords": [
-    "knowledge-base",
-    "documentation",
-    "okf",
-    "provenance",
-    "compile"
-  ]
+  "keywords": ["knowledge-base", "documentation", "okf", "provenance", "weave"]
 }

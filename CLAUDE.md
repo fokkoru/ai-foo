@@ -24,7 +24,7 @@ The skill and agent tables live in `plugins/df/README.md` — that is the single
 
 ### kb (plugins/kb/)
 
-Knowledge base compiler. One skill, `/kb:compile` on Claude Code or `$kb:compile` on Codex CLI, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
+Knowledge base compiler. One skill, `/kb:weave` on Claude Code or `$kb:weave` on Codex CLI, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it, and either plugin installs without the other.
 
 The skill table lives in `plugins/kb/README.md` — that is the single copy.
 
@@ -99,7 +99,7 @@ Don't bolt nuance onto a rule that works: "don't X unless it matters" reopens th
 
 **Emphasis.** Explain why a rule exists instead of shouting it — `skill-creator` calls all-caps ALWAYS/NEVER "a yellow flag". Bold marks the lead-in a scanning reader navigates by; bold inside running prose is noise. Reach for a table at three parallel dimensions (agent × purpose × when-to-use).
 
-**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit`, `df:deslop`, both `agy` skills and `cdx:consult` auto-trigger, so theirs are the descriptions worth tuning for trigger phrases; df's other seven and `kb:compile` set `disable-model-invocation: true` and are read by a human picking a command.
+**Limits.** SKILL.md body under 500 lines, `description` under 1024 characters — and under 250 for an auto-triggering skill, which is where the Claude Code listing slices, enforced by `scripts/check-skill-description-length.sh` — and a reference file over 100 lines gets a table of contents. `df:commit`, `df:deslop`, both `agy` skills and `cdx:consult` auto-trigger, so theirs are the descriptions worth tuning for trigger phrases; df's other seven and `kb:weave` set `disable-model-invocation: true` and are read by a human picking a command.
 
 ## Verify Before Finishing
 
@@ -132,4 +132,4 @@ These check structure, and none of them can see a lost capability. So when a cha
 
 Every claim records what it was built from in the page's `sources[]` block, with a hash of the exact fragment, so `plugins/kb/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
 
-`/kb:compile` writes this directory and nothing else writes it by hand.
+`/kb:weave` writes this directory and nothing else writes it by hand.

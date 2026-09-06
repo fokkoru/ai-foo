@@ -12,14 +12,14 @@ Routing is decided by the current code, not by the genre of the note it came fro
 
 ## The skill
 
-| Skill        | Description                                                               |
-| ------------ | ------------------------------------------------------------------------- |
-| `kb:compile` | Compile the raw corpus under `thoughts/` into a knowledge base in `docs/` |
+| Skill      | Description                                                             |
+| ---------- | ----------------------------------------------------------------------- |
+| `kb:weave` | Weave the raw corpus under `thoughts/` into a knowledge base in `docs/` |
 
 Invoke it yourself — it never triggers on its own:
 
-- **Claude Code**: `/kb:compile`
-- **Codex CLI**: `$kb:compile`
+- **Claude Code**: `/kb:weave`
+- **Codex CLI**: `$kb:weave`
 
 The compiler leaves its output uncommitted in the working tree. Read the diff, then commit it however you normally would — by hand, or with `df:commit` if you happen to have that plugin installed.
 
@@ -27,9 +27,9 @@ The compiler leaves its output uncommitted in the working tree. Read the diff, t
 
 What the skill guarantees, stated so you can check it from your own working copy and the run in front of you — no need to open a `SKILL.md`. A run that does not produce its row is a bug worth reporting, and a change that removes a row has to say so here first.
 
-| Skill        | You know it worked when                                                                                                                                                     |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kb:compile` | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
+| Skill      | You know it worked when                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kb:weave` | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
 
 ## Customize paths (optional)
 

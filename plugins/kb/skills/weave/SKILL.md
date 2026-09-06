@@ -1,6 +1,6 @@
 ---
-name: compile
-description: Compile raw sources under thoughts/ into the project's long-term memory — a durable, committed knowledge base under docs/ of OKF-conformant pages, routed by whether a claim is a verified fact about the current code or a proposal, each carrying per-source provenance
+name: weave
+description: Weave raw sources under thoughts/ into the project's long-term memory — a durable, committed knowledge base under docs/ of OKF-conformant pages, routed by whether a claim is a verified fact about the current code or a proposal, each carrying per-source provenance
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, LS, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(*check-docs.sh*)
 ---
@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, LS, Bash(date:*), Bash(git config:
 <objective>
 Turn accumulated raw sources into pages that get smarter, not into more siblings. The output under `docs/` is the project's long-term memory: the layer a later session reads instead of re-reading the raw notes, and the layer a new contributor reads instead of asking.
 
-This is a batch pass somebody runs, not a recall mechanism that fires on its own. The skill is called `compile` for that reason — "memory" already names mechanisms in both runtimes that inject context automatically, and this one never does.
+This is a batch pass somebody runs, not a recall mechanism that fires on its own, which is why it is not called "memory" — that word already names mechanisms in both runtimes that inject context automatically, and this one never does. It is called `weave` because a second source on a topic is worked into the page that already covers it rather than filed beside it, and that is the test the skill gives for its own success.
 
 The input is a directory of markdown. `thoughts/` is not any plugin's artifact, and a project that has never installed another plugin compiles its own notes with this skill unchanged.
 

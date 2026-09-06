@@ -1,0 +1,5 @@
+interface:
+  display_name: "Weave"
+  short_description: "Weave raw thoughts/ sources into the docs/ knowledge base"
+policy:
+  allow_implicit_invocation: false
