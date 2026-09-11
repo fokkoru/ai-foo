@@ -275,12 +275,19 @@ if (!data) process.exit(0);
 // The first line is ccstatusline's, but its worktree widget prints the word
 // "main" in an ordinary checkout, which read as a second branch name. This
 // prints a mark and only when the directory really is a linked worktree.
-// Claude Code sends `workspace.git_worktree`, the worktree's name, and omits it
-// outside a linked worktree — the exact condition, with no filesystem walk.
+// Claude Code carries that in two fields, and every payload captured on 2.1.269
+// carried one or the other. `workspace.git_worktree` is the git answer: the
+// worktree's name, present when the session's own cwd resolves to a linked
+// worktree's git directory. A session the harness moved into a worktree itself
+// gets the top-level `worktree` object instead — name, path, branch,
+// original_cwd, original_branch — and then `workspace.git_worktree` is absent.
+// Both observed on Claude Code 2.1.269; reading only the first left every
+// harness-made worktree unmarked.
 if (process.argv[2] === "worktree") {
   // ccstatusline trims a widget's output, so the space that sets the mark off
   // from the path is a custom-text widget in the config, not a space here.
-  if (data.workspace?.git_worktree) process.stdout.write("🌿");
+  if (data.worktree?.name || data.workspace?.git_worktree)
+    process.stdout.write("🌿");
   process.exit(0);
 }
 

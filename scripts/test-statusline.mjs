@@ -223,6 +223,20 @@ ok(
   ) === "🌿",
 );
 ok(
+  "a harness-made worktree session prints the mark from the top-level object",
+  render(
+    {
+      worktree: {
+        name: "feature/x",
+        path: "/repo/.claude/worktrees/feature+x",
+        branch: "worktree-feature+x",
+      },
+      workspace: { current_dir: "/repo/.claude/worktrees/feature+x" },
+    },
+    "worktree",
+  ) === "🌿",
+);
+ok(
   "no git_worktree prints nothing",
   render({ workspace: { current_dir: process.cwd() } }, "worktree") === "",
 );
