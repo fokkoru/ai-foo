@@ -5,7 +5,7 @@ description: "How the Claude Code status line is assembled from ccstatusline's g
 status: stable
 generated:
   by: "kb:lint"
-  at: "2026-09-10T17:04:14-07:00"
+  at: "2026-09-10T18:13:42-07:00"
 sources:
   - resource: "CLAUDE.md"
     id: "sl-not-a-plugin"
@@ -210,11 +210,11 @@ Three steps, none of which a clone performs for you.
         "color": "ansi256:211",
         "metadata": { "hide": "no-git,zero" }
       },
-      { "id": "flex-1", "type": "flex-separator" },
       {
-        "id": "gap-4",
+        "id": "sep-3",
         "type": "custom-text",
-        "customText": " ",
+        "customText": " │ ",
+        "color": "ansi256:243",
         "merge": true,
         "metadata": { "hide": "merge-target-hidden" }
       },

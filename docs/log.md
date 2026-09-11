@@ -2,6 +2,7 @@
 
 ## 2026-09-10
 
+- **Update**: [The two-line status line](architecture/statusline.md) — `kb:lint` over the page named on the invocation, no checker records. The page calls its reproduced `ccstatusline` config the only tracked copy of `~/.config/ccstatusline/settings.json`, and the two had diverged: the live first line no longer carries the `flex-separator` and the blank `gap-4` that pushed the PR widget to the right edge, a `│` custom-text separator stands in their place. Reproduced config updated to match; no other key differs, and no prose changed.
 - **Update**: [The two-line status line](architecture/statusline.md) — `kb:lint` over the page named on the invocation, eight checker records against `statusline/statusline.mjs`. One claim was false, not drifted: the auto-compact buffer is 33,000 tokens on Claude Code 2.1.268, a 20,000-token summary reserve plus the fixed 13,000, confirmed by `/context` printing `Autocompact buffer: 33k tokens`; the script had pinned 13,000 and the page repeated it. Corrected both the constant's paragraph and the two sentences calling the context readout a meter, since the bar was removed and only the toned percentage remains. The other seven citations moved with the file and were re-anchored; five of them hash to their old values at the new ranges, so no prose behind them changed.
 
 ## 2026-09-06
