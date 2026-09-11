@@ -1034,7 +1034,12 @@ cmd_sources_pending() {
     }
     recorded=""
     if [ -n "$intake" ] && [ -f "$intake" ]; then
-      recorded=$(intake_recorded_hash "$intake" "$rel")
+      # A ledger that exists but cannot be read is not an empty ledger: treating
+      # it as one would list every consumed source as new.
+      recorded=$(intake_recorded_hash "$intake" "$rel") || {
+        report INTAKE-UNREADABLE sources-pending "could not read $intake"
+        return 1
+      }
     fi
     if [ -z "$recorded" ]; then
       printf '%s\tnew\n' "$rel"
@@ -1061,7 +1066,7 @@ intake_state_valid() {
 # owner typed, so the spelling is checked before it is looked up.
 intake_path_canonical() {
   case "$1" in
-  "" | /* | ./* | ../* | */./* | */../* | */. | */..) return 1 ;;
+  "" | /* | ./* | ../* | */./* | */../* | */. | */.. | *//*) return 1 ;;
   esac
   return 0
 }
@@ -1076,13 +1081,18 @@ cmd_intake_commit() {
   [ -n "$intake" ] || usage
   [ -n "$root" ] || usage
   [ -n "$staging" ] || usage
-  if [ ! -f "$staging" ]; then
-    report NO-STAGING intake-commit "$staging is not a file"
+  if [ ! -f "$staging" ] || [ ! -r "$staging" ]; then
+    report NO-STAGING intake-commit "$staging is not a readable file"
     return 1
   fi
   root="${root%/}"
   pending="$WORKDIR/intake-pending"
-  : >"$pending"
+  # Every write below is guarded: set -e does not reach this call tree, and an
+  # append that failed halfway would otherwise record a short ledger as success.
+  : >"$pending" || {
+    report INTAKE-FAILED intake-commit "could not stage under $WORKDIR"
+    return 1
+  }
 
   # Every staged line is validated before anything is written, so a run that
   # fails here leaves the ledger as it was. The `|| [ -n "$line" ]` keeps a
@@ -1122,9 +1132,20 @@ cmd_intake_commit() {
       report HASH-FAILED intake-commit "could not hash $rel"
       return 1
     }
-    printf '%s\t%s\t%s\n' "$rel" "$hash" "$state" >>"$pending"
+    printf '%s\t%s\t%s\n' "$rel" "$hash" "$state" >>"$pending" || {
+      report INTAKE-FAILED intake-commit "could not stage $rel"
+      return 1
+    }
   done <"$staging"
 
+  # A ledger edited by hand may end without a newline; appending straight after
+  # it would join two records into one line.
+  if [ -s "$intake" ] && [ -n "$(tail -c 1 "$intake")" ]; then
+    printf '\n' >>"$intake" || {
+      report INTAKE-FAILED intake-commit "could not append to $intake"
+      return 1
+    }
+  fi
   cat "$pending" >>"$intake" || {
     report INTAKE-FAILED intake-commit "could not append to $intake"
     return 1
@@ -1144,8 +1165,8 @@ cmd_intake_check() {
   local intake="${1:-}" root="${2:-}" line rel hash state current
   [ -n "$intake" ] || usage
   [ -n "$root" ] || usage
-  if [ ! -f "$intake" ]; then
-    report NO-INTAKE intake-check "$intake is not a file"
+  if [ ! -f "$intake" ] || [ ! -r "$intake" ]; then
+    report NO-INTAKE intake-check "$intake is not a readable file"
     return 1
   fi
   root="${root%/}"

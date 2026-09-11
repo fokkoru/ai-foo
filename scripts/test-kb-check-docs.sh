@@ -1047,6 +1047,27 @@ else
   bad "an escaping path was accepted: $out"
 fi
 
+printf 'research//new.md\tconsumed\n' >"$INTK/staging-doubled"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-doubled" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-path(intake-commit)'; then
+  pass "a path with an empty component is refused: enumeration would never spell it that way"
+else
+  bad "a doubled slash was accepted and would stay pending forever: $out"
+fi
+
+# A ledger edited by hand may lose its final newline; the next append must
+# not join two records into one line.
+lines_before=$(awk 'END {print NR}' "$commit_ledger")
+printf '%s' "$(cat "$commit_ledger")" >"$commit_ledger"
+printf 'research/same.md\tconsumed\n' >"$INTK/staging-same"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-same" 2>&1)
+if [ $? -eq 0 ] && [ "$(awk 'END {print NR}' "$commit_ledger")" -eq $((lines_before + 1)) ] &&
+  "$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" >/dev/null 2>&1; then
+  pass "an append after an unterminated last line starts a new record"
+else
+  bad "an unterminated ledger was corrupted by the next append: $out $(cat "$commit_ledger")"
+fi
+
 printf 'only-two\tfields\n' >>"$commit_ledger"
 out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
 if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-malformed(intake-check)'; then

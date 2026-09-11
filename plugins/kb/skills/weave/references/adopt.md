@@ -27,7 +27,7 @@ Any of the three files already present is left as it is and named in the report.
 
 Stop, report, and release the claim when:
 
-- `docs/index.md` exists and carries no `okf_version`. It is a hand-written map, this run may not edit it, and `check` will not pass without the key. Say that renaming it — `README.md` is the usual name for such a map — and rerunning is the way through.
+- `docs/index.md` exists and the baseline `check` reports it — no frontmatter, a key beside `okf_version`, a page it does not reach. It is a hand-written map, this run may not edit it, and `check` will not pass while it stays as it is. Say that renaming it — `README.md` is the usual name for such a map — and rerunning is the way through.
 - The owner does not confirm the mapping in "Propose the mapping and wait".
 
 ## Survey the tree
@@ -62,7 +62,7 @@ Write `docs/log.md` from the skeleton with one section for today and one `**Crea
 
 For every page except a reserved `index.md`, `log.md` or `WIKI.md`, run `check-docs.sh stamp-type <page> <type>` with the value the confirmed table gives it — the directory's value, or the last row's value for a loose page, a `README.md` or a template. It refuses a page that already carries a `type:` and says why; carry each refusal into the report and move on.
 
-Then, for every page stamped `decision` in this run that has no `decision_id:` key, run `check-docs.sh assign-id <page>` and write the value it prints into a `decision_id:` key, second line of the block, by one Edit that adds that line and nothing else. A page that already carries the key keeps its value — an identifier is assigned once — and `check` reports a decision page without one.
+Then, for every page that carries `type: decision` after stamping — stamped in this run or typed by hand before it — and has no `decision_id:` key with a value, run `check-docs.sh assign-id <page>` and write the value it prints into a `decision_id:` key, second line of the block, by one Edit that adds that line, or fills the empty one, and nothing else. A page that already carries a value keeps it — an identifier is assigned once — and `check` reports a decision page without one.
 
 Nothing else on any page is touched. A page whose frontmatter lacks `title:` or `description:` stays that way; `check` does not test those keys, and adding them would be writing the owner's prose.
 
