@@ -5,7 +5,7 @@ description: "How the Claude Code status line is assembled from ccstatusline's g
 status: stable
 generated:
   by: "kb:lint"
-  at: "2026-09-10T18:13:42-07:00"
+  at: "2026-09-11T14:58:40-07:00"
 sources:
   - resource: "CLAUDE.md"
     id: "sl-not-a-plugin"
@@ -37,12 +37,12 @@ sources:
     sha256: "ea823662305d"
   - resource: "statusline/statusline.mjs"
     id: "sl-dispatch"
-    fragment: "L272-L298"
-    sha256: "5d0f3dbddf98"
+    fragment: "L272-L305"
+    sha256: "5f5ebe8de8f7"
   - resource: "statusline/statusline.mjs"
     id: "sl-worktree"
-    fragment: "L275-L285"
-    sha256: "dbb0e3382159"
+    fragment: "L275-L292"
+    sha256: "d543ff5abf90"
 ---
 
 # The two-line status line
@@ -102,10 +102,14 @@ ratio is toned the other way round, since a healthy session sits high and anythi
 the prefix is being rebuilt on most requests.[^sl-thresholds]
 
 **Worktree.** The `worktree` mode prints a mark only when the current directory really is a linked
-worktree. It reads `workspace.git_worktree`, which Claude Code sends as the worktree's name and
-omits outside a linked worktree, so the payload answers the question outright. That replaced a walk
-up from the working directory reading each `.git` it found on every render, and nothing was kept
-behind as a fallback for a Claude Code that predates the field: the script has exactly one
+worktree. The payload answers that in either of two fields. `workspace.git_worktree` carries the
+worktree's name when the session's own working directory resolves to a linked worktree's git
+directory; a session the harness itself moved into a worktree carries a top-level `worktree` object
+instead — name, path, branch, `original_cwd`, `original_branch` — and then `workspace.git_worktree`
+is absent. The mark fires on either, because reading only the first left every worktree the harness
+made unmarked. Both shapes were observed on Claude Code 2.1.269. That replaced a walk up from the
+working directory reading each `.git` it found on every render, and nothing was kept behind as a
+fallback for a Claude Code that predates the fields: the script has exactly one
 installation,[^sl-not-a-plugin] so a second path would be a branch nothing here ever runs. The cost
 of that is a behaviour, not a risk — on an older Claude Code the mark stops appearing, and nothing
 else on either line changes.[^sl-worktree] The space that sets the

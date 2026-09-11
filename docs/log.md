@@ -1,5 +1,9 @@
 # Log
 
+## 2026-09-11
+
+- **Update**: [The two-line status line](architecture/statusline.md) — `kb:lint` over two checker records, no page named. The worktree paragraph said the mode reads `workspace.git_worktree` and that the payload answers outright; the script now fires on that field or on a top-level `worktree` object, which is what a session the harness moved into a worktree carries instead. The paragraph names both fields and why one was not enough. The argument-dispatch citation moved only because the file grew, and was re-anchored with no prose changed.
+
 ## 2026-09-10
 
 - **Update**: [The knowledge compiler](architecture/knowledge-compiler.md) — `kb:lint` over nine checker records, no page named. Eight citations into `check-docs.sh` and one into the `kb` README moved when the checker gained four modes; seven of the eight hash to their old values at the new ranges, so no prose behind them changed, and were re-anchored. The header citation changed in meaning: the page counted fourteen modes and the script now lists eighteen, so the sentence names the count and the two additions, the intake ledger and the `type:` stamp. The README section behind the skill-table citation gained rows for those behaviours; the three-skill description it supports still holds, hash re-anchored.
