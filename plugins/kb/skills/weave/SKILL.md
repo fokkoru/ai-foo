@@ -28,11 +28,15 @@ Inspection is not enough to prove that denial held. A project may hide `thoughts
 <quick_start>
 If sources are named, begin at Step 0.
 
-If no sources are named, ask which ones to compile and wait for the answer. Never default to the whole corpus — a first run over everything produces a tree nobody reviews.
+If no sources are named and `docs/` holds pages but no `docs/WIKI.md`, begin at Step 0: that is its adoption row, and an adoption compiles nothing, so it has no sources to name.
 
-`weave captures` names a class rather than filenames: the pending capture records, whichever they turn out to be. `check-docs.sh captures-eligible <records root> docs/kb-receipt.tsv` computes that class from the receipt and the records on disk. An invocation naming unrelated files absorbs no captures, and a bare invocation still asks and waits.
+Otherwise, if no sources are named, ask which ones to compile and wait for the answer. Never default to the whole corpus — a first run over everything produces a tree nobody reviews.
+
+`weave captures` names a class rather than filenames: the pending capture records, whichever they turn out to be. `check-docs.sh captures-eligible <records root> docs/kb-receipt.tsv` computes that class from the receipt and the records on disk. An invocation naming unrelated files absorbs no captures, and a bare invocation follows the two rules above.
 
 `weave reconsider` is the pass that returns to what an earlier run deferred: `check-docs.sh captures-deferred <records root> docs/kb-receipt.tsv` lists those decisions, and the run re-examines each against current evidence and consumes any that now route. A deferred decision does not wake on its own — nothing schedules this pass, and reaching a deferred decision takes a run somebody starts.
+
+`weave pending` prints the queue and asks: `check-docs.sh sources-pending <raw root> docs/kb-intake.tsv` lists every raw source outside `captures/` that no run has consumed at its current bytes, as `new` or `changed`. Show that list, ask which entries this run takes, and wait for the answer — the same wait as a bare invocation. An empty list ends the run with a one-line report: nothing is pending, and there is nothing to claim or snapshot for. The list is the queue, not the batch: a scope the model picks is not reproducible from the invocation, and the whole queue at once is the tree-nobody-reviews failure the bare invocation guards against.
 
 0. Claim, seed and snapshot
 1. Read the sources and scan for supersession
@@ -57,21 +61,23 @@ Take the run's claim first, before anything else, with `check-docs.sh claim-acqu
 
 If the claim is refused, stop and report what `claim-acquire` printed. A live owner means another run is going; an abandoned one means a run died, and somebody has to look at what it left in `docs/` before the claim is released by hand.
 
-Then run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it.
+Then run `check-docs.sh snapshot`. It records a hash of every file under the raw root and prints the path of the manifest holding them. Keep that path: Step 6 needs it, and it names this run's manifest alone, so a compile running beside this one cannot be confused with it. `NO-RAW-ROOT` from it is a halt on every row of the table below except the third: a hand-written tree may have no raw layer at all, and `references/adopt.md` says what an adoption does without a manifest.
 
 Then settle what `docs/` already is:
 
-| State of `docs/`                          | Do this                                                                                                     |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `docs/WIKI.md` exists                     | Read it. It is authoritative and outranks this file wherever the two disagree                               |
-| `docs/` absent or empty                   | Read `references/wiki-template.md` and write it unchanged to `docs/WIKI.md`, then report that you seeded it |
-| `docs/` has content but no `docs/WIKI.md` | Stop and ask the user to confirm the target directory before writing anything                               |
+| State of `docs/`                          | Do this                                                                                                                     |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `docs/WIKI.md` exists                     | Read it. It is authoritative and outranks this file wherever the two disagree                                               |
+| `docs/` absent or empty                   | Read `references/wiki-template.md` and write it unchanged to `docs/WIKI.md`, then report that you seeded it                 |
+| `docs/` has content but no `docs/WIKI.md` | Read `references/adopt.md` and follow it to its end. The run stops when the adoption is reported; nothing is compiled in it |
 
-The third row is a hand-written documentation tree, not a knowledge base with a missing file. Overwriting one is the single most expensive mistake this skill can make.
+The third row is a hand-written documentation tree, not a knowledge base with a missing file. Overwriting one is the single most expensive mistake this skill can make, which is why the procedure that adopts one is written down separately and read only here: it changes nothing that is there, and it ends the run so the adoption is committed on its own.
 
 ### Step 1: Read the sources and scan for supersession
 
 Read every named source completely. A source is the unit the user named; reading half of one produces a page that cites a fragment nobody checked.
+
+The ledger decides only for the `pending` class. A source the owner named by filename is read in full whatever `docs/kb-intake.tsv` says about it: naming it is the way back to a source recorded `no-home` whose bytes never changed but whose code did. Capture records are never in the ledger; the receipt, `weave captures` and `weave reconsider` govern those exactly as before. Within the `pending` class a source is read only if `sources-pending` listed it; one listed as `changed` is read again in full, because the ledger records what was consumed, not a diff.
 
 Then read `docs/index.md` and, for every topic the sources touch, the pages it names. You cannot update a page you have not read, and Step 3 turns on knowing which pages already exist.
 
@@ -179,6 +185,8 @@ Acknowledgement is per decision, never per record: a record is routinely half co
 
 The receipt is committed alongside the pages it describes, so reverting a bad run reverts its bookkeeping too.
 
+Then write the intake. Stage one line per named source outside `captures/` this run read — `<path relative to the raw root>\t<state>`, `consumed` when at least one claim from it reached a page and `no-home` when none did — and run `check-docs.sh intake-commit docs/kb-intake.tsv <raw root> <staging file>`. It hashes each file itself and writes nothing unless every line validates. Then run `check-docs.sh intake-check docs/kb-intake.tsv <raw root>` and carry what it notes into the report. A source skipped in Step 1 is not staged: it is already recorded. Nor is a named source whose last ledger line already carries its current hash and state — a repeat run over unchanged sources leaves the ledger as it was, the same way it leaves the pages. Capture records are never staged here; the receipt is theirs.
+
 Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is done, and also on the halt path above after reporting. Holding it through a halt buys nothing: the user has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies and then makes somebody inspect a compiled layer they already know the state of.
 
 ### Step 7: Report
@@ -204,9 +212,9 @@ Close by saying that `docs/` is ready to be committed on its own.
 - Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 0 and `verify-sources` in Step 6, not by inspection
 - Never run `git add`, `git commit`, or any other git write. Committing is somebody else's job — `df:commit` when that plugin is installed, the user's own hands otherwise — and `docs/` lands in its own commit so that a bad compile is recoverable with one `git revert`
 - Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and `index.md` can end up disagreeing with each other
-- A repeat run over unchanged sources produces no diff — no timestamp bumps, no `log.md` entry, nothing. Skip a source whose every recorded fragment hash still matches on every page citing it
+- A repeat `weave pending` over unchanged sources produces no diff — no timestamp bumps, no `log.md` entry, no intake line. A non-capture source the ledger records at its current hash is not in that list, and the list is the check, not a re-read. A source named by filename, and every capture record, is outside this rule
 - Never rewrite an existing `docs/WIKI.md`
-- An adoption run ends at its report. Compiling a source in the same run couples two things that revert separately
+- An adoption run ends at its report, and that report lists the tree's own findings as the owner's backlog rather than resolving them: the run adopted pages, it did not compile claims, so the whole-run rule above has nothing of this run's to judge
 
 </constraints>
 
