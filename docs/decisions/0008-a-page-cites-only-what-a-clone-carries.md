@@ -12,7 +12,7 @@ generated:
 sources:
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "raw-citation-refusal"
-    fragment: "L777-L797"
+    fragment: "L786-L806"
     sha256: "0524b3f6aafb"
   - resource: "plugins/kb/README.md"
     id: "kb-raw-untracked"

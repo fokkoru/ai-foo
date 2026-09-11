@@ -14,22 +14,22 @@ sources:
   - resource: "plugins/kb/README.md"
     id: "kb-skill-table"
     fragment: "## The skills"
-    sha256: "1babb17bdc94"
+    sha256: "a0d28de65a65"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-modes"
-    fragment: "L2-L26"
-    sha256: "96a4ec037994"
+    fragment: "L2-L31"
+    sha256: "b04c173886ee"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-manifest"
-    fragment: "L28-L34"
+    fragment: "L33-L39"
     sha256: "d95cc3e40e01"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-claim"
-    fragment: "L1308-L1321"
+    fragment: "L1570-L1583"
     sha256: "24c5e1bb89e4"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "checker-receipt"
-    fragment: "L975-L995"
+    fragment: "L1237-L1257"
     sha256: "7bc17f218020"
   - resource: "plugins/kb/skills/capture/SKILL.md"
     id: "capture-claim-step"
@@ -41,11 +41,11 @@ sources:
     sha256: "fcf30c0174f1"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "lint-rules"
-    fragment: "L692-L756"
+    fragment: "L701-L765"
     sha256: "933b5af6828e"
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "lint-unhashed"
-    fragment: "L821-L825"
+    fragment: "L830-L834"
     sha256: "c4ffbe4d5454"
   - resource: "plugins/kb/skills/lint/SKILL.md"
     id: "lint-candidates"
@@ -77,9 +77,10 @@ claim about present behaviour reaches a fact page only once the compiler located
 
 ## How it works
 
-`check-docs.sh` is the mechanical half. It ships fourteen modes covering conformance, reachability,
+`check-docs.sh` is the mechanical half. It ships eighteen modes covering conformance, reachability,
 provenance, raw-source immutability, capture-record format, decision identifiers, the run claim,
-supersession edges, and the receipt. Each exits 0 on success and 1 on any failure, printing one
+supersession edges, the receipt, the intake ledger of raw sources a run consumed, and the `type:`
+stamp an adoption puts on a hand-written page. Each exits 0 on success and 1 on any failure, printing one
 `RULE(subject): detail` line per failure.[^checker-modes]
 
 A weave run takes a repository-local claim before it does anything else, then snapshots the raw layer.

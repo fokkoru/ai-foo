@@ -12,7 +12,7 @@ generated:
 sources:
   - resource: "plugins/kb/scripts/check-docs.sh"
     id: "source-missing-report"
-    fragment: "L758-L775"
+    fragment: "L767-L784"
     sha256: "0544e2607722"
   - resource: "docs/WIKI.md"
     id: "vanished-source-rule"
