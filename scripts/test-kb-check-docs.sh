@@ -952,4 +952,107 @@ fi
 chmod 644 "$INTK/thoughts/research/locked.md"
 rm "$INTK/thoughts/research/locked.md"
 
+# --- recording what a run took in -------------------------------------------
+
+commit_ledger="$INTK/commit.tsv"
+printf 'research/new.md\tconsumed\nresearch/homeless.md\tno-home\n' >"$INTK/staging-ok"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-ok" 2>&1)
+if [ $? -eq 0 ] && [ "$(awk 'END {print NR}' "$commit_ledger")" -eq 2 ] &&
+  awk -F'\t' '$1 == "research/new.md" && length($2) == 64 && $3 == "consumed" {f = 1} END {exit f ? 0 : 1}' "$commit_ledger" &&
+  printf '%s\n' "$out" | grep -q '^intake-commit: 2 sources recorded'; then
+  pass "a validated staging is appended with the file hash computed by the checker"
+else
+  bad "intake-commit did not record the staging: $out $(cat "$commit_ledger" 2>/dev/null)"
+fi
+
+out=$("$CHECKER" sources-pending "$INTK/thoughts" "$commit_ledger" 2>&1)
+if ! printf '%s\n' "$out" | grep -q 'research/new.md'; then
+  pass "a consumed source stops being pending"
+else
+  bad "a consumed source is still pending: $out"
+fi
+
+printf 'research/new.md\tconsumed\nresearch/missing.md\tconsumed\n' >"$INTK/staging-missing"
+before=$(cat "$commit_ledger")
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-missing" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-source-missing(intake-commit)' &&
+  [ "$(cat "$commit_ledger")" = "$before" ]; then
+  pass "one bad staged line writes nothing"
+else
+  bad "a bad staging still wrote: $out"
+fi
+
+printf 'captures/rec.md\tconsumed\n' >"$INTK/staging-capture"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-capture" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-in-captures(intake-commit)'; then
+  pass "a capture record is refused by intake"
+else
+  bad "a capture record reached the intake ledger: $out"
+fi
+
+printf 'research/new.md\tmaybe\n' >"$INTK/staging-state"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-state" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-state(intake-commit)'; then
+  pass "an unknown state is refused"
+else
+  bad "an unknown state was recorded: $out"
+fi
+
+# --- the ledger's own health --------------------------------------------------
+
+out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
+if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q '^OK: 2 intake lines'; then
+  pass "a fresh ledger checks clean"
+else
+  bad "a fresh ledger did not check clean: $out"
+fi
+
+echo "edited after intake" >>"$INTK/thoughts/research/new.md"
+rm "$INTK/thoughts/research/homeless.md"
+out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
+if [ $? -eq 0 ] &&
+  printf '%s\n' "$out" | grep -q '^intake-source-changed(research/new.md)' &&
+  printf '%s\n' "$out" | grep -q '^intake-source-gone(research/homeless.md)'; then
+  pass "a changed or deleted source is noted, not reported"
+else
+  bad "a changed source was treated as a defect or missed: $out"
+fi
+
+# consume, edit, consume again: only the last line for the path is compared
+printf 'research/new.md\tconsumed\n' >"$INTK/staging-again"
+"$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-again" >/dev/null 2>&1
+out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
+if [ $? -eq 0 ] && ! printf '%s\n' "$out" | grep -q 'intake-source-changed(research/new.md)'; then
+  pass "a source consumed again at its new hash is no longer noted as changed"
+else
+  bad "an older ledger line for a re-consumed source was compared: $out"
+fi
+
+printf 'research/x.md\tnothex\tconsumed\n' >>"$commit_ledger"
+out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-hash(intake-check)'; then
+  pass "a malformed hash is a failure"
+else
+  bad "a malformed hash passed: $out"
+fi
+# BSD sed; the line removed is the one the case above appended.
+sed -i '' '$d' "$commit_ledger"
+
+printf '../outside.md\tconsumed\n' >"$INTK/staging-escape"
+echo "outside" >"$INTK/outside.md"
+out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-escape" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-path(intake-commit)'; then
+  pass "a path that escapes the raw root is refused before it is looked up"
+else
+  bad "an escaping path was accepted: $out"
+fi
+
+printf 'only-two\tfields\n' >>"$commit_ledger"
+out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-malformed(intake-check)'; then
+  pass "a malformed ledger line is a failure"
+else
+  bad "a malformed ledger line passed: $out"
+fi
+
 exit "$fail"

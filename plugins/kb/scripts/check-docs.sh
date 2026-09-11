@@ -22,6 +22,9 @@
 #   captures-deferred <records-root> <receipt>
 #                                          decisions a run looked at and left
 #   sources-pending <raw-root> [intake]    raw sources no run consumed at their current bytes
+#   intake-commit <intake> <raw-root> <staging>
+#                                          record what a validated run consumed of the raw layer
+#   intake-check <intake> <raw-root>       the intake ledger's format; notes sources that moved on
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -73,6 +76,8 @@ usage: $self snapshot [raw-root]
        $self captures-eligible <records-root> [receipt]
        $self captures-deferred <records-root> <receipt>
        $self sources-pending <raw-root> [intake]
+       $self intake-commit <intake> <raw-root> <staging>
+       $self intake-check <intake> <raw-root>
 EOF
   exit 2
 }
@@ -1040,6 +1045,170 @@ EOF
   return 0
 }
 
+# A state the ledger accepts.
+intake_state_valid() {
+  case "$1" in
+  consumed | no-home) return 0 ;;
+  esac
+  return 1
+}
+
+# A path the ledger will accept: relative, no `.` or `..` segment, no leading
+# slash. The receipt trusts its paths because capture records are published by
+# the plugin; a staging line here is written by the model from a name the
+# owner typed, so the spelling is checked before it is looked up.
+intake_path_canonical() {
+  case "$1" in
+  "" | /* | ./* | ../* | */./* | */../* | */. | */..) return 1 ;;
+  esac
+  return 0
+}
+
+# What sha256_file prints: 64 hexadecimal characters.
+intake_hash_wellformed() {
+  printf '%s' "$1" | grep -Eq '^[0-9a-f]{64}$'
+}
+
+cmd_intake_commit() {
+  local intake="${1:-}" root="${2:-}" staging="${3:-}" pending line rel state hash
+  [ -n "$intake" ] || usage
+  [ -n "$root" ] || usage
+  [ -n "$staging" ] || usage
+  if [ ! -f "$staging" ]; then
+    report NO-STAGING intake-commit "$staging is not a file"
+    return 1
+  fi
+  root="${root%/}"
+  pending="$WORKDIR/intake-pending"
+  : >"$pending"
+
+  # Every staged line is validated before anything is written, so a run that
+  # fails here leaves the ledger as it was. The `|| [ -n "$line" ]` keeps a
+  # last line with no trailing newline, as receipt-commit explains. The loop
+  # reads the staging file directly rather than a heredoc because it returns
+  # on the first failure instead of accumulating findings.
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
+    2) ;;
+    *)
+      report intake-malformed intake-commit "expected two tab-separated fields, got: $line"
+      return 1
+      ;;
+    esac
+    rel=$(printf '%s' "$line" | cut -f1)
+    state=$(printf '%s' "$line" | cut -f2)
+    if ! intake_state_valid "$state"; then
+      report intake-state intake-commit "$rel: state must be consumed or no-home, got $state"
+      return 1
+    fi
+    if ! intake_path_canonical "$rel"; then
+      report intake-path intake-commit "$rel is not a plain path relative to the raw root"
+      return 1
+    fi
+    case "$rel" in
+    captures/*)
+      report intake-in-captures intake-commit "$rel is a capture record; the receipt acknowledges those, per decision"
+      return 1
+      ;;
+    esac
+    if [ ! -f "$root/$rel" ]; then
+      report intake-source-missing intake-commit "$rel is not a file under $root"
+      return 1
+    fi
+    hash=$(sha256_file "$root/$rel") || {
+      report HASH-FAILED intake-commit "could not hash $rel"
+      return 1
+    }
+    printf '%s\t%s\t%s\n' "$rel" "$hash" "$state" >>"$pending"
+  done <"$staging"
+
+  cat "$pending" >>"$intake" || {
+    report INTAKE-FAILED intake-commit "could not append to $intake"
+    return 1
+  }
+  echo "intake-commit: $(line_count "$pending") sources recorded in $intake"
+  return 0
+}
+
+# The ledger's own format, plus what has moved on since it was written. Every
+# line is validated structurally; existence and current bytes are compared
+# against each path's last line only, because that is the one that counts
+# and an older line for the same path is history, not a pending source. A
+# source that changed or went away is noted rather than reported: the raw
+# layer is the owner's, and both are reasons to run weave again, not defects
+# in the compiled layer.
+cmd_intake_check() {
+  local intake="${1:-}" root="${2:-}" line rel hash state current
+  [ -n "$intake" ] || usage
+  [ -n "$root" ] || usage
+  if [ ! -f "$intake" ]; then
+    report NO-INTAKE intake-check "$intake is not a file"
+    return 1
+  fi
+  root="${root%/}"
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
+    3) ;;
+    *)
+      report intake-malformed intake-check "expected three tab-separated fields, got: $line"
+      continue
+      ;;
+    esac
+    rel=$(printf '%s' "$line" | cut -f1)
+    hash=$(printf '%s' "$line" | cut -f2)
+    state=$(printf '%s' "$line" | cut -f3)
+    if ! intake_path_canonical "$rel"; then
+      report intake-path intake-check "$rel is not a plain path relative to the raw root"
+      continue
+    fi
+    if ! intake_hash_wellformed "$hash"; then
+      report intake-hash intake-check "$rel: hash is not 64 hexadecimal characters"
+      continue
+    fi
+    if ! intake_state_valid "$state"; then
+      report intake-state intake-check "$rel: state must be consumed or no-home, got $state"
+      continue
+    fi
+    case "$rel" in
+    captures/*)
+      report intake-in-captures intake-check "$rel is a capture record and does not belong in the intake ledger"
+      continue
+      ;;
+    esac
+  done <<EOF
+$(cat "$intake")
+EOF
+  if [ "$fail" -ne 0 ]; then
+    return 0
+  fi
+  # Last line per path, in path order.
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    rel=$(printf '%s' "$line" | cut -f1)
+    hash=$(printf '%s' "$line" | cut -f2)
+    state=$(printf '%s' "$line" | cut -f3)
+    if [ ! -f "$root/$rel" ]; then
+      note intake-source-gone "$rel" "recorded $state, no longer under $root"
+      continue
+    fi
+    current=$(sha256_file "$root/$rel") || {
+      report HASH-FAILED intake-check "could not hash $rel"
+      continue
+    }
+    if [ "$current" != "$hash" ]; then
+      note intake-source-changed "$rel" "recorded $state at another hash; it is pending again"
+    fi
+  done <<EOF
+$(awk -F'\t' '{h[$1] = $2; s[$1] = $3} END {for (p in h) print p "\t" h[p] "\t" s[p]}' "$intake" | LC_ALL=C sort)
+EOF
+  if [ "$fail" -eq 0 ]; then
+    echo "OK: $(line_count "$intake") intake lines in $intake"
+  fi
+  return 0
+}
+
 # ----------------------------------------------------------------- receipt
 
 # What a run consumed and what it left, per capture and per decision. A record
@@ -1743,6 +1912,8 @@ receipt-check) cmd_receipt_check "$@" || fail=1 ;;
 captures-eligible) cmd_captures_eligible "$@" || fail=1 ;;
 captures-deferred) cmd_captures_deferred "$@" || fail=1 ;;
 sources-pending) cmd_sources_pending "$@" || fail=1 ;;
+intake-commit) cmd_intake_commit "$@" || fail=1 ;;
+intake-check) cmd_intake_check "$@" || fail=1 ;;
 *) usage ;;
 esac
 
