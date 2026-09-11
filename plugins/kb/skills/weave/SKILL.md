@@ -17,6 +17,8 @@ The input is a directory of markdown. `thoughts/` is not any plugin's artifact, 
 <artifact_scope>
 Writes are allowed under `docs/` only.
 
+On the adoption row of Step 0 the allowed writes narrow further to what `references/adopt.md` lists: three files when absent, a `type:` key through `stamp-type`, and a `decision_id:` on a decision page that has none. That run writes no page body and compiles no source.
+
 `thoughts/**` is denied. Before any Write or Edit call, verify the target path is inside `docs/` — if it is not, stop and ask the user.
 
 Inspection is not enough to prove that denial held. A project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it. That is why Step 0 snapshots and Step 6 verifies.
@@ -204,6 +206,7 @@ Close by saying that `docs/` is ready to be committed on its own.
 - Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and `index.md` can end up disagreeing with each other
 - A repeat run over unchanged sources produces no diff — no timestamp bumps, no `log.md` entry, nothing. Skip a source whose every recorded fragment hash still matches on every page citing it
 - Never rewrite an existing `docs/WIKI.md`
+- An adoption run ends at its report. Compiling a source in the same run couples two things that revert separately
 
 </constraints>
 

@@ -29,11 +29,12 @@ The compiler leaves its output uncommitted in the working tree. Read the diff, t
 
 What the skill guarantees, stated so you can check it from your own working copy and the run in front of you — no need to open a `SKILL.md`. A run that does not produce its row is a bug worth reporting, and a change that removes a row has to say so here first.
 
-| Skill        | You know it worked when                                                                                                                                                     |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kb:capture` | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                     |
-| `kb:weave`   | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling |
-| `kb:lint`    | `docs/` changed and `thoughts/` did not, and every page the run edited traces to a finding that named its evidence                                                          |
+| Skill                             | You know it worked when                                                                                                                                                                                                                                                                                              |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kb:capture`                      | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                                                                                                                                                              |
+| `kb:weave`                        | `docs/` changed and `thoughts/` did not — the run reports a source-hash verification, and a second document on a topic updated an existing page instead of adding a sibling                                                                                                                                          |
+| `kb:weave` on a hand-written tree | `docs/WIKI.md`, `docs/index.md` and `docs/log.md` appeared, every page gained a `type:` line — and a decision page without an id a `decision_id:` line — and nothing else in its diff, `thoughts/` did not change, nothing was compiled, and the run showed you the directory-to-type table before it wrote anything |
+| `kb:lint`                         | `docs/` changed and `thoughts/` did not, and every page the run edited traces to a finding that named its evidence                                                                                                                                                                                                   |
 
 ## Customize paths (optional)
 
