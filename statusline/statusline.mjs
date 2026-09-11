@@ -11,7 +11,7 @@
 // rate-limit windows. Groups are divided by a rule; inside a group every
 // number carries the word that says what it is.
 //
-// Usage: statusline.mjs run
+// Usage: statusline.mjs run | worktree
 
 import { readFileSync } from "node:fs";
 
@@ -46,10 +46,13 @@ const OUTPUT_RATE = {
   "claude-mythos-5-1": 50,
 };
 
-// Auto-compact does not fire at a fraction of the window: Claude Code 2.1.260
-// compacts once the context reaches the window less a fixed 13,000-token
-// buffer, so that difference is what the meter measures against.
-const AUTOCOMPACT_BUFFER = 13000;
+// Auto-compact does not fire at a fraction of the window. Claude Code 2.1.268
+// compacts once the context reaches the window less two reserves: 20,000
+// tokens held back for the summary response, then a fixed 13,000-token
+// buffer. `/context` reports their sum as "Autocompact buffer: 33k tokens",
+// and that sum is what the percentage measures against. The payload carries
+// neither reserve, so the figure is pinned here.
+const AUTOCOMPACT_BUFFER = 20000 + 13000;
 
 // Cache reads bill at 0.1x the input rate; the pricing page names Fable 5.1 and
 // Mythos 5.1 alone as the 0.025x exception, and every other model as standard.
@@ -70,7 +73,6 @@ const C = {
   yellow: "\x1b[38;5;223m", // #f9e2af — money
   pink: "\x1b[38;5;218m", // #f5c2e7 — the limit windows
   comment: "\x1b[38;5;243m", // #6c7086 overlay — words, rules, units
-  track: "\x1b[38;5;238m", // the unfilled part of a bar
   off: "\x1b[0m",
 };
 
@@ -82,18 +84,6 @@ const tone = (pct) => (pct >= 85 ? C.red : pct >= 60 ? C.orange : C.green);
 const toneHit = (pct) => (pct >= 85 ? C.green : pct >= 60 ? C.orange : C.red);
 const paint = (s, c) => c + s + C.off;
 const emphasise = (s, c) => "\x1b[1m" + c + s + C.off;
-
-// The meter sits on the baseline and stops at half a cell, so it is no taller
-// than a lowercase letter beside it. The full block it replaced filled the
-// cell and stood above the whole line. Half blocks have no partial-width
-// siblings, so the meter steps a whole cell at a time; the percentage printed
-// beside it carries the precision that costs.
-function bar(pct, cells, colour) {
-  const full = Math.round((Math.max(0, Math.min(100, pct)) / 100) * cells);
-  return (
-    paint("▄".repeat(full), colour) + paint("▁".repeat(cells - full), C.track)
-  );
-}
 
 const RULE = paint("│", C.comment);
 
@@ -144,7 +134,7 @@ function duration(mins) {
 function renderModel(d) {
   // The display name carries a parenthetical for the wide-context variants,
   // "Opus 5 (1M context)". The window size is already implied by the context
-  // meter, so only the name is kept.
+  // percentage, so only the name is kept.
   const name = String(d.model?.display_name ?? "")
     .replace(/\s*\(.*\)\s*$/, "")
     .trim();
@@ -163,8 +153,6 @@ function renderContext(d) {
   const pct = Math.round((used / (size - AUTOCOMPACT_BUFFER)) * 100);
   return (
     paint("ctx", C.cyan) +
-    " " +
-    bar(pct, 12, tone(pct)) +
     " " +
     emphasise(pct + "%", tone(pct)) +
     paint(" " + compact(used), C.comment)

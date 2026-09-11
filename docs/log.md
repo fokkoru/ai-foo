@@ -1,5 +1,9 @@
 # Log
 
+## 2026-09-10
+
+- **Update**: [The two-line status line](architecture/statusline.md) — `kb:lint` over the page named on the invocation, eight checker records against `statusline/statusline.mjs`. One claim was false, not drifted: the auto-compact buffer is 33,000 tokens on Claude Code 2.1.268, a 20,000-token summary reserve plus the fixed 13,000, confirmed by `/context` printing `Autocompact buffer: 33k tokens`; the script had pinned 13,000 and the page repeated it. Corrected both the constant's paragraph and the two sentences calling the context readout a meter, since the bar was removed and only the toned percentage remains. The other seven citations moved with the file and were re-anchored; five of them hash to their old values at the new ranges, so no prose behind them changed.
+
 ## 2026-09-06
 
 - **Creation**: [The knowledge compiler](architecture/knowledge-compiler.md) — considered [Independent review dispatch](architecture/review-dispatch.md) and [Prompt A/B harness](architecture/prompt-eval-harness.md), the two pages about a mechanism this repository runs over its own work; both are about df's review and evaluation machinery and neither covers the raw-to-compiled pipeline. No page mentioned `kb` at all, and the layer that writes `docs/` had no page in it.

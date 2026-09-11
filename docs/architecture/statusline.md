@@ -4,8 +4,8 @@ title: "The two-line status line"
 description: "How the Claude Code status line is assembled from ccstatusline's git widgets and one local script, and how to recreate it on a new machine."
 status: stable
 generated:
-  by: "kb:compile"
-  at: "2026-09-06T00:00:11-07:00"
+  by: "kb:lint"
+  at: "2026-09-10T17:04:14-07:00"
 sources:
   - resource: "CLAUDE.md"
     id: "sl-not-a-plugin"
@@ -14,34 +14,34 @@ sources:
   - resource: "statusline/statusline.mjs"
     id: "sl-why"
     fragment: "L2-L14"
-    sha256: "c1dc73bfb32a"
+    sha256: "02472ac4fa5e"
   - resource: "statusline/statusline.mjs"
     id: "sl-buffer"
-    fragment: "L49-L52"
-    sha256: "ec716fa3d24a"
+    fragment: "L49-L55"
+    sha256: "c9d681ece83c"
   - resource: "statusline/statusline.mjs"
     id: "sl-rates"
-    fragment: "L18-L59"
-    sha256: "2ca471acaf3a"
+    fragment: "L18-L62"
+    sha256: "14b4b0892a21"
   - resource: "statusline/statusline.mjs"
     id: "sl-cache"
-    fragment: "L174-L194"
+    fragment: "L162-L182"
     sha256: "a51da5b9ddfa"
   - resource: "statusline/statusline.mjs"
     id: "sl-cost"
-    fragment: "L196-L268"
+    fragment: "L184-L256"
     sha256: "744b66b88c4d"
   - resource: "statusline/statusline.mjs"
     id: "sl-thresholds"
-    fragment: "L77-L82"
+    fragment: "L79-L84"
     sha256: "ea823662305d"
   - resource: "statusline/statusline.mjs"
     id: "sl-dispatch"
-    fragment: "L284-L310"
+    fragment: "L272-L298"
     sha256: "5d0f3dbddf98"
   - resource: "statusline/statusline.mjs"
     id: "sl-worktree"
-    fragment: "L287-L297"
+    fragment: "L275-L285"
     sha256: "dbb0e3382159"
 ---
 
@@ -66,9 +66,12 @@ The script has two modes, chosen by its first argument. `run` prints the whole s
 Claude Code hands the status line a JSON payload on stdin. `ccstatusline` passes that same payload
 to each `custom-command` widget, so the script parses stdin and writes ANSI-coloured text.[^sl-why]
 
-**Context.** The meter measures against the point where auto-compact fires, which is not a fraction
-of the window: Claude Code 2.1.260 compacts once the context reaches the window size less a fixed
-13,000-token buffer, so the percentage is used tokens over that difference.[^sl-buffer]
+**Context.** The percentage measures against the point where auto-compact fires, which is not a
+fraction of the window: Claude Code 2.1.268 compacts once the context reaches the window size less
+two reserves, 20,000 tokens held for the summary response and a fixed 13,000-token buffer. `/context`
+reports their sum as `Autocompact buffer: 33k tokens`, and the percentage is used tokens over the
+window less that sum. The payload carries neither reserve, so the script pins the
+figure.[^sl-buffer]
 
 **Cost.** Three figures, priced from a table of published rates. Every rate below is
 [reported] (https://platform.claude.com/docs/en/about-claude/pricing, retrieved 2026-09-05).
@@ -93,8 +96,8 @@ compaction — prints `next ?` rather than substituting the last context and pri
 measurement. A model absent from the rate table prints no cost rather than a guessed
 one.[^sl-rates][^sl-cost]
 
-**Colour.** Colour encodes state, not identity. A meter is green below 60%, amber from 60%, red
-from 85% — 60% is where there is still room to act and 85% is where there is not. The cache hit
+**Colour.** Colour encodes state, not identity. A percentage is green below 60%, amber from 60%,
+red from 85% — 60% is where there is still room to act and 85% is where there is not. The cache hit
 ratio is toned the other way round, since a healthy session sits high and anything under 60% means
 the prefix is being rebuilt on most requests.[^sl-thresholds]
 
