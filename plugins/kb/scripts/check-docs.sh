@@ -21,6 +21,7 @@
 #                                          decisions no run has consumed yet
 #   captures-deferred <records-root> <receipt>
 #                                          decisions a run looked at and left
+#   sources-pending <raw-root> [intake]    raw sources no run consumed at their current bytes
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -71,6 +72,7 @@ usage: $self snapshot [raw-root]
        $self receipt-check <receipt> <records-root>
        $self captures-eligible <records-root> [receipt]
        $self captures-deferred <records-root> <receipt>
+       $self sources-pending <raw-root> [intake]
 EOF
   exit 2
 }
@@ -970,6 +972,74 @@ cmd_captures_deferred() {
   awk -F'\t' '$3 == "deferred" {print $1 "\t" $4}' "$receipt" | LC_ALL=C sort -u
 }
 
+# ------------------------------------------------------------------ intake
+
+# What a run consumed of the raw layer outside captures, per file. Captures are
+# acknowledged per decision in the receipt, and a second answer per file would
+# disagree with the first, so they are excluded here.
+#
+#   <path relative to the raw root>\t<sha256 of the whole file>\t<state>
+#
+# The state is `consumed` or `no-home` — the run read the source and routed
+# nothing from it. Append-only; the last line for a path is the one that
+# counts. The hash is the whole file's bytes, the same hash snapshot records,
+# so a source that changes after it was consumed shows up as pending again.
+# That is the intended difference from the receipt: a capture record is
+# immutable and a mismatch there is a defect, while a note is the owner's to
+# edit and a mismatch here is a reason to compile it again.
+#
+# Tracked and committed alongside the pages it describes, for the reason the
+# receipt is: reverting a bad run has to revert its bookkeeping too.
+
+# The last recorded hash for a path, empty when never recorded.
+intake_recorded_hash() {
+  awk -F'\t' -v p="$2" '$1 == p {h = $2} END {print h}' "$1"
+}
+
+# Raw sources no run has consumed at their current bytes. Enumeration is
+# mechanical; which of the listed sources a run then takes is the model's
+# choice, and the run's report is where that choice is written down.
+cmd_sources_pending() {
+  local root="${1:-}" intake="${2:-}" path rel hash recorded
+  [ -n "$root" ] || usage
+  if [ ! -d "$root" ]; then
+    report NO-RAW-ROOT sources-pending "$root is not a directory"
+    return 1
+  fi
+  root="${root%/}"
+  # Enumerate once, into a file, guarded, for the reason cmd_check gives: a
+  # find that fails partway would otherwise print a short queue with exit 0.
+  find "$root" -type f -name '*.md' -print | LC_ALL=C sort >"$WORKDIR/raw-files" || {
+    report ENUMERATION-FAILED sources-pending "could not enumerate the files under $root"
+    return 1
+  }
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    rel="${path#"$root"/}"
+    case "$rel" in
+    captures/*) continue ;;
+    esac
+    # Assigned and tested separately: inside a printf the hash's exit status
+    # is lost and an unreadable file records as an empty hash.
+    hash=$(sha256_file "$path") || {
+      report HASH-FAILED sources-pending "could not hash $rel"
+      return 1
+    }
+    recorded=""
+    if [ -n "$intake" ] && [ -f "$intake" ]; then
+      recorded=$(intake_recorded_hash "$intake" "$rel")
+    fi
+    if [ -z "$recorded" ]; then
+      printf '%s\tnew\n' "$rel"
+    elif [ "$recorded" != "$hash" ]; then
+      printf '%s\tchanged\n' "$rel"
+    fi
+  done <<EOF
+$(cat "$WORKDIR/raw-files")
+EOF
+  return 0
+}
+
 # ----------------------------------------------------------------- receipt
 
 # What a run consumed and what it left, per capture and per decision. A record
@@ -1672,6 +1742,7 @@ receipt-commit) cmd_receipt_commit "$@" || fail=1 ;;
 receipt-check) cmd_receipt_check "$@" || fail=1 ;;
 captures-eligible) cmd_captures_eligible "$@" || fail=1 ;;
 captures-deferred) cmd_captures_deferred "$@" || fail=1 ;;
+sources-pending) cmd_sources_pending "$@" || fail=1 ;;
 *) usage ;;
 esac
 

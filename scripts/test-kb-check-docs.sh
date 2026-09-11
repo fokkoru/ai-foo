@@ -897,4 +897,59 @@ else
   bad "a finding reached the stream a caller reads the value from: $out"
 fi
 
+# --- which raw sources a run may still take in ------------------------------
+
+INTK="$SCRATCH/intake"
+mkdir -p "$INTK/thoughts/research" "$INTK/thoughts/captures"
+echo "a note nobody compiled" >"$INTK/thoughts/research/new.md"
+echo "a note compiled as is" >"$INTK/thoughts/research/same.md"
+echo "a note compiled, then edited" >"$INTK/thoughts/research/edited.md"
+echo "a note read and found homeless" >"$INTK/thoughts/research/homeless.md"
+echo "a capture record" >"$INTK/thoughts/captures/rec.md"
+intake_ledger="$INTK/kb-intake.tsv"
+same_hash=$(shasum -a 256 "$INTK/thoughts/research/same.md" | awk '{print $1}')
+homeless_hash=$(shasum -a 256 "$INTK/thoughts/research/homeless.md" | awk '{print $1}')
+printf 'research/same.md\t%s\tconsumed\n' "$same_hash" >"$intake_ledger"
+printf 'research/edited.md\t%s\tconsumed\n' "0000000000000000000000000000000000000000000000000000000000000000" >>"$intake_ledger"
+printf 'research/homeless.md\t%s\tno-home\n' "$homeless_hash" >>"$intake_ledger"
+
+out=$("$CHECKER" sources-pending "$INTK/thoughts" "$intake_ledger" 2>&1)
+if [ $? -eq 0 ] &&
+  printf '%s\n' "$out" | awk -F'\t' '$1 == "research/new.md" && $2 == "new" {f = 1} END {exit f ? 0 : 1}' &&
+  printf '%s\n' "$out" | awk -F'\t' '$1 == "research/edited.md" && $2 == "changed" {f = 1} END {exit f ? 0 : 1}' &&
+  ! printf '%s\n' "$out" | grep -q 'same.md' &&
+  ! printf '%s\n' "$out" | grep -q 'homeless.md' &&
+  ! printf '%s\n' "$out" | grep -q 'captures/'; then
+  pass "pending is new plus changed, minus consumed, homeless and captures"
+else
+  bad "pending was wrong: $out"
+fi
+
+out=$("$CHECKER" sources-pending "$INTK/thoughts" 2>&1)
+if [ "$(printf '%s\n' "$out" | awk -F'\t' '$2 == "new"' | wc -l | tr -d ' ')" -eq 4 ] &&
+  ! printf '%s\n' "$out" | grep -q 'captures/'; then
+  pass "with no ledger every non-capture source is new"
+else
+  bad "an absent ledger did not make everything new: $out"
+fi
+
+out=$("$CHECKER" sources-pending "$INTK/nowhere" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^NO-RAW-ROOT(sources-pending)'; then
+  pass "a missing raw root is reported"
+else
+  bad "a missing raw root was not reported: $out"
+fi
+
+# Skipped by a root user, whom sha256_file can still read; the harness runs unprivileged.
+echo "unreadable" >"$INTK/thoughts/research/locked.md"
+chmod 000 "$INTK/thoughts/research/locked.md"
+out=$("$CHECKER" sources-pending "$INTK/thoughts" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^HASH-FAILED(sources-pending)'; then
+  pass "a file that cannot be hashed fails the run rather than recording an empty hash"
+else
+  bad "an unhashable file was swallowed: $out"
+fi
+chmod 644 "$INTK/thoughts/research/locked.md"
+rm "$INTK/thoughts/research/locked.md"
+
 exit "$fail"
