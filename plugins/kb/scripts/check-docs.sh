@@ -7,6 +7,7 @@
 #   check [docs-root] [raw-root]           every conformance rule over the compiled tree
 #   check-capture <record>                 the format rules for one capture record
 #   assign-id <page>                       an identifier for a new decision page
+#   stamp-type <page> <type>               insert type: as the page's first frontmatter key
 #   resolve-decision <docs-root> <id> [path-hint]
 #                                          the page an identifier names
 #   claim-acquire <session-id> <pid>       take the whole-run claim, print its run id
@@ -66,6 +67,7 @@ usage: $self snapshot [raw-root]
        $self check [docs-root] [raw-root]
        $self check-capture <record>
        $self assign-id <page>
+       $self stamp-type <page> <type>
        $self resolve-decision <docs-root> <id> [path-hint]
        $self claim-acquire <session-id> <pid>
        $self claim-release <run-id>
@@ -1735,6 +1737,70 @@ cmd_assign_id() {
   fragment_text "$page" "(whole)" | normalize_and_hash
 }
 
+# The one edit an adoption run makes to a page that already exists. A
+# hand-written page carries no type, and until it does check reports it on
+# every run and lint has nothing it can act on. Inserting the key as the first
+# line of the block leaves every other byte of the page where it was; that is
+# the whole promise.
+cmd_stamp_type() {
+  local page="${1:-}" type="${2:-}" end tmp
+  [ -n "$page" ] || usage
+  [ -n "$type" ] || usage
+  if [ ! -f "$page" ]; then
+    report NO-PAGE stamp-type "$page is not a file"
+    return 1
+  fi
+  # Read before anything is assembled: a page that cannot be opened must not
+  # reach the write below with an empty replacement.
+  if [ ! -r "$page" ]; then
+    report STAMP-FAILED "$page" "cannot be read; nothing stamped"
+    return 1
+  fi
+  end=$(fm_end "$page")
+  if [ "$end" -eq 0 ] && [ "$(head -n 1 "$page")" = "---" ]; then
+    report frontmatter-parseable "$page" "the opening --- has no closing ---; nothing stamped"
+    return 1
+  fi
+  if [ "$end" -gt 0 ]; then
+    if awk -v n="$end" 'NR > 1 && NR < n && index($0, "type:") == 1 {f = 1} END {exit f ? 0 : 1}' "$page"; then
+      if [ -n "$(fm_value "$page" type)" ]; then
+        report type-present "$page" "already carries type: $(fm_value "$page" type); stamp-type never overwrites"
+      else
+        report type-empty "$page" "carries a type: key with no value; fill it by hand rather than doubling it"
+      fi
+      return 1
+    fi
+  fi
+  # The whole replacement is assembled and checked before the page is opened
+  # for writing: a cat or tail that fails halfway must not leave a truncated
+  # page behind, and set -e does not reach this call tree. cat into the page
+  # rather than mv keeps its inode, mode and any symlink.
+  tmp="$WORKDIR/stamp"
+  if [ "$end" -eq 0 ]; then
+    {
+      printf -- '---\ntype: %s\n---\n' "$type"
+      cat "$page"
+    } >"$tmp" || {
+      report STAMP-FAILED "$page" "could not assemble the stamped page; nothing written"
+      return 1
+    }
+  else
+    {
+      printf -- '---\ntype: %s\n' "$type"
+      tail -n +2 "$page"
+    } >"$tmp" || {
+      report STAMP-FAILED "$page" "could not assemble the stamped page; nothing written"
+      return 1
+    }
+  fi
+  cat "$tmp" >"$page" || {
+    report STAMP-FAILED "$page" "could not write the page"
+    return 1
+  }
+  echo "stamp-type: $page type: $type"
+  return 0
+}
+
 # Identifiers seen so far, id<TAB>page. A page carrying none is reported as it
 # is checked; duplicates need the whole set, so they wait for the loop to end.
 check_decision_id() {
@@ -1902,6 +1968,7 @@ verify-sources) cmd_verify_sources "$@" || fail=1 ;;
 check) cmd_check "$@" || fail=1 ;;
 check-capture) cmd_check_capture "$@" || fail=1 ;;
 assign-id) cmd_assign_id "$@" || fail=1 ;;
+stamp-type) cmd_stamp_type "$@" || fail=1 ;;
 resolve-decision) cmd_resolve_decision "$@" || fail=1 ;;
 claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
 claim-release) cmd_claim_release "$@" || fail=1 ;;

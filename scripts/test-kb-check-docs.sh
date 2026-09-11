@@ -1055,4 +1055,65 @@ else
   bad "a malformed ledger line passed: $out"
 fi
 
+# --- stamping a type onto a page written by hand ------------------------------
+
+STAMP="$SCRATCH/stamp"
+mkdir -p "$STAMP"
+printf '# A bare page\n\nBody line.\n' >"$STAMP/bare.md"
+printf -- '---\ntitle: "With frontmatter"\n---\n\n# Titled\n' >"$STAMP/fm.md"
+printf -- '---\ntype: product\n---\n# Typed\n' >"$STAMP/typed.md"
+printf -- '---\ntype:\n---\n# Empty\n' >"$STAMP/empty.md"
+printf -- '---\ntitle: never closes\n# Open\n' >"$STAMP/open.md"
+
+out=$("$CHECKER" stamp-type "$STAMP/bare.md" guide 2>&1)
+if [ $? -eq 0 ] && [ "$(sed -n '1,3p' "$STAMP/bare.md" | tr '\n' '|')" = "---|type: guide|---|" ] &&
+  [ "$(tail -n +4 "$STAMP/bare.md" | tr '\n' '|')" = "# A bare page||Body line.|" ]; then
+  pass "a page with no frontmatter gains a block holding only type"
+else
+  bad "stamping a bare page went wrong: $out $(cat "$STAMP/bare.md")"
+fi
+
+out=$("$CHECKER" stamp-type "$STAMP/fm.md" decision 2>&1)
+if [ $? -eq 0 ] && [ "$(sed -n '2p' "$STAMP/fm.md")" = "type: decision" ] &&
+  [ "$(sed -n '3p' "$STAMP/fm.md")" = 'title: "With frontmatter"' ] &&
+  [ "$(tail -n +6 "$STAMP/fm.md" | tr '\n' '|')" = "# Titled|" ]; then
+  pass "an existing block gains type as its first key and keeps the rest"
+else
+  bad "stamping a page with frontmatter went wrong: $out $(cat "$STAMP/fm.md")"
+fi
+
+out=$("$CHECKER" stamp-type "$STAMP/typed.md" guide 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^type-present(' &&
+  [ "$(sed -n '2p' "$STAMP/typed.md")" = "type: product" ]; then
+  pass "an existing type is never overwritten"
+else
+  bad "an existing type was overwritten or the refusal was silent: $out"
+fi
+
+out=$("$CHECKER" stamp-type "$STAMP/empty.md" guide 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^type-empty('; then
+  pass "an empty type key is reported rather than doubled"
+else
+  bad "an empty type key was doubled or passed: $out"
+fi
+
+out=$("$CHECKER" stamp-type "$STAMP/open.md" guide 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^frontmatter-parseable('; then
+  pass "an unclosed block is refused"
+else
+  bad "an unclosed block was stamped: $out"
+fi
+
+# Skipped by a root user, who can read the page; the harness runs unprivileged.
+printf '# Locked\n' >"$STAMP/locked.md"
+chmod 000 "$STAMP/locked.md"
+out=$("$CHECKER" stamp-type "$STAMP/locked.md" guide 2>&1)
+rc=$?
+chmod 644 "$STAMP/locked.md"
+if [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -q '^STAMP-FAILED(' && [ "$(cat "$STAMP/locked.md")" = "# Locked" ]; then
+  pass "a page that cannot be read is left exactly as it was"
+else
+  bad "an unreadable page was truncated or the failure was silent: $out $(cat "$STAMP/locked.md")"
+fi
+
 exit "$fail"
