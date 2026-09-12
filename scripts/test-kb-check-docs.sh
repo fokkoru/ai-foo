@@ -1486,4 +1486,197 @@ else
   bad "a freshly adopted tree was not green: $out"
 fi
 
+# --- multi-page commits against an existing ledger --------------------------
+
+# The coverage hole review round 1 found: every prior multi-page commit ran
+# against a state file that did not exist yet, so state_replace's [ -f "$file" ]
+# branch — the one that drops rows for the named pages out of the existing
+# file — never ran. A second, real-world commit against an already-populated
+# ledger is the ordinary case after a tree's first kb:weave run.
+MULTI="$SCRATCH/multi"
+mkdir -p "$MULTI/.kb" "$MULTI/docs/decisions" "$MULTI/docs/guides" "$MULTI/src"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$MULTI/.kb/schema.md"
+printf '# Index\n' >"$MULTI/docs/index.md"
+printf '# One\n' >"$MULTI/docs/decisions/0001-one.md"
+printf '# Two\n' >"$MULTI/docs/decisions/0002-two.md"
+printf '# Untouched\n' >"$MULTI/docs/guides/untouched.md"
+printf 'one\ntwo\nthree\n' >"$MULTI/src/a.txt"
+multi() { (cd "$MULTI" && "$CHECKER" "$@"); }
+
+printf 'docs/guides/untouched.md\tu\tsrc/a.txt\tL1-L1\n' >"$MULTI/seed-prov"
+multi provenance-commit seed-prov >/dev/null
+printf 'docs/guides/untouched.md\n' >"$MULTI/seed-pages"
+multi pages-commit seed-pages >/dev/null
+
+printf 'docs/decisions/0001-one.md\ta\tsrc/a.txt\tL1-L1\ndocs/decisions/0002-two.md\tb\tsrc/a.txt\tL2-L2\n' \
+  >"$MULTI/two-prov"
+multi provenance-commit two-prov >/dev/null
+if grep -q '^docs/guides/untouched.md	u	' "$MULTI/.kb/provenance.tsv" &&
+  grep -q '^docs/decisions/0001-one.md	a	' "$MULTI/.kb/provenance.tsv" &&
+  grep -q '^docs/decisions/0002-two.md	b	' "$MULTI/.kb/provenance.tsv" &&
+  [ "$(awk 'END{print NR}' "$MULTI/.kb/provenance.tsv")" -eq 3 ]; then
+  pass "provenance-commit for two new pages leaves an untouched page's row alone"
+else
+  bad "a multi-page provenance-commit dropped an untouched row: $(cat "$MULTI/.kb/provenance.tsv")"
+fi
+
+printf 'docs/decisions/0001-one.md\ndocs/decisions/0002-two.md\n' >"$MULTI/two-pages"
+multi pages-commit two-pages >/dev/null
+if grep -q '^docs/guides/untouched.md	' "$MULTI/.kb/pages.tsv" &&
+  grep -q '^docs/decisions/0001-one.md	' "$MULTI/.kb/pages.tsv" &&
+  grep -q '^docs/decisions/0002-two.md	' "$MULTI/.kb/pages.tsv" &&
+  [ "$(awk 'END{print NR}' "$MULTI/.kb/pages.tsv")" -eq 3 ]; then
+  pass "pages-commit for two new pages leaves an untouched page's row alone"
+else
+  bad "a multi-page pages-commit dropped an untouched row: $(cat "$MULTI/.kb/pages.tsv")"
+fi
+
+# --- validations that must hold on the read path, not only the write path ---
+
+# Important 1: an empty fragment field means the whole file on the read path
+# too, not a heading citation of "".
+FRAGDEF="$SCRATCH/frag-default"
+mkdir -p "$FRAGDEF/.kb" "$FRAGDEF/docs/decisions"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$FRAGDEF/.kb/schema.md"
+printf '# Index\n\n- [P](decisions/p.md)\n' >"$FRAGDEF/docs/index.md"
+cat >"$FRAGDEF/docs/decisions/p.md" <<'EOF'
+# P
+
+A claim.[^a]
+
+[^a]: the whole resource.
+EOF
+printf 'one\ntwo\n' >"$FRAGDEF/res.md"
+hash=$(cd "$FRAGDEF" && "$CHECKER" assign-id res.md 2>/dev/null)
+printf 'docs/decisions/p.md\ta\tres.md\t\t%s\n' "$hash" >"$FRAGDEF/.kb/provenance.tsv"
+out=$(cd "$FRAGDEF" && "$CHECKER" check docs 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -qE 'fragment-missing|source-drift'; then
+  pass "a hand-written row with an empty fragment field reads as the whole file"
+else
+  bad "an empty fragment field misread on the check path: $out"
+fi
+
+# Important 2: a provenance row for a page not on disk must not go unseen just
+# because the page loop never reaches it.
+GONEPROV="$SCRATCH/prov-gone"
+mkdir -p "$GONEPROV/.kb" "$GONEPROV/docs"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$GONEPROV/.kb/schema.md"
+printf '# Index\n' >"$GONEPROV/docs/index.md"
+printf 'docs/decisions/nonexistent.md\ta\tdocs/index.md\t(whole)\tdeadbeef0000\n' >"$GONEPROV/.kb/provenance.tsv"
+out=$(cd "$GONEPROV" && "$CHECKER" check docs 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -q '^provenance-gone(docs/decisions/nonexistent.md)'; then
+  pass "a provenance row for a page the loop never enumerated is reported"
+else
+  bad "an orphaned provenance row went unseen: $out"
+fi
+
+# Important 3: an empty label must not silently drop out of the join with no
+# report — the loop it would otherwise vanish from is `for slug in $ids`.
+EMPTYLABEL="$SCRATCH/empty-label"
+mkdir -p "$EMPTYLABEL/.kb" "$EMPTYLABEL/docs/decisions"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$EMPTYLABEL/.kb/schema.md"
+printf '# Index\n\n- [P](decisions/p.md)\n' >"$EMPTYLABEL/docs/index.md"
+printf '# P\n\nA claim.\n' >"$EMPTYLABEL/docs/decisions/p.md"
+printf 'one\n' >"$EMPTYLABEL/res.md"
+printf 'docs/decisions/p.md\t\tres.md\t(whole)\tdeadbeef0000\n' >"$EMPTYLABEL/.kb/provenance.tsv"
+out=$(cd "$EMPTYLABEL" && "$CHECKER" check docs 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -q '^provenance-label(docs/decisions/p.md)'; then
+  pass "an empty label is reported rather than vanishing from the join"
+else
+  bad "an empty label went unreported: $out"
+fi
+
+# Important 4: an absolute root with no decisions: key must not turn every
+# registered page into a decision page — "$decisions"/* becomes /* when
+# decisions is empty, matching any absolute path.
+NODECISIONS="$SCRATCH/no-decisions-key"
+mkdir -p "$NODECISIONS/.kb" "$NODECISIONS/docs"
+{
+  echo "---"
+  echo "map: $NODECISIONS/docs/index.md"
+  echo "---"
+} >"$NODECISIONS/.kb/schema.md"
+printf '# Index\n' >"$NODECISIONS/docs/index.md"
+printf '%s\n' "$NODECISIONS/docs/index.md" >"$NODECISIONS/pstage"
+(cd "$NODECISIONS" && "$CHECKER" pages-commit pstage >/dev/null)
+out=$(cd "$NODECISIONS" && "$CHECKER" check "$NODECISIONS/docs" 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && ! printf '%s\n' "$out" | grep -q 'decision-id-missing'; then
+  pass "an absolute root with no decisions: key holds no page to the decision-id rule"
+else
+  bad "an empty decisions: key matched every registered page: $out"
+fi
+
+# Minor A: a 4-field provenance row (no hash) is a shape defect, not drift.
+SHORTROW="$SCRATCH/short-row"
+mkdir -p "$SHORTROW/.kb" "$SHORTROW/docs/decisions"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$SHORTROW/.kb/schema.md"
+printf '# Index\n\n- [P](decisions/p.md)\n' >"$SHORTROW/docs/index.md"
+printf '# P\n\nA claim.[^a]\n\n[^a]: the resource.\n' >"$SHORTROW/docs/decisions/p.md"
+printf 'one\n' >"$SHORTROW/res.md"
+printf 'docs/decisions/p.md\ta\tres.md\t(whole)\n' >"$SHORTROW/.kb/provenance.tsv"
+out=$(cd "$SHORTROW" && "$CHECKER" check docs 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && printf '%s\n' "$out" | grep -q '^provenance-malformed(docs/decisions/p.md)' &&
+  ! printf '%s\n' "$out" | grep -q '^source-drift('; then
+  pass "a row with no hash field is reported as malformed, not as drift"
+else
+  bad "a 4-field row was read as drift instead of malformed: $out"
+fi
+
+# Minor B: a label containing whitespace must not word-split into two false
+# unjoined-footnote reports; provenance-commit already refuses it, so this
+# only arises from a hand-edited ledger.
+WSLABEL="$SCRATCH/ws-label"
+mkdir -p "$WSLABEL/.kb" "$WSLABEL/docs/decisions"
+{
+  echo "---"
+  echo "map: docs/index.md"
+  echo "decisions: docs/decisions"
+  echo "---"
+} >"$WSLABEL/.kb/schema.md"
+printf '# Index\n\n- [P](decisions/p.md)\n' >"$WSLABEL/docs/index.md"
+printf '# P\n\nA claim.[^a b]\n\n[^a b]: the resource.\n' >"$WSLABEL/docs/decisions/p.md"
+printf 'one\n' >"$WSLABEL/res.md"
+printf 'docs/decisions/p.md\ta b\tres.md\t(whole)\tdeadbeef0000\n' >"$WSLABEL/.kb/provenance.tsv"
+out=$(cd "$WSLABEL" && "$CHECKER" check docs 2>&1)
+if [ "$(printf '%s\n' "$out" | grep -c '^unjoined-footnote(')" -eq 0 ] &&
+  printf '%s\n' "$out" | grep -q '^provenance-label(docs/decisions/p.md)'; then
+  pass "a whitespace-carrying label is reported and excluded from the join, not word-split into it"
+else
+  bad "a whitespace label produced a false join failure: $out"
+fi
+
+# provenance-commit itself refuses a whitespace label on the write path.
+printf 'docs/decisions/p.md\ta b\tres.md\t(whole)\n' >"$WSLABEL/stage-ws"
+out=$(cd "$WSLABEL" && "$CHECKER" provenance-commit stage-ws 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^provenance-label('; then
+  pass "provenance-commit refuses a label containing whitespace"
+else
+  bad "a whitespace label was accepted by provenance-commit: $out"
+fi
+
 exit "$fail"

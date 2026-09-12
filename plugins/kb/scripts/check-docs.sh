@@ -655,12 +655,28 @@ check_open_markers() {
 # definition whose text names a real file in backticks, but whose label
 # carries no provenance row, is a citation the compiler never recorded.
 check_footnote_join() {
-  local page="$1" recs ids deflines defs cites slug defline label rest path
+  local page="$1" recs line ids deflines defs cites slug defline label rest path
   recs=$(provenance_rows "$page")
+  ids=""
   if [ -n "$recs" ]; then
-    ids=$(printf '%s\n' "$recs" | cut -f2 | LC_ALL=C sort -u)
-  else
-    ids=""
+    # Built by validating each row's label rather than by cutting the column
+    # straight into a sort -u: an empty or whitespace-carrying label word-
+    # splits or vanishes from the `for slug in $ids` loop below with no
+    # report at all, the same defect provenance-commit already refuses on the
+    # write path.
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      label=$(printf '%s' "$line" | cut -f2)
+      if provenance_label_valid "$label"; then
+        ids="$ids
+$label"
+      else
+        report provenance-label "$page" "a provenance row's label is empty or contains whitespace: $line"
+      fi
+    done <<EOF
+$recs
+EOF
+    ids=$(printf '%s\n' "$ids" | sed '/^$/d' | LC_ALL=C sort -u)
   fi
   # Fences only, not strip_code: a definition's backtick-quoted path is the
   # very thing unregistered-citation reads, and strip_code deletes an inline
@@ -710,9 +726,18 @@ check_sources() {
 
   while IFS= read -r line; do
     [ -n "$line" ] || continue
+    # A row with fewer than 5 fields is malformed, not drifted: without this,
+    # a row missing its hash reads as an empty $recorded and reports as
+    # source-drift with a blank recorded value rather than as the shape
+    # defect it is. provenance-commit always writes 5 fields, so this only
+    # arises from a hand-edited or migrated ledger.
+    if [ "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" -ne 5 ]; then
+      report provenance-malformed "$page" "expected 5 tab-separated fields: $line"
+      continue
+    fi
     label=$(printf '%s' "$line" | cut -f2)
     resource=$(printf '%s' "$line" | cut -f3)
-    fragment=$(printf '%s' "$line" | cut -f4)
+    fragment=$(provenance_fragment_default "$(printf '%s' "$line" | cut -f4)")
     recorded=$(printf '%s' "$line" | cut -f5)
 
     if [ ! -f "$resource" ]; then
@@ -1278,6 +1303,28 @@ page_registered() {
   [ -f "$PAGES" ] && awk -F'\t' -v p="$1" '$1 == p {found = 1} END {exit !found}' "$PAGES"
 }
 
+# A provenance row's label must be non-empty and carry no whitespace: GFM and
+# Pandoc both forbid whitespace in a footnote label, and a labeled row is
+# meant to be citable as [^label]. Shared by provenance-commit, which refuses
+# a bad label before it is ever written, and check, which must still refuse
+# one already on disk — a hand edit or a migration script does not go through
+# provenance-commit.
+provenance_label_valid() {
+  case "$1" in
+  "" | *[[:space:]]*) return 1 ;;
+  esac
+  return 0
+}
+
+# The fragment an empty field means: the whole file. provenance-commit stores
+# this normalized value, but a row already on disk — hand-written or migrated
+# rather than committed — may still carry the field empty, and check must
+# treat it the same way rather than falling into the heading-citation branch
+# on an empty string.
+provenance_fragment_default() {
+  [ -n "$1" ] && printf '%s\n' "$1" || printf '(whole)\n'
+}
+
 # The fingerprint a compiled page is recorded at: the same normalize-and-hash
 # pipeline every other identity in this script uses, over the whole file.
 page_fingerprint() {
@@ -1289,16 +1336,26 @@ page_fingerprint() {
 # failure leaves the old file. `pages` is a newline-separated list of the
 # distinct page paths being replaced; an empty `rows` file (pages-forget)
 # still produces a valid file rather than an error under set -euo pipefail.
+#
+# The drop list is written to a file and read with NR==FNR rather than passed
+# to awk as a -v string: BSD awk — this script's floor — rejects a literal
+# newline inside a -v assignment and produces an empty match set instead of
+# failing loudly, which silently dropped every row for every page not in the
+# list on any multi-page commit against an existing file.
 state_replace() {
-  local file="$1" pages="$2" rows="$3" tmp
+  local file="$1" pages="$2" rows="$3" tmp dropfile
   tmp="$WORKDIR/$(basename "$file").new"
+  dropfile="$WORKDIR/$(basename "$file").drop"
+  printf '%s\n' "$pages" >"$dropfile" || return 1
   {
     if [ -f "$file" ]; then
-      awk -F'\t' -v list="$pages" 'BEGIN {n = split(list, a, "\n"); for (i = 1; i <= n; i++) drop[a[i]] = 1} !($1 in drop)' "$file"
+      awk -F'\t' 'NR == FNR {drop[$0] = 1; next} !($1 in drop)' "$dropfile" "$file" || return 1
     fi
     cat "$rows"
   } >"$tmp" || return 1
-  mkdir -p "$(dirname "$file")" && LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp" >"$file"
+  mkdir -p "$(dirname "$file")" || return 1
+  LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp" >"$tmp.sorted" || return 1
+  mv "$tmp.sorted" "$file"
 }
 
 cmd_provenance_commit() {
@@ -1337,8 +1394,8 @@ cmd_provenance_commit() {
       report provenance-page "$staging" "$page does not exist"
       continue
     fi
-    if [ -z "$label" ]; then
-      report provenance-label "$staging" "a row carries no label: $line"
+    if ! provenance_label_valid "$label"; then
+      report provenance-label "$staging" "a label must be non-empty and free of whitespace: $line"
       continue
     fi
     if [ -z "$resource" ] || [ ! -f "$resource" ]; then
@@ -1360,7 +1417,7 @@ cmd_provenance_commit() {
       ;;
     esac
 
-    [ -n "$fragment" ] || fragment="(whole)"
+    fragment=$(provenance_fragment_default "$fragment")
     case "$fragment" in
     "(whole)") ;;
     L[0-9]*-L[0-9]*)
@@ -1846,6 +1903,12 @@ cmd_assign_id() {
 check_decision_id() {
   local page="$1" decisions="$2" ids="$3" id
   page_registered "$page" || return 0
+  # An empty decisions: — absent from the schema, or present with no value,
+  # which an adopted tree with no decisions directory yet has every reason to
+  # carry — must never become the "$decisions"/* glob: with an empty prefix
+  # that pattern is /* and matches any absolute page path, holding every
+  # registered page to a rule meant only for pages under decisions/.
+  [ -n "$decisions" ] || return 0
   case "$page" in
   "$decisions"/*) ;;
   *) return 0 ;;
@@ -2022,6 +2085,22 @@ cmd_check() {
         report page-gone "$path" "registered in $PAGES but not on disk; kb:lint moves or forgets it"
       fi
     done <"$PAGES"
+  fi
+
+  # A page .kb/provenance.tsv still cites but that is not among the pages the
+  # loop above walked — provenance-commit refuses this at commit time (the
+  # page must exist to be staged), so it only arises from a hand-edited or
+  # migrated ledger, the page loop having no other way to see a row for a
+  # page it never enumerated.
+  if [ -f "$PROVENANCE" ]; then
+    while IFS= read -r path; do
+      [ -n "$path" ] || continue
+      if ! grep -Fxq -- "$path" "$WORKDIR/pages"; then
+        report provenance-gone "$path" "cited in $PROVENANCE but not on disk; provenance-commit or pages-forget clears it"
+      fi
+    done <<EOF
+$(cut -f1 "$PROVENANCE" | LC_ALL=C sort -u)
+EOF
   fi
 
   if [ "$fail" -eq 0 ]; then
