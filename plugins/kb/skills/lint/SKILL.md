@@ -60,7 +60,7 @@ Run `check-docs.sh snapshot`. It records a hash of every file under the raw root
 
 Work over the union of two sets.
 
-**M** is what `check-docs.sh check` reports and notes over `docs/`, read as candidates rather than as a pass/fail verdict — every rule it computes, whether it fails the run (`source-missing`, `fragment-missing`, `source-drift`, `unreachable`, `dead-anchor`, `unjoined-footnote`, `page-gone`) or only notes it (`open-marker`, `unused-source`, `page-edited`, `unregistered-citation`).
+**M** is what `check-docs.sh check` reports and notes over `docs/`, read as candidates rather than as a pass/fail verdict. Step 3 below has a verdict for these rules only, whether they fail the run (`source-missing`, `fragment-missing`, `source-drift`, `unreachable`, `dead-anchor`, `unjoined-footnote`, `page-gone`) or only note it (`open-marker`, `unused-source`, `page-edited`, `unregistered-citation`). `check` computes others too — `schema-missing`, `map-missing`, `provenance-label`, `provenance-malformed`, `provenance-gone`, `decision-ref-dangling`, `valid-links`, `external-claim-incomplete`, `frontmatter-parseable`, `source-in-raw-root`, `source-is-capture`, among more — and a finding under one of those still enters M and still needs its evidence collected below, but Step 3 has no verdict built for it: it goes to the report as undetermined rather than being forced into a verdict meant for something else.
 
 **H** is each page named on the invocation, validated as an existing `.md` file under `docs/`. Naming a page authorises inspection, nothing more — every finding it produces still needs its own demonstrated failure and its own oracle, the same as one M surfaced. A fragment hash catches evidence that moved; it cannot catch a claim that misread evidence that never moved, and no mechanical rule can — H is the only intake for that class.
 
@@ -72,19 +72,19 @@ Read the file at the path Step 0 resolved for `references/page-templates.md` bef
 
 Take each finding on its own and settle it as one of six things.
 
-The page is wrong: name the correction, ground it in the finding's evidence, and make the edit.
+The page is wrong: name the correction, ground it in the finding's evidence, and make the edit. Keep the page's path — it is staged for `pages-commit` in Step 4, alongside every other page this verdict or the next one touches.
 
-The claim still holds but its provenance no longer demonstrates it: stage the page's citation on the fragment that now carries the evidence — `docs/<page>\t<label>\t<resource>\t<fragment>` — and run `check-docs.sh provenance-commit <staging> [raw-root]`, then leave the prose alone. This is the ordinary case for a drift record: the source moved, the prose it supports is still true, and only the citation is stale. Confirm the new fragment actually supports the claim before taking this branch — a fragment that does not support it is the first case, not this one.
+The claim still holds but its provenance no longer demonstrates it: `provenance-commit` replaces every row for each page named in the staging file, so the stage for this page is its complete citation set, not the one row that drifted — list one line for every citation the page still makes, the corrected one on the fragment that now carries the evidence and every other one restated unchanged, or the rows left out of the stage are lost. Run `check-docs.sh provenance-commit <staging> [raw-root]`, then leave the prose alone. This is the ordinary case for a drift record: the source moved, the prose it supports is still true, and only the citation is stale. Confirm the new fragment actually supports the claim before taking this branch — a fragment that does not support it is the first case, not this one. `unregistered-citation` — a footnote definition with no provenance row at all — settles the same way: stage the page's complete citation set, this row included.
 
-The page was edited by hand and still holds: confirm every citation on it still supports its sentence, then `pages-commit` the page. Advance the fingerprint only after that reading; a fingerprint advanced on sight endorses whatever the edit said, whether or not it was true.
+The page was edited by hand and still holds: confirm every citation on it still supports its sentence. Keep its path — it is staged for `pages-commit` in Step 4 alongside the wrong-page corrections, not committed here on its own. Advance the fingerprint only after that reading; a fingerprint advanced on sight endorses whatever the edit said, whether or not it was true.
 
-The page was renamed: a `page-gone` whose fingerprint equals the fingerprint of an unregistered page on disk. Stage the old rows under the new path, `provenance-commit`, `pages-commit` the new path, then `pages-forget` the old one. No match: report it and leave it — never infer a rename from a title.
+The page was renamed: a `page-gone` whose fingerprint equals the fingerprint of an unregistered page on disk. The gone page's recorded fingerprint is the second column of its row in `.kb/pages.tsv`; a candidate's current fingerprint is what `check-docs.sh assign-id <page>` prints — the same normalize-and-hash pipeline `check` compares fingerprints with, so the two numbers are comparable. The candidates are the `.md` files under the docs root with no row in `.kb/pages.tsv`; list them and compute each one's value. On a match: stage the old rows under the new path and run `check-docs.sh provenance-commit <staging>`, then stage the new path on its own line and run `check-docs.sh pages-commit <staging>`, then relink the map from the old path to the new one, then run `check-docs.sh pages-forget <old page>` last, once the new path is registered and reachable. No match: report it and leave it — never infer a rename from a title.
 
 The page is right: dismiss the finding. Name it in the report and write nothing.
 
 The answer is not determinable from the repository: report it, with the pages it concerns and what settling it would take, and write nothing. Restructuring, merging two pages, splitting one, and rewriting prose that is not false all land here — none of it has an oracle. Such a finding recurs in the next report until the owner acts or the page changes; that repetition is the accepted cost of not building a queue for it.
 
-Reading is not bounded by the union — a finding on one page routinely needs another page read to settle, and a correction routinely touches `index.md` or a decision page. Writing is bounded by `<artifact_scope>` above.
+Reading is not bounded by the union — a finding on one page routinely needs another page read to settle, and a correction routinely touches the map or a decision page. Writing is bounded by `<artifact_scope>` above.
 
 ### Step 4: Verify and release
 
@@ -92,9 +92,13 @@ Run `check-docs.sh check` over `docs/` and report what it said — this run's ow
 
 A failure from `verify-sources` means this run wrote into the raw layer, which `<artifact_scope>` forbids. That is a defect in the run, not a finding to hand to the user: say so plainly, name the files, and stop.
 
+Once `check` and `verify-sources` both pass, stage every page kept from the "page is wrong" and "the page was edited by hand" verdicts above, one path per line, and run `check-docs.sh pages-commit <staging>`. It writes each page's fingerprint. The renamed-page verdict already registered its own page in Step 3 and is not staged again here.
+
+Run `check-docs.sh check` a second time. `page-edited` on a page this run just corrected could not have cleared before its fingerprint was advanced, so this run is the one that actually confirms the correction stuck — a page still reported `page-edited` here means `pages-commit` was skipped or staged the wrong path. Fix whatever it reports, then repeat `pages-commit` and `check` before going on.
+
 Release the claim with `check-docs.sh claim-release <run id>` once both checks pass, and also on the halt path above after reporting. Holding it through a halt buys nothing: the owner has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies.
 
-Report: the size of M and H, a verdict for every finding, the pages edited, and the result of both checker runs. End with a proposed commit body, one sentence per correction, saying whether the citation moved or the prose was wrong.
+Report: the size of M and H, a verdict for every finding, the pages edited, and the result of every `check` and `verify-sources` run in Step 4. End with a proposed commit body, one sentence per correction, saying whether the citation moved or the prose was wrong.
 
 </workflow>
 
@@ -119,7 +123,7 @@ Report: the size of M and H, a verdict for every finding, the pages edited, and 
 
 <success_criteria>
 
-- `docs/` changed and `thoughts/` did not
+- `docs/` or `.kb/` changed and `thoughts/` did not
 - Every page the run edited traces to a finding that named its evidence
 - A run over a clean tree with no page named produces no diff at all
 
