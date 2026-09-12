@@ -1,6 +1,6 @@
 {
   "name": "kb",
-  "description": "Capture the decisions a session reaches, and weave a repository's raw notes into a durable, committed knowledge base in Open Knowledge Format",
+  "description": "Capture the decisions a session reaches, and weave a repository's raw notes into a durable, committed knowledge base shaped by Open Knowledge Format",
   "author": {
     "name": "fokkoru"
   },
@@ -8,7 +8,6 @@
   "keywords": [
     "knowledge-base",
     "documentation",
-    "okf",
     "provenance",
     "weave",
     "capture"

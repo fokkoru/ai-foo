@@ -34,7 +34,7 @@ What the skill guarantees, stated so you can check it from your own working copy
 | `kb:capture`                      | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                                                                                                                        |
 | `kb:weave`                        | `docs/` and `.kb/` changed and `thoughts/` did not — the run reports a source-hash verification, a second document on a topic updated an existing page instead of adding a sibling, and every non-capture source it read is recorded in `.kb/consumed.tsv` at its current hash |
 | `kb:weave` on a hand-written tree | `.kb/schema.md` appeared, `git status docs/` is clean when an existing file served as the map (otherwise `docs/index.md` also appeared), `thoughts/` did not change, nothing was compiled, and the run showed you the directory-to-type table before it wrote anything         |
-| `kb:lint`                         | `docs/` or `.kb/` changed and `thoughts/` did not, every page the run edited traces to a finding that named its evidence, and a page you edited by hand was listed as `page-edited` before the run and is not after                                                            |
+| `kb:lint`                         | `docs/` or `.kb/` changed and `thoughts/` did not, every page the run edited traces to a finding that named its evidence, and a page you edited by hand was listed as `page-edited` before the run and, unless the run's verdict on it was undetermined, is not after          |
 
 ## Customize paths (optional)
 
