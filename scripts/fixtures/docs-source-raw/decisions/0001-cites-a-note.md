@@ -6,10 +6,6 @@ status: stable
 decision_id: "aaaaaaaa1111"
 supersedes: ""
 superseded_by: ""
-sources:
-  - resource: "scripts/fixtures/raw/note.md"
-    id: "the-note"
-    fragment: "(whole)"
 ---
 
 # Cites a note
@@ -17,3 +13,5 @@ sources:
 ## Context
 
 The claim rests on a note a fresh clone does not have.[^the-note]
+
+[^the-note]: a note inside the raw layer.

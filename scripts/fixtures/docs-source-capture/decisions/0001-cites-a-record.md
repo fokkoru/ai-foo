@@ -6,10 +6,6 @@ status: stable
 decision_id: "aaaaaaaa2222"
 supersedes: ""
 superseded_by: ""
-sources:
-  - resource: "scripts/fixtures/raw/captures/rec.md"
-    id: "the-record"
-    fragment: "(whole)"
 ---
 
 # Cites a record
@@ -17,3 +13,5 @@ sources:
 ## Context
 
 The claim rests on a capture record.[^the-record]
+
+[^the-record]: a capture record inside the raw layer.

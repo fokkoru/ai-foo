@@ -6,11 +6,6 @@ status: deprecated
 decision_id: "888888888888"
 supersedes: ""
 superseded_by: ""
-sources:
-  - resource: "scripts/fixtures/docs-deprecation/decisions/0001-stable.md"
-    id: "fixture-page"
-    fragment: "(whole)"
-    sha256: "000000000000"
 ---
 
 # Withdrawn, still cited
@@ -18,3 +13,5 @@ sources:
 ## Context
 
 The rule this page records no longer holds. Its provenance is checked all the same.[^fixture-page]
+
+[^fixture-page]: the resource this page cited when it was compiled.

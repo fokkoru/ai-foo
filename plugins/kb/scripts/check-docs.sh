@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # Conformance, reachability, provenance, and raw-source immutability checks for
-# a knowledge base compiled by kb:weave.
+# a knowledge base compiled by kb:weave, reading .kb/schema.md, .kb/pages.tsv,
+# .kb/provenance.tsv and .kb/consumed.tsv.
 #
 #   snapshot [raw-root]                    hash every raw source, print the manifest path
 #   verify-sources <manifest> [raw-root]   prove the raw layer did not change during a run
-#   check [docs-root] [raw-root]           every conformance rule over the compiled tree
+#   check [docs-root] [raw-root]           every conformance rule over the compiled tree,
+#                                          read from .kb/schema.md, .kb/pages.tsv and
+#                                          .kb/provenance.tsv
 #   check-capture <record>                 the format rules for one capture record
 #   assign-id <page>                       an identifier for a new decision page
-#   stamp-type <page> <type>               insert type: as the page's first frontmatter key
 #   resolve-decision <docs-root> <id> [path-hint]
 #                                          the page an identifier names
 #   claim-acquire <session-id> <pid>       take the whole-run claim, print its run id
@@ -20,6 +22,9 @@
 #   captures-eligible <records-root>       decisions no run has consumed yet
 #   captures-deferred <records-root>       decisions a run looked at and left
 #   sources-pending <raw-root>             raw sources no run consumed at their current bytes
+#   provenance-commit <staging> [raw-root] record a page's cited fragments, hash computed
+#   pages-commit <staging>                 record a page's compiled fingerprint
+#   pages-forget <page>                    remove a page's rows from both state files
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -61,7 +66,6 @@ usage: $self snapshot [raw-root]
        $self check [docs-root] [raw-root]
        $self check-capture <record>
        $self assign-id <page>
-       $self stamp-type <page> <type>
        $self resolve-decision <docs-root> <id> [path-hint]
        $self claim-acquire <session-id> <pid>
        $self claim-release <run-id>
@@ -72,6 +76,9 @@ usage: $self snapshot [raw-root]
        $self captures-eligible <records-root>
        $self captures-deferred <records-root>
        $self sources-pending <raw-root>
+       $self provenance-commit <staging> [raw-root]
+       $self pages-commit <staging>
+       $self pages-forget <page>
 EOF
   exit 2
 }
@@ -143,6 +150,27 @@ abspath() {
   (cd "$d" 2>/dev/null && printf '%s/%s\n' "$(pwd -P)" "$b") || true
 }
 
+# Whether a resource sits inside the raw root or its captures subtree, given
+# the raw root already resolved to an absolute path (empty when there is none
+# to be inside — an empty prefix would otherwise match any absolute path).
+# Prints "capture", "raw", or nothing, so a caller decides which rule to fire:
+# provenance-commit refuses the row before it is ever written, check_sources
+# reports it on every row already on disk, however it got there. One helper
+# for both, so a hand-edited or migrated .kb/provenance.tsv is held to the
+# same exclusion a committed row was.
+provenance_resource_zone() {
+  local raw="$1" resource="$2" resolved
+  [ -n "$raw" ] || return 0
+  # Both sides are resolved before comparing, so a relative citation and an
+  # absolute raw root are still recognised as the same tree.
+  resolved=$(abspath "$resource")
+  case "$resolved" in
+  "$raw"/captures/*) printf 'capture\n' ;;
+  "$raw"/*) printf 'raw\n' ;;
+  esac
+  return 0
+}
+
 # ---------------------------------------------------------------- frontmatter
 
 # Line number of the closing --- of a leading frontmatter block, 0 when the file
@@ -186,45 +214,6 @@ fm_keys() {
       k = $0
       sub(/:.*$/, "", k)
       print k
-    }' "$1"
-}
-
-# The one list of maps this schema carries, flattened to index<TAB>key<TAB>value.
-# Deliberately not a YAML parser: it reads `sources:` at column 1, then treats an
-# indented `- key: value` as the start of an entry and any further indented
-# `key: value` as belonging to it.
-sources_records() {
-  awk '
-    NR==1 && $0!="---" {exit}
-    NR==1 {infm=1; next}
-    infm && $0=="---" {exit}
-    !infm {next}
-    /^sources:[[:space:]]*$/ {insrc=1; idx=0; next}
-    insrc && /^[^[:space:]]/ {insrc=0}
-    insrc && /^[[:space:]]*-[[:space:]]/ {
-      idx++
-      line = $0
-      sub(/^[[:space:]]*-[[:space:]]*/, "", line)
-      emit(idx, line)
-      next
-    }
-    insrc && /^[[:space:]]+[^[:space:]-]/ {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      emit(idx, line)
-      next
-    }
-    function emit(i, s,   k, v, first) {
-      if (s !~ /:/) return
-      k = s; sub(/:.*$/, "", k)
-      v = s; sub(/^[^:]*:[[:space:]]*/, "", v)
-      sub(/[[:space:]]+$/, "", v)
-      first = substr(v, 1, 1)
-      if (length(v) >= 2 && first == substr(v, length(v), 1) &&
-          (first == "\"" || first == "\047")) {
-        v = substr(v, 2, length(v) - 2)
-      }
-      print i "\t" k "\t" v
     }' "$1"
 }
 
@@ -541,9 +530,9 @@ cmd_check_capture() {
     return 1
   fi
 
-  # Every loop that reports reads from a heredoc rather than a pipe, for the
-  # reason check_log gives: a report inside a pipeline sets fail=1 in a subshell
-  # and throws it away.
+  # Every loop that reports reads from a heredoc rather than a pipe: a report
+  # inside a pipeline runs in a subshell, where fail=1 is set and then thrown
+  # away, and the script would exit 0 while printing failures.
   while IFS= read -r dupe; do
     [ -n "$dupe" ] || continue
     report capture-decision-duplicate "$rec" \
@@ -596,82 +585,11 @@ EOF
 # ---------------------------------------------------------------------- check
 
 check_page_frontmatter() {
-  local page="$1" root_index="$2" base end
-  base=$(basename "$page")
-  end=$(fm_end "$page")
-
-  case "$base" in
-  index.md)
-    if [ "$page" != "$root_index" ] && [ "$(head -1 "$page")" = "---" ]; then
-      report index-frontmatter "$page" "an index.md below the bundle root carries frontmatter"
-    fi
-    ;;
-  # The rule table defines no frontmatter rule for log.md, so it gets none here.
-  # It stays reserved for type-required below and for unreachable in
-  # check_reachability, both of which exempt it by name.
-  log.md) ;;
-  *)
-    if [ "$(head -1 "$page")" != "---" ]; then
-      report frontmatter-present "$page" "no --- on line 1"
-      return 0
-    fi
-    ;;
-  esac
-
-  if [ "$(head -1 "$page")" = "---" ] && [ "$end" -eq 0 ]; then
+  local page="$1"
+  if [ "$(head -1 "$page")" = "---" ] && [ "$(fm_end "$page")" -eq 0 ]; then
     report frontmatter-parseable "$page" "the opening --- has no closing ---"
-    return 0
   fi
-
-  case "$base" in
-  index.md | log.md) ;;
-  *)
-    if [ -z "$(fm_value "$page" type)" ]; then
-      report type-required "$page" "no type: key, or its value is empty"
-    fi
-    ;;
-  esac
-}
-
-check_root_index() {
-  local root_index="$1" keys
-  if [ ! -f "$root_index" ]; then
-    report index-version-key "$root_index" "the bundle root has no index.md"
-    return 0
-  fi
-  if [ "$(head -1 "$root_index")" != "---" ] || [ "$(fm_end "$root_index")" -eq 0 ]; then
-    report index-version-key "$root_index" "the bundle-root index.md carries no frontmatter block"
-    return 0
-  fi
-  keys=$(fm_keys "$root_index")
-  if [ "$keys" != "okf_version" ]; then
-    report index-version-key "$root_index" \
-      "frontmatter keys are [$(printf '%s' "$keys" | tr '\n' ' ')], expected okf_version alone"
-  fi
-}
-
-check_log() {
-  local log="$1" prev="" h d
-  # Every loop that reports reads from a heredoc rather than a pipe: a `report`
-  # inside a pipeline runs in a subshell, where fail=1 is set and then thrown
-  # away, and the script would exit 0 while printing failures.
-  while IFS= read -r h; do
-    [ -n "$h" ] || continue
-    case "$h" in
-    "## "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;;
-    *)
-      report log-date-format "$log" "heading '$h' is not ## YYYY-MM-DD"
-      continue
-      ;;
-    esac
-    d=${h#\#\# }
-    if [ -n "$prev" ] && [ ! "$prev" \> "$d" ]; then
-      report log-date-order "$log" "$prev is not newer than the $d that follows it"
-    fi
-    prev="$d"
-  done <<EOF
-$(strip_code "$log" | awk '/^## / {print}')
-EOF
+  return 0
 }
 
 check_links() {
@@ -724,54 +642,81 @@ check_open_markers() {
   return 0
 }
 
-# The page-local join between [^slug] citations in a body and sources[].id. Both
-# directions come from one pass. A slug declared on another page satisfies
-# neither rule: attribution resolves through the entry on the citing page, and a
-# join that reached across pages would report nothing while proving nothing.
+# The page-local join between .kb/provenance.tsv rows and the [^label]:
+# definitions and [^label] citations in a body. ids are the labels a
+# provenance row declares for this page; defs are the [^label]: lines; cites
+# are [^label] references outside a definition line. A row with no matching
+# definition is unjoined — a report, since nothing on the page attributes it.
+# A row nobody cites is merely unused — a note, since the join still holds. A
+# citation naming a label with no row and no definition is neither: it is
+# prose, and nothing here has an opinion about it.
 #
-# A [^slug]: line at the start of a line defines the footnote, it does not cite
-# it, so definitions are excluded from the citation side.
+# A registered page additionally gets unregistered-citation: a [^label]:
+# definition whose text names a real file in backticks, but whose label
+# carries no provenance row, is a citation the compiler never recorded.
 check_footnote_join() {
-  local page="$1" recs ids cites slug
-  recs=$(sources_records "$page")
-  ids=$(printf '%s\n' "$recs" | awk -F'\t' '$2=="id" {print $3}' | LC_ALL=C sort -u)
+  local page="$1" recs ids deflines defs cites slug defline label rest path
+  recs=$(provenance_rows "$page")
+  if [ -n "$recs" ]; then
+    ids=$(printf '%s\n' "$recs" | cut -f2 | LC_ALL=C sort -u)
+  else
+    ids=""
+  fi
+  # Fences only, not strip_code: a definition's backtick-quoted path is the
+  # very thing unregistered-citation reads, and strip_code deletes an inline
+  # span along with its text, the same reason heading_slugs gives.
+  deflines=$(awk "$AWK_FENCE"'
+    fence_line($0) {next}
+    infence {next}
+    {print}' "$page" | { grep -oE '^\[\^[^]]+\]:.*$' || true; })
+  defs=$(printf '%s\n' "$deflines" | sed -e 's/^\[\^//' -e 's/\]:.*$//' | LC_ALL=C sort -u)
   cites=$(strip_code "$page" |
     grep -v '^\[\^[^]]*\]:' |
     { grep -oE '\[\^[^]]+\]' || true; } |
     sed -e 's/^\[\^//' -e 's/\]$//' | LC_ALL=C sort -u)
 
-  for slug in $cites; do
-    if ! printf '%s\n' "$ids" | grep -Fxq -- "$slug"; then
+  for slug in $ids; do
+    if ! printf '%s\n' "$defs" | grep -Fxq -- "$slug"; then
       report unjoined-footnote "$page" \
-        "the body cites [^$slug], which no sources[] entry on this page declares as its id"
+        "provenance declares $slug, which no [^$slug]: definition on this page joins"
+    fi
+    if ! printf '%s\n' "$cites" | grep -Fxq -- "$slug"; then
+      note unused-source "$page" \
+        "provenance declares $slug, which no [^$slug] in the body cites"
     fi
   done
 
-  for slug in $ids; do
-    if ! printf '%s\n' "$cites" | grep -Fxq -- "$slug"; then
-      note unused-source "$page" \
-        "sources[] declares the id $slug, which no [^$slug] in the body cites"
+  page_registered "$page" || return 0
+  while IFS= read -r defline; do
+    [ -n "$defline" ] || continue
+    label=$(printf '%s' "$defline" | sed -e 's/^\[\^//' -e 's/\]:.*$//')
+    printf '%s\n' "$ids" | grep -Fxq -- "$label" && continue
+    rest=$(printf '%s' "$defline" | sed -e 's/^\[\^[^]]*\]:[[:space:]]*//')
+    path=$(printf '%s' "$rest" | sed -n 's/^`\([^`]*\)`.*/\1/p')
+    if [ -n "$path" ] && [ -f "$path" ]; then
+      note unregistered-citation "$page" \
+        "[^$label]: names $path, which no provenance row backs"
     fi
-  done
+  done <<EOF
+$deflines
+EOF
   return 0
 }
 
 check_sources() {
-  local page="$1" raw="$2" recs idx resource fragment recorded text actual total end resolved
-  recs=$(sources_records "$page")
+  local page="$1" raw="$2" recs line label resource fragment recorded text actual total end
+  recs=$(provenance_rows "$page")
   [ -n "$recs" ] || return 0
 
-  for idx in $(printf '%s\n' "$recs" | cut -f1 | LC_ALL=C sort -un); do
-    resource=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="resource" {print $3; exit}')
-    fragment=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="fragment" {print $3; exit}')
-    recorded=$(printf '%s\n' "$recs" | awk -F'\t' -v i="$idx" '$1==i && $2=="sha256" {print $3; exit}')
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    label=$(printf '%s' "$line" | cut -f2)
+    resource=$(printf '%s' "$line" | cut -f3)
+    fragment=$(printf '%s' "$line" | cut -f4)
+    recorded=$(printf '%s' "$line" | cut -f5)
 
-    if [ -z "$resource" ]; then
-      report source-missing "$page" "sources[$idx] carries no resource"
-      continue
-    fi
     if [ ! -f "$resource" ]; then
-      report source-missing "$page" "sources[$idx] names $resource, which does not exist"
+      report source-missing "$page" "[^$label] names $resource, which does not exist"
       continue
     fi
 
@@ -780,23 +725,19 @@ check_sources() {
     # claim it supports cannot be checked by anyone but the author. A capture
     # record is called out separately because it is not merely untracked — it
     # sits outside the source trust order entirely, never competing for a page
-    # and never cited by one.
-    # Both sides are resolved before comparing, so a relative citation and an
-    # absolute raw root are still recognised as the same tree.
-    resolved=$(abspath "$resource")
-    # With no raw root on disk there is no tree to be inside, and an empty
-    # prefix would match any absolute path.
-    [ -n "$raw" ] && case "$resolved" in
-    "$raw"/captures/*)
-      report source-is-capture "$page" "sources[$idx] names the capture record $resource; a record is never cited by a page"
+    # and never cited by one. The same zone check runs on the write path, in
+    # provenance-commit, so a row that reached .kb/provenance.tsv without going
+    # through it — a hand edit, a migration script — is held to it here too.
+    case "$(provenance_resource_zone "$raw" "$resource")" in
+    capture)
+      report source-is-capture "$page" "[^$label] names the capture record $resource; a record is never cited by a page"
       continue
       ;;
-    "$raw"/*)
-      report source-in-raw-root "$page" "sources[$idx] names $resource, inside the raw root, which a fresh clone does not have"
+    raw)
+      report source-in-raw-root "$page" "[^$label] names $resource, inside the raw root, which a fresh clone does not have"
       continue
       ;;
     esac
-    [ -n "$fragment" ] || fragment="(whole)"
 
     case "$fragment" in
     "(whole)") ;;
@@ -806,31 +747,29 @@ check_sources() {
       total=$(line_count "$resource")
       if [ "$end" -gt "$total" ]; then
         report fragment-missing "$page" \
-          "sources[$idx] cites $fragment of $resource, which has $total lines"
+          "[^$label] cites $fragment of $resource, which has $total lines"
         continue
       fi
       ;;
     *)
       if ! grep -Fxq -- "$fragment" "$resource"; then
         report fragment-missing "$page" \
-          "sources[$idx] cites the heading '$fragment', absent from $resource"
+          "[^$label] cites the heading '$fragment', absent from $resource"
         continue
       fi
       ;;
     esac
 
-    if [ -z "$recorded" ]; then
-      report unhashed-source "$page" \
-        "sources[$idx] declares no sha256, so $fragment of $resource is never compared"
-      continue
-    fi
     text=$(fragment_text "$resource" "$fragment")
     actual=$(printf '%s\n' "$text" | normalize_and_hash)
     if [ "$actual" != "$recorded" ]; then
       report source-drift "$page" \
-        "sources[$idx] records $recorded for $fragment of $resource, which now hashes to $actual"
+        "[^$label] records $recorded for $fragment of $resource, which now hashes to $actual"
     fi
-  done
+  done <<EOF
+$recs
+EOF
+  return 0
 }
 
 # A claim whose evidence is external is marked [reported] and carries its source
@@ -858,13 +797,13 @@ EOF
 }
 
 check_reachability() {
-  local docs="$1" root_index="$2" seen queue cur dir t resolved n page base
-  [ -f "$root_index" ] || return 0
+  local docs="$1" map="$2" seen queue cur dir t resolved n page mapabs
+  [ -f "$map" ] || return 0
 
   seen="$WORKDIR/seen"
   queue="$WORKDIR/queue"
 
-  abspath "$root_index" >"$seen" || {
+  abspath "$map" >"$seen" || {
     report REACHABILITY-FAILED "$docs" "could not write the traversal set under $WORKDIR"
     return 1
   }
@@ -872,6 +811,7 @@ check_reachability() {
     report REACHABILITY-FAILED "$docs" "could not seed the traversal queue under $WORKDIR"
     return 1
   }
+  mapabs=$(cat "$seen")
 
   n=0
   while [ "$n" -lt "$(line_count "$queue")" ]; do
@@ -903,13 +843,10 @@ EOF
 
   while IFS= read -r page; do
     [ -n "$page" ] || continue
-    base=$(basename "$page")
-    case "$base" in
-    log.md | WIKI.md) continue ;;
-    esac
     resolved=$(abspath "$page")
+    [ "$resolved" = "$mapabs" ] && continue
     if ! grep -Fxq -- "$resolved" "$seen"; then
-      report unreachable "$page" "not reachable from $root_index by following relative .md links"
+      report unreachable "$page" "not reachable from $map by following relative .md links"
     fi
   done <"$WORKDIR/pages"
 }
@@ -1322,6 +1259,202 @@ EOF
   return 0
 }
 
+# ------------------------------------------------------- provenance and pages
+
+# State access. Every path here resolves against the working directory, the
+# way CONSUMED does: a plugin-bundled script has no directory of its own to
+# infer these from, so the caller's cwd is the one anchor both share.
+PROVENANCE=".kb/provenance.tsv"
+PAGES=".kb/pages.tsv"
+SCHEMA=".kb/schema.md"
+
+# Rows for one page. Columns: page label resource fragment sha256.
+provenance_rows() {
+  [ -f "$PROVENANCE" ] || return 0
+  awk -F'\t' -v p="$1" '$1 == p' "$PROVENANCE"
+}
+
+page_registered() {
+  [ -f "$PAGES" ] && awk -F'\t' -v p="$1" '$1 == p {found = 1} END {exit !found}' "$PAGES"
+}
+
+# The fingerprint a compiled page is recorded at: the same normalize-and-hash
+# pipeline every other identity in this script uses, over the whole file.
+page_fingerprint() {
+  fragment_text "$1" "(whole)" | normalize_and_hash
+}
+
+# Rewrites a state file with every row for the named pages removed, then
+# appends the staged rows. Written to a temp file and moved into place, so a
+# failure leaves the old file. `pages` is a newline-separated list of the
+# distinct page paths being replaced; an empty `rows` file (pages-forget)
+# still produces a valid file rather than an error under set -euo pipefail.
+state_replace() {
+  local file="$1" pages="$2" rows="$3" tmp
+  tmp="$WORKDIR/$(basename "$file").new"
+  {
+    if [ -f "$file" ]; then
+      awk -F'\t' -v list="$pages" 'BEGIN {n = split(list, a, "\n"); for (i = 1; i <= n; i++) drop[a[i]] = 1} !($1 in drop)' "$file"
+    fi
+    cat "$rows"
+  } >"$tmp" || return 1
+  mkdir -p "$(dirname "$file")" && LC_ALL=C sort -t"$(printf '\t')" -k1,1 -k2,2 "$tmp" >"$file"
+}
+
+cmd_provenance_commit() {
+  local staging="${1:-}" raw="${2:-thoughts}" line page label resource fragment sha
+  local end total rows distinct n=0
+  [ -n "$staging" ] || usage
+  if [ ! -f "$staging" ] || [ ! -r "$staging" ]; then
+    report NO-STAGING provenance-commit "$staging is not a readable file"
+    return 1
+  fi
+  raw=$(cd "${raw%/}" 2>/dev/null && pwd -P) || raw=""
+
+  rows="$WORKDIR/provenance-pending"
+  distinct="$WORKDIR/provenance-pages"
+  : >"$rows"
+  : >"$distinct"
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    if [ "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" -ne 4 ]; then
+      report provenance-malformed "$staging" "expected 4 tab-separated fields: $line"
+      continue
+    fi
+    page=$(printf '%s' "$line" | cut -f1)
+    label=$(printf '%s' "$line" | cut -f2)
+    resource=$(printf '%s' "$line" | cut -f3)
+    fragment=$(printf '%s' "$line" | cut -f4)
+
+    case "$page" in
+    *.md) ;;
+    *)
+      report provenance-page "$staging" "page must be a .md file: $line"
+      continue
+      ;;
+    esac
+    if [ ! -f "$page" ]; then
+      report provenance-page "$staging" "$page does not exist"
+      continue
+    fi
+    if [ -z "$label" ]; then
+      report provenance-label "$staging" "a row carries no label: $line"
+      continue
+    fi
+    if [ -z "$resource" ] || [ ! -f "$resource" ]; then
+      report provenance-resource "$staging" "$resource does not exist"
+      continue
+    fi
+
+    # The same zone check check_sources applies to every row it reads, applied
+    # here so a row that could never pass check is refused before it is ever
+    # written.
+    case "$(provenance_resource_zone "$raw" "$resource")" in
+    capture)
+      report provenance-resource "$staging" "$resource is a capture record; a record is never cited by a page"
+      continue
+      ;;
+    raw)
+      report provenance-resource "$staging" "$resource is inside the raw root $raw, which a fresh clone does not have"
+      continue
+      ;;
+    esac
+
+    [ -n "$fragment" ] || fragment="(whole)"
+    case "$fragment" in
+    "(whole)") ;;
+    L[0-9]*-L[0-9]*)
+      end=${fragment##*-}
+      end=${end#L}
+      total=$(line_count "$resource")
+      if [ "$end" -gt "$total" ]; then
+        report provenance-fragment "$staging" "$fragment of $resource exceeds its $total lines"
+        continue
+      fi
+      ;;
+    *)
+      if ! grep -Fxq -- "$fragment" "$resource"; then
+        report provenance-fragment "$staging" "the heading '$fragment' is absent from $resource"
+        continue
+      fi
+      ;;
+    esac
+
+    sha=$(fragment_text "$resource" "$fragment" | normalize_and_hash) || {
+      report HASH-FAILED "$staging" "could not hash $fragment of $resource"
+      continue
+    }
+    printf '%s\t%s\t%s\t%s\t%s\n' "$page" "$label" "$resource" "$fragment" "$sha" >>"$rows" || {
+      report PROVENANCE-FAILED provenance-commit "could not stage under $WORKDIR"
+      return 1
+    }
+    printf '%s\n' "$page" >>"$distinct"
+    n=$((n + 1))
+  done <"$staging"
+  [ "$fail" -eq 0 ] || return 1
+
+  LC_ALL=C sort -u "$distinct" >"$distinct.u" && mv "$distinct.u" "$distinct"
+  state_replace "$PROVENANCE" "$(cat "$distinct")" "$rows" || {
+    report PROVENANCE-FAILED provenance-commit "could not write $PROVENANCE"
+    return 1
+  }
+  echo "provenance-commit: $n rows for $(line_count "$distinct") pages in $PROVENANCE"
+}
+
+cmd_pages_commit() {
+  local staging="${1:-}" page rows distinct n=0
+  [ -n "$staging" ] || usage
+  if [ ! -f "$staging" ] || [ ! -r "$staging" ]; then
+    report NO-STAGING pages-commit "$staging is not a readable file"
+    return 1
+  fi
+
+  rows="$WORKDIR/pages-pending"
+  distinct="$WORKDIR/pages-distinct"
+  : >"$rows"
+  : >"$distinct"
+  while IFS= read -r page || [ -n "$page" ]; do
+    [ -n "$page" ] || continue
+    if [ ! -f "$page" ]; then
+      report pages-missing "$staging" "$page does not exist"
+      continue
+    fi
+    printf '%s\t%s\n' "$page" "$(page_fingerprint "$page")" >>"$rows" || {
+      report PAGES-FAILED pages-commit "could not stage under $WORKDIR"
+      return 1
+    }
+    printf '%s\n' "$page" >>"$distinct"
+    n=$((n + 1))
+  done <"$staging"
+  [ "$fail" -eq 0 ] || return 1
+
+  LC_ALL=C sort -u "$distinct" >"$distinct.u" && mv "$distinct.u" "$distinct"
+  state_replace "$PAGES" "$(cat "$distinct")" "$rows" || {
+    report PAGES-FAILED pages-commit "could not write $PAGES"
+    return 1
+  }
+  echo "pages-commit: $n pages in $PAGES"
+}
+
+# The point of forgetting: a page gone from disk stops being page-gone, and a
+# page kept but withdrawn from the compiled set stops carrying stale
+# provenance and a stale fingerprint. Neither file is required to hold a row
+# for the page named, so this never fails on account of the page's own state.
+cmd_pages_forget() {
+  local page="${1:-}"
+  [ -n "$page" ] || usage
+  : >"$WORKDIR/forget-rows"
+  state_replace "$PAGES" "$page" "$WORKDIR/forget-rows" || {
+    report PAGES-FAILED pages-forget "could not update $PAGES"
+    return 1
+  }
+  state_replace "$PROVENANCE" "$page" "$WORKDIR/forget-rows" || {
+    report PAGES-FAILED pages-forget "could not update $PROVENANCE"
+    return 1
+  }
+  echo "pages-forget: $page removed from $PAGES and $PROVENANCE"
+}
+
 # ------------------------------------------------------------- supersession
 
 # A reference addresses one decision, never a whole file: a record holds several
@@ -1705,81 +1838,38 @@ cmd_assign_id() {
   fragment_text "$page" "(whole)" | normalize_and_hash
 }
 
-# The one edit an adoption run makes to a page that already exists. A
-# hand-written page carries no type, and until it does check reports it on
-# every run and lint has nothing it can act on. Inserting the key as the first
-# line of the block leaves every other byte of the page where it was; that is
-# the whole promise.
-cmd_stamp_type() {
-  local page="${1:-}" type="${2:-}" end tmp
-  [ -n "$page" ] || usage
-  [ -n "$type" ] || usage
-  if [ ! -f "$page" ]; then
-    report NO-PAGE stamp-type "$page is not a file"
-    return 1
-  fi
-  # Read before anything is assembled: a page that cannot be opened must not
-  # reach the write below with an empty replacement.
-  if [ ! -r "$page" ]; then
-    report STAMP-FAILED "$page" "cannot be read; nothing stamped"
-    return 1
-  fi
-  end=$(fm_end "$page")
-  if [ "$end" -eq 0 ] && [ "$(head -n 1 "$page")" = "---" ]; then
-    report frontmatter-parseable "$page" "the opening --- has no closing ---; nothing stamped"
-    return 1
-  fi
-  if [ "$end" -gt 0 ]; then
-    if awk -v n="$end" 'NR > 1 && NR < n && index($0, "type:") == 1 {f = 1} END {exit f ? 0 : 1}' "$page"; then
-      if [ -n "$(fm_value "$page" type)" ]; then
-        report type-present "$page" "already carries type: $(fm_value "$page" type); stamp-type never overwrites"
-      else
-        report type-empty "$page" "carries a type: key with no value; fill it by hand rather than doubling it"
-      fi
-      return 1
-    fi
-  fi
-  # The whole replacement is assembled and checked before the page is opened
-  # for writing: a cat or tail that fails halfway must not leave a truncated
-  # page behind, and set -e does not reach this call tree. cat into the page
-  # rather than mv keeps its inode, mode and any symlink.
-  tmp="$WORKDIR/stamp"
-  if [ "$end" -eq 0 ]; then
-    {
-      printf -- '---\ntype: %s\n---\n' "$type"
-      cat "$page"
-    } >"$tmp" || {
-      report STAMP-FAILED "$page" "could not assemble the stamped page; nothing written"
-      return 1
-    }
-  else
-    {
-      printf -- '---\ntype: %s\n' "$type"
-      tail -n +2 "$page"
-    } >"$tmp" || {
-      report STAMP-FAILED "$page" "could not assemble the stamped page; nothing written"
-      return 1
-    }
-  fi
-  cat "$tmp" >"$page" || {
-    report STAMP-FAILED "$page" "could not write the page"
-    return 1
-  }
-  echo "stamp-type: $page type: $type"
-  return 0
-}
-
 # Identifiers seen so far, id<TAB>page. A page carrying none is reported as it
 # is checked; duplicates need the whole set, so they wait for the loop to end.
+# Gated on registration rather than on a type: key — an unregistered page under
+# decisions/ is a draft nobody has compiled yet, and requiring an identifier of
+# it would report every page kb:weave has not reached.
 check_decision_id() {
-  local page="$1" ids="$2" id
-  [ "$(fm_value "$page" type)" = "decision" ] || return 0
+  local page="$1" decisions="$2" ids="$3" id
+  page_registered "$page" || return 0
+  case "$page" in
+  "$decisions"/*) ;;
+  *) return 0 ;;
+  esac
   id=$(fm_value "$page" decision_id)
   if [ -z "$id" ]; then
     report decision-id-missing "$page" "a decision page carries no decision_id, so no reference can name it across a rename"
     return 0
   fi
   printf '%s\t%s\n' "$id" "$page" >>"$ids"
+}
+
+# A registered page whose current bytes no longer match the fingerprint
+# .kb/pages.tsv recorded. Advisory: an edit after compilation is not wrong, it
+# is a page kb:lint has not looked at since.
+check_fingerprint() {
+  local page="$1" recorded current
+  page_registered "$page" || return 0
+  recorded=$(awk -F'\t' -v p="$page" '$1 == p {print $2; exit}' "$PAGES")
+  current=$(page_fingerprint "$page")
+  if [ "$current" != "$recorded" ]; then
+    note page-edited "$page" "changed since the compiler last wrote it; kb:lint inspects it"
+  fi
+  return 0
 }
 
 # A deprecated page keeps its links and its history, and where a replacement
@@ -1865,11 +1955,12 @@ EOF
 }
 
 cmd_check() {
-  local docs="${1:-docs}" raw="${2:-thoughts}" root_index page base
-  # A sources[].resource resolves against the working directory, not against the
-  # raw root: a citation names tracked code or checked-in config, which lives
-  # anywhere in the repository. The raw root is here so the opposite can be
-  # caught — a citation that points inside it.
+  local docs="${1:-docs}" raw="${2:-thoughts}" map decisions page line path
+  docs="${docs%/}"
+  # A provenance row's resource resolves against the working directory, not
+  # against the raw root: a citation names tracked code or checked-in config,
+  # which lives anywhere in the repository. The raw root is here so the
+  # opposite can be caught — a citation that points inside it.
   # Resolved once, so every citation compares against one spelling of the tree.
   # An absent raw root leaves it empty, and no citation can then match it.
   raw=$(cd "${raw%/}" 2>/dev/null && pwd -P) || raw=""
@@ -1878,7 +1969,18 @@ cmd_check() {
     report NO-DOCS-ROOT check "$docs is not a directory — nothing to check"
     return 1
   fi
-  root_index="$docs/index.md"
+
+  [ -f "$SCHEMA" ] || {
+    report schema-missing "$SCHEMA" "no schema; run kb:weave to seed or adopt"
+    return 1
+  }
+  map=$(fm_value "$SCHEMA" map)
+  if [ -z "$map" ] || [ ! -f "$map" ]; then
+    report map-missing "$SCHEMA" "map: names $map, which does not exist"
+    return 1
+  fi
+  decisions=$(fm_value "$SCHEMA" decisions)
+  decisions="${decisions%/}"
 
   # Enumerate once, into a file, guarded. A find that fails partway — one
   # unreadable subdirectory is enough — would otherwise leave those pages
@@ -1889,31 +1991,38 @@ cmd_check() {
     return 1
   }
 
-  check_root_index "$root_index"
-
   : >"$WORKDIR/decision-ids"
   : >"$WORKDIR/superseded-by"
 
   while IFS= read -r page; do
     [ -n "$page" ] || continue
-    check_page_frontmatter "$page" "$root_index"
+    check_page_frontmatter "$page"
     check_links "$page"
     check_anchors "$page"
     check_open_markers "$page"
     check_footnote_join "$page"
     check_sources "$page" "$raw"
     check_external_claims "$page"
-    check_decision_id "$page" "$WORKDIR/decision-ids"
+    check_decision_id "$page" "$decisions" "$WORKDIR/decision-ids"
     check_superseded_by "$page" "$WORKDIR/superseded-by"
-    base=$(basename "$page")
-    if [ "$base" = "log.md" ]; then
-      check_log "$page"
-    fi
+    check_fingerprint "$page"
   done <"$WORKDIR/pages"
 
   check_decision_id_unique "$WORKDIR/decision-ids"
   check_superseded_by_resolves "$WORKDIR/superseded-by" "$WORKDIR/decision-ids"
-  check_reachability "$docs" "$root_index"
+  check_reachability "$docs" "$map"
+
+  # A page .kb/pages.tsv still names but that no longer sits under $docs —
+  # moved, renamed, or deleted since it was registered.
+  if [ -f "$PAGES" ]; then
+    while IFS= read -r line; do
+      [ -n "$line" ] || continue
+      path=$(printf '%s' "$line" | cut -f1)
+      if ! grep -Fxq -- "$path" "$WORKDIR/pages"; then
+        report page-gone "$path" "registered in $PAGES but not on disk; kb:lint moves or forgets it"
+      fi
+    done <"$PAGES"
+  fi
 
   if [ "$fail" -eq 0 ]; then
     echo "OK: $(line_count "$WORKDIR/pages") pages under $docs conform"
@@ -1936,7 +2045,6 @@ verify-sources) cmd_verify_sources "$@" || fail=1 ;;
 check) cmd_check "$@" || fail=1 ;;
 check-capture) cmd_check_capture "$@" || fail=1 ;;
 assign-id) cmd_assign_id "$@" || fail=1 ;;
-stamp-type) cmd_stamp_type "$@" || fail=1 ;;
 resolve-decision) cmd_resolve_decision "$@" || fail=1 ;;
 claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
 claim-release) cmd_claim_release "$@" || fail=1 ;;
@@ -1947,6 +2055,9 @@ captures-deferred) cmd_captures_deferred "$@" || fail=1 ;;
 sources-pending) cmd_sources_pending "$@" || fail=1 ;;
 consumed-commit) cmd_consumed_commit "$@" || fail=1 ;;
 consumed-check) cmd_consumed_check "$@" || fail=1 ;;
+provenance-commit) cmd_provenance_commit "$@" || fail=1 ;;
+pages-commit) cmd_pages_commit "$@" || fail=1 ;;
+pages-forget) cmd_pages_forget "$@" || fail=1 ;;
 *) usage ;;
 esac
 

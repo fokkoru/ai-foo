@@ -1,27 +1,21 @@
 ---
 type: decision
 title: "Retired"
-description: "A page whose cited resource is gone and whose entry is marked retired."
+description: "A page whose cited resource is deleted after it was committed."
 status: stable
 decision_id: "r1r1r1r1r1r1"
 supersedes: ""
 superseded_by: ""
-sources:
-  - resource: "scripts/fixtures/does-not-exist.md"
-    id: "gone"
-    fragment: "(whole)"
-    sha256: "000000000000"
-    retired: true
 ---
 
 # Retired
 
 ## Context
 
-The cited file does not exist. Before this change the `retired` flag silenced the report.[^gone]
+The cited resource existed when this row was committed and is removed afterward.[^gone]
 
 ## Decision
 
-A vanished source reports whatever the entry is marked.
+A vanished source is reported regardless of anything the row carries.
 
-[^gone]: `scripts/fixtures/does-not-exist.md`, whole file.
+[^gone]: the resource this page cited.
