@@ -33,8 +33,8 @@ What the skill guarantees, stated so you can check it from your own working copy
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `kb:capture`                      | a file appeared under `thoughts/captures/` naming the decision, the alternative you rejected and the reason, and `docs/` did not change                                                                                                                                        |
 | `kb:weave`                        | `docs/` and `.kb/` changed and `thoughts/` did not — the run reports a source-hash verification, a second document on a topic updated an existing page instead of adding a sibling, and every non-capture source it read is recorded in `.kb/consumed.tsv` at its current hash |
-| `kb:weave` on a hand-written tree | `.kb/schema.md` appeared and `git status docs/` is clean, `thoughts/` did not change, nothing was compiled, and the run showed you the directory-to-type table before it wrote anything                                                                                        |
-| `kb:lint`                         | `docs/` changed and `thoughts/` did not, every page the run edited traces to a finding that named its evidence, and a page you edited by hand was listed as `page-edited` before the run and is not after                                                                      |
+| `kb:weave` on a hand-written tree | `.kb/schema.md` appeared, `git status docs/` is clean when an existing file served as the map (otherwise `docs/index.md` also appeared), `thoughts/` did not change, nothing was compiled, and the run showed you the directory-to-type table before it wrote anything         |
+| `kb:lint`                         | `docs/` or `.kb/` changed and `thoughts/` did not, every page the run edited traces to a finding that named its evidence, and a page you edited by hand was listed as `page-edited` before the run and is not after                                                            |
 
 ## Customize paths (optional)
 
@@ -45,15 +45,28 @@ The skill uses these default paths:
 
 To override either, add a one-line note to your project's `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `kb: read notes from notes/ and write the knowledge base to wiki/`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
 
-## Upgrading from 1.0.x
+## Upgrading
 
-`kb:compile` is gone and `kb:weave` replaces it. Type the new name; there is no alias.
+### `kb:compile` is gone
 
-Three edits the skill will not make for you. A project already running `kb` has to make them by hand, because they are changes to your schema and your own pages, and the skill may rewrite neither:
+`kb:weave` replaces it. Type the new name; there is no alias.
 
-1. **The new routing row.** `docs/WIKI.md` gains a row for a rule that no longer holds whose replacement was never built: it goes to the old decision page as `status: deprecated` with no `superseded_by`, and the replacement is not compiled. Without the row there is nowhere for that case to land.
+### Moving a 1.x project to 2.0.0
+
+`kb` 2.0.0 moved the compiler's own state out of `docs/` and into a hidden, tracked `.kb/`. The compiler does not migrate a project automatically — an installed 1.x project reaches this schema only by hand:
+
+- `docs/WIKI.md` becomes `.kb/schema.md`, with `map:` and `decisions:` set to your existing map and decisions directory.
+- Every page's `sources[]` frontmatter block becomes rows in `.kb/provenance.tsv`: stage one line per citation — `docs/<page>\t<label>\t<resource>\t<fragment>` — per page and run `check-docs.sh provenance-commit <staging>`.
+- Every compiled page is registered by staging its path, one per line, and running `check-docs.sh pages-commit <staging>`, which records its fingerprint.
+- The receipt and intake ledgers become rows in the single `.kb/consumed.tsv`, written by staging and running `check-docs.sh consumed-commit <raw-root> <staging>`.
+- `docs/log.md` is deleted. Git history is the log from here on.
+- `type:` and `okf_version` frontmatter keys are dropped from every page; neither is read by anything.
+
+Three edits the skill still will not make for you, on top of the moves above. A project already running `kb` has to make them by hand, because they are changes to your schema and your own pages, and the skill may rewrite neither:
+
+1. **The new routing row.** `.kb/schema.md` gains a row for a rule that no longer holds whose replacement was never built: it goes to the old decision page as `status: deprecated` with no `superseded_by`, and the replacement is not compiled. Without the row there is nowhere for that case to land.
 2. **An identifier on every existing decision page**, plus the line in your decision page template. Run `check-docs.sh assign-id <page>` on each page under `docs/decisions/` and write the value into a `decision_id` key. Until you do, `check-docs.sh check` reports every one of them.
-3. **The two mentions of the old skill name in `docs/WIKI.md` prose.** Generator identity in page frontmatter stays on the old name: a renamed producer did not retroactively produce those pages.
+3. **The two mentions of the old skill name in `.kb/schema.md` prose**, carried over unchanged from `docs/WIKI.md`. Generator identity in page frontmatter stays on the old name: a renamed producer did not retroactively produce those pages.
 
 `thoughts/captures/` is written by `kb:capture` and stays untracked. Keep it out of git the way you keep the rest of `thoughts/` out.
 
