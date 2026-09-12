@@ -30,15 +30,15 @@ This is a starting point, not a contract. A project that outgrows the three dire
 
 ## A key is carried only when something reads it
 
-OKF §11 requires nothing beyond `type` and makes every optional family independently cherry-pickable. A key nobody reads is maintenance with no return, so this schema carries a key only when a human reader or `check-docs.sh` consumes it.
+OKF §11 makes every optional family independently cherry-pickable, and its only fixed requirement — that a page's classification be knowable — is met structurally here, by which of the three directories a page lives in, not by a `type` key. A key nobody reads is maintenance with no return, so this schema carries a key only when a human reader or `check-docs.sh` consumes it.
 
 Three keys are absent on purpose:
 
-| Key           | Why it is not here                                                                                                                                                 |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `tags`        | Nothing reads it. Search reads the body                                                                                                                            |
-| `stale_after` | It guesses a date at write time. `sources[].sha256` measures whether the source actually changed, which is the question the guess stood in for                     |
-| `verified`    | It records a confirmation event, which is a different act from generation. `kb:weave` never performs one, so the key would always be a claim about work nobody did |
+| Key           | Why it is not here                                                                                                                                                                                  |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tags`        | Nothing reads it. Search reads the body                                                                                                                                                             |
+| `stale_after` | It guesses a date at write time. The hash `provenance-commit` computes for each `.kb/provenance.tsv` row measures whether the source actually changed, which is the question the guess stood in for |
+| `verified`    | It records a confirmation event, which is a different act from generation. `kb:weave` never performs one, so the key would always be a claim about work nobody did                                  |
 
 Adding one back is allowed. Name what reads it first.
 

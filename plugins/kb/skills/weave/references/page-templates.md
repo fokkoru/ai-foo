@@ -47,7 +47,7 @@ The reviewer defaults to opus.[^cr-frontmatter]
 That definition is prose for the reader; the hash that lets `check-docs.sh` detect drift lives in `.kb/provenance.tsv`, one row per label, written by `provenance-commit` rather than typed by hand. Stage one line per citation in the staging file it takes:
 
 ```
-docs/<page>	<label>	<path>	<L<a>-L<b> | heading | empty for whole>
+docs/<page>	<label>	<resource>	<L<a>-L<b> | heading | empty for whole>
 ```
 
 ## Architecture page
