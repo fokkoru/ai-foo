@@ -14,5 +14,5 @@ docs/decisions/0007-the-rung-decides-what-a-prompt-edit-runs.md	529d50bf4cdd
 docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	eb0f4286f853
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	f2f20bfeaef8
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	75db359f80db
-docs/product/answer-first-style.md	18096c79d8db
+docs/product/answer-first-style.md	ef3a65e1da1f
 docs/product/df-workflow.md	273bb559ae18

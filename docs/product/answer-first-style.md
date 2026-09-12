@@ -21,9 +21,10 @@ if they said "just give me the TLDR", with supporting detail after. Length follo
 change rather than the length of the session behind it, and a detail is cut whole rather than
 compressed into fragments, abbreviations or arrow chains.[^style-head]
 
-Two rules come from none of its sources. The first is a test for jargon: a technical term stays only
-when it is shorter than the plain phrasing, because "use the plain word" on its own gives the model
-nothing to check against and comparing two lengths is something it can check. The second is the end
+Two rules come from none of its sources. The first is the vocabulary rule: plain words, plus the
+technical terms the reader has shown they understand. Until 0.10.0 it was a length test, a technical
+term staying only when shorter than the plain phrasing, which made the model pick the compressed word
+rather than the known one. The second is the end
 state. When something is the reader's to act on, the message ends with one of four exclusive labels — **Need from you**, **Blocked**, **Not
 verified**, **Next** — taken in that order. An action the model can take itself is taken instead of
 being written as a next step, and when nothing is open the message stops with the content.[^style-sources]
@@ -37,8 +38,10 @@ confirmation.[^style-head]
 Where the harness injects its own writing rules, the style is emitted before them, so the base
 prompt's text carries recency. The style therefore repeats the base prompt's sentences where the two
 overlap rather than rewording them, and adds only what the base prompt does not carry: the explicit
-length rule and the end state. Where those harness rules are absent, the style is the only prose
-rule set in the prompt, which is why it is standalone rather than a delta.[^style-placement]
+length rule, the first-mention rule for coined names, and the end state. Where those harness rules
+are absent, the style is the only prose rule set in the prompt, which is why it is standalone rather
+than a delta. Version 0.11.0 dropped the shared sentences and 0.11.1 restored them for that
+reason.[^style-placement]
 
 ## What it does not cover
 
@@ -48,7 +51,7 @@ in full.[^style-head]
 The body has been compared against its predecessor on a fixed prompt set with the harness in
 [Prompt A/B harness](../architecture/prompt-eval-harness.md), but that run's numbers are not
 recorded in this repository, so no effect size is stated here. The marketplace entry ships
-0.10.0.[^style-version]
+0.11.1.[^style-version]
 
 [^style-head]: `plugins/style/output-styles/answer-first.md`, frontmatter and the first two paragraphs.
 

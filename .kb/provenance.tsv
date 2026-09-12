@@ -69,10 +69,10 @@ docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	versionin
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	source-missing-report	plugins/kb/scripts/check-docs.sh	L743-L746	a0fb5933b4eb
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	.kb/schema.md	## Provenance	b30a2f3c7b4d
 docs/product/answer-first-style.md	root-readme	README.md	L59-L59	9fe28e6b3b2d
-docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	cc934dba94d0
+docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	12c0f272ff86
 docs/product/answer-first-style.md	style-placement	plugins/style/README.md	## What the base prompt already says about prose	d398dda946b7
-docs/product/answer-first-style.md	style-sources	plugins/style/README.md	## Where the rules came from	36a1cb715a67
-docs/product/answer-first-style.md	style-version	.claude-plugin/marketplace.json	L65-L75	aeb076e5b064
+docs/product/answer-first-style.md	style-sources	plugins/style/README.md	## Where the rules came from	7f4c71613ac3
+docs/product/answer-first-style.md	style-version	.claude-plugin/marketplace.json	L65-L75	d976406db89d
 docs/product/df-workflow.md	checks-blind	CLAUDE.md	## Verify Before Finishing	f6107b0487d9
 docs/product/df-workflow.md	df-overview	plugins/df/README.md	## Overview	7aac1aa99ad3
 docs/product/df-workflow.md	df-skills	plugins/df/README.md	## Skills	57866131d440
