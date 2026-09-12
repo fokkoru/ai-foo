@@ -66,7 +66,7 @@ Report, in this order:
 
 - the confirmed mapping table, and which file was confirmed as the map
 - the file written — `.kb/schema.md` alone, or `.kb/schema.md` and `docs/index.md` — and the existing map that was left as it was, if any
-- `check`'s findings, labelled as the owner's backlog
+- `check`'s findings, labelled as the owner's backlog; and, separately, that the adopted pages carry no provenance, which `check` is silent about, so `/kb:lint <page>` on a named page is how one gets inspected
 - the result of `verify-sources`, or that there was no raw root
 
 Print — never write — a `## Documentation` block for the owner to paste into their instructions file, pointing a later session at `docs/` before `thoughts/`, the way Step 7 does on the run that seeds a tree.

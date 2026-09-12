@@ -148,13 +148,13 @@ This is the step the whole skill exists for. A knowledge base that gains a page 
 
 ### Step 4: Write provenance
 
-Every page's footnote citations are staged and committed in one call, never typed into `.kb/provenance.tsv` by hand. Stage one line per citation the run added or moved:
+Every page's footnote citations are staged and committed in one call, never typed into `.kb/provenance.tsv` by hand. `provenance-commit` replaces every row for each page named in the staging file, so the stage for a page is its complete citation set, not a diff against what was there before: list one line for every citation the page makes, not only the ones this run added or moved, or the rows this run leaves out are lost.
 
 ```
 docs/<page>	<label>	<resource>	<fragment>
 ```
 
-`<fragment>` is a heading line, an `L<start>-L<end>` range for a resource with no headings, or empty for the whole file. Then run `check-docs.sh provenance-commit <staging> <raw root>`. It computes the hash itself and replaces every row for each page named in the staging file, so a run stages every citation the page still makes, not a diff against what was there before — a page with a live citation you fail to restage loses that row. It refuses a row whose page is not on disk, whose resource does not exist or lives in the raw root, whose label is empty or carries whitespace, or whose fragment does not resolve, and writes nothing at all if any row fails.
+`<fragment>` is a heading line, an `L<start>-L<end>` range for a resource with no headings, or empty for the whole file. Then run `check-docs.sh provenance-commit <staging> <raw root>`. It computes the hash itself. It refuses a row whose page is not on disk, whose resource does not exist or lives in the raw root, whose label is empty or carries whitespace, or whose fragment does not resolve, and writes nothing at all if any row fails.
 
 A citation whose resource no longer exists is deleted together with the prose it supported — dropped from the staging file rather than restaged — and the deletion goes into the proposed commit body from Step 7. A claim whose evidence is gone is not a claim the page can still make.
 
@@ -176,7 +176,16 @@ A failure from the second is different in kind. It means this run wrote into the
 
 Once both pass, and not before, run `check-docs.sh pages-commit <staging>` with one page path per line, every page this run wrote, new or updated. It writes each page's fingerprint.
 
-Then write the consumption ledger. Stage one line per decision this run touched — `capture\t<record path relative to the captures directory>\t<decision heading>\tconsumed|deferred` — and one per named non-capture source outside `captures/` this run read — `note\t<path relative to the raw root>\t\tconsumed|no-home`, `consumed` when at least one claim from it reached a page and `no-home` when none did — then run `check-docs.sh consumed-commit <raw root> <staging file>`. It computes each row's hash itself, validates the whole set, and writes nothing unless all of it validates, so a run that stops here leaves no entry.
+Run `check-docs.sh check` again. `decision_id`-missing, a fingerprint mismatch, and `unregistered-citation` all gate on a page being registered, so the run before `pages-commit` could not have seen any of the three on a page this run just created — it was not registered yet to check against. This second run is the one that actually holds this run's new pages to those rules; fix whatever it reports — most commonly a decision page left at `decision_id: "unset"` because the `assign-id` round trip in Step 4 was skipped — then run `pages-commit` and `check` again before going on.
+
+Then write the consumption ledger. Stage one line per decision this run touched and one per named non-capture source outside `captures/` this run read:
+
+```
+capture	<record path relative to the captures directory>	<decision heading>	consumed|deferred
+note	<path relative to the raw root>		consumed|no-home
+```
+
+A note row is `consumed` when at least one claim from it reached a page and `no-home` when none did. Then run `check-docs.sh consumed-commit <raw root> <staging file>`. It computes each row's hash itself, validates the whole set, and writes nothing unless all of it validates, so a run that stops here leaves no entry.
 
 Acknowledgement is per decision, never per record: a record is routinely half compiled and half deferred, and marking the whole file done would lose the deferred half. "Offered", "confirmed" and "read for context" are not acknowledgement. A decision that routed nowhere is `deferred` and waits indefinitely — nothing expires, and only a run the owner starts returns to it.
 
@@ -209,7 +218,7 @@ Close by saying that `docs/` is ready to be committed on its own.
 
 - Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 0 and `verify-sources` in Step 6, not by inspection
 - Never run `git add`, `git commit`, or any other git write. Committing is somebody else's job — `df:commit` when that plugin is installed, the user's own hands otherwise — and `docs/` lands in its own commit so that a bad compile is recoverable with one `git revert`
-- Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and `index.md` can end up disagreeing with each other
+- Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and the file `map:` names can end up disagreeing with each other
 - A repeat `weave pending` over unchanged sources produces no diff — no timestamp bumps, no ledger row. A non-capture source the ledger records at its current hash is not in that list, and the list is the check, not a re-read. A source named by filename, and every capture record, is outside this rule
 - Never rewrite an existing `.kb/schema.md`
 - Never write a page under `docs/` that the map does not reach
