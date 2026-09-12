@@ -1,6 +1,6 @@
 ---
 name: weave
-description: Weave raw sources under thoughts/ into the project's long-term memory — a durable, committed knowledge base under docs/ of OKF-conformant pages, routed by whether a claim is a verified fact about the current code or a proposal, each carrying per-source provenance
+description: Weave raw sources under thoughts/ into the project's long-term memory — a durable, committed knowledge base under docs/ shaped by Open Knowledge Format, routed by whether a claim is a verified fact about the current code or a proposal, each carrying per-source provenance
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, LS, Bash(date:*), Bash(git config:*), Bash(git rev-parse:*), Bash(*check-docs.sh*)
 ---
@@ -158,6 +158,8 @@ docs/<page>	<label>	<resource>	<fragment>
 
 A citation whose resource no longer exists is deleted together with the prose it supported — dropped from the staging file rather than restaged — and the deletion goes into the proposed commit body from Step 7. A claim whose evidence is gone is not a claim the page can still make.
 
+`provenance-commit` replaces rows only for a page named in the staging file, so when the citation being dropped was the page's only one, staging nothing for that page drops nothing — its row survives with no citation left to justify it. When the citation being retired is the page's last, run `check-docs.sh pages-forget <page>` and then `check-docs.sh pages-commit <staging>` naming that page, to re-register it with no provenance rows: that is the correct end state for a page that now cites nothing, and it is the only sequence that clears the stale row using shipped modes alone.
+
 A new decision page also gets its `decision_id`, which is how a supersession reference names the decision across an editorial rename. Write the page with `decision_id: "unset"`, then run `check-docs.sh assign-id <page>` and write the value it prints into the key. Assign it once: a later edit to the page never reassigns it, and a substantively different decision is a new page with its own.
 
 ### Step 5: Update the map
@@ -170,13 +172,13 @@ A new page gets one line added to that file and nothing else — the map itself 
 
 Run `check-docs.sh check`, then `check-docs.sh verify-sources <manifest>` with the manifest path Step 0 printed.
 
-Fix whatever the first reports and run it again.
+Fix whatever it reports about a page this run wrote, new or updated, and run it again. A finding on a page this run never touched is not this run's defect — an adopted or partially-linted tree can carry one indefinitely, and gating this loop on the whole tree would make it unwinnable in exactly that state.
 
 A failure from the second is different in kind. It means this run wrote into the raw layer, which `<artifact_scope>` forbids. That is a defect in the run, not a finding to hand to the user: say so plainly, name the files, and stop.
 
-Once both pass, and not before, run `check-docs.sh pages-commit <staging>` with one page path per line, every page this run wrote, new or updated. It writes each page's fingerprint.
+Once `verify-sources` passes — regardless of what the first `check` reported elsewhere in the tree — run `check-docs.sh pages-commit <staging>` with one page path per line, every page this run wrote, new or updated. It writes each page's fingerprint. Gating this on `check` as well as `verify-sources` would leave the pages this run actually wrote unregistered whenever any other finding in `docs/` stayed open — the ordinary case for an adopted or partially-linted tree, not the exception. An adopted tree's own findings, handed to the owner as backlog by `references/adopt.md`, are exactly that case: the run after an adoption cannot reach `pages-commit` at all if this gate stayed on a green whole tree.
 
-Run `check-docs.sh check` again. `decision_id`-missing, a fingerprint mismatch, and `unregistered-citation` all gate on a page being registered, so the run before `pages-commit` could not have seen any of the three on a page this run just created — it was not registered yet to check against. This second run is the one that actually holds this run's new pages to those rules; fix whatever it reports — most commonly a decision page left at `decision_id: "unset"` because the `assign-id` round trip in Step 4 was skipped — then run `pages-commit` and `check` again before going on.
+Run `check-docs.sh check` again. `decision_id`-missing, a fingerprint mismatch, and `unregistered-citation` all gate on a page being registered, so the run before `pages-commit` could not have seen any of the three on a page this run just created — it was not registered yet to check against. This second run is the one that actually holds this run's new pages to those rules; fix whatever it reports about a page this run touched — most commonly a decision page left at `decision_id: "unset"` because the `assign-id` round trip in Step 4 was skipped — then run `pages-commit` and `check` again before going on. A finding this run did not cause — left open elsewhere in the tree, or already settled as undetermined by an earlier `kb:lint` pass — is expected to still be there and is not this loop's job.
 
 Then write the consumption ledger. Stage one line per decision this run touched and one per named non-capture source outside `captures/` this run read:
 

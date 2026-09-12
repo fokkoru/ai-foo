@@ -50,6 +50,8 @@ That definition is prose for the reader; the hash that lets `check-docs.sh` dete
 docs/<page>	<label>	<resource>	<L<a>-L<b> | heading | empty for whole>
 ```
 
+`provenance-commit` replaces every row for each page named in the staging file — the stage for a page is its complete citation set, never a diff against what is already recorded, so a page named in the stage with fewer lines than it had before loses the rows left out.
+
 ## Architecture page
 
 ```markdown
