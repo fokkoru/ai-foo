@@ -1,8 +1,9 @@
 ---
-type: schema
 title: "Knowledge Base Schema"
 description: "What this knowledge base contains, how a page earns its place in it, and which rules a compiler must follow."
-template_version: "1"
+template_version: "2"
+map: docs/index.md
+decisions: docs/decisions
 ---
 
 # Knowledge Base Schema
@@ -12,27 +13,20 @@ This file is the schema for the knowledge base under `docs/`. It is written for 
 ## Contents
 
 - [Editing this file is expected](#editing-this-file-is-expected)
-- [OKF v0.2, pinned](#okf-v02-pinned)
 - [A key is carried only when something reads it](#a-key-is-carried-only-when-something-reads-it)
+- [The map](#the-map)
 - [The four directories](#the-four-directories)
 - [The routing test](#the-routing-test)
 - [What adopted means](#what-adopted-means)
 - [Source trust order](#source-trust-order)
 - [Confidence vocabulary](#confidence-vocabulary)
 - [Provenance](#provenance)
-- [index.md and log.md](#indexmd-and-logmd)
 
 ## Editing this file is expected
 
 This is a starting point, not a contract. A project that outgrows the four directories, the routing test, or the confidence vocabulary edits this file, and nothing complains — no drift check compares it against the copy the plugin ships.
 
 `template_version` is how a later release tells you the shipped template has moved on. It reports; it never gates. Your edits stay.
-
-## OKF v0.2, pinned
-
-The bundle conforms to the Open Knowledge Format, version 0.2. Re-evaluate at the next OKF release rather than tracking drafts.
-
-Conformance costs a `type:` key on every page and two reserved filenames, `index.md` and `log.md`. That is the whole surface. Everything else below is this project's convention, and a consumer that ignores all of it still reads the bundle.
 
 ## A key is carried only when something reads it
 
@@ -48,14 +42,20 @@ Three keys are absent on purpose:
 
 Adding one back is allowed. Name what reads it first.
 
+## The map
+
+`map: docs/index.md` names the bundle's root index — the page `check-docs.sh` walks from, following relative `.md` links, to prove every other page is reachable. `decisions: docs/decisions` names the directory that same run holds to the `decision_id` rule. Neither key names a page `kb:weave` compiled: the map is not registered in `.kb/pages.tsv`, unlike the pages it links to, because it is the owner's table of contents, not output.
+
+Every relative `.md` link on a page must resolve to a file — `check-docs.sh` enforces this over every page under `docs/`, whether or not that page is reachable from the map.
+
 ## The four directories
 
-| Directory       | Holds                             | `type` value   |
-| --------------- | --------------------------------- | -------------- |
-| `architecture/` | How the system works, and why     | `architecture` |
-| `product/`      | Behaviour, concepts, capabilities | `product`      |
-| `decisions/`    | ADR-shaped records, numbered      | `decision`     |
-| `roadmap/`      | Direction and planned work        | `roadmap`      |
+| Directory       | Holds                             |
+| --------------- | --------------------------------- |
+| `architecture/` | How the system works, and why     |
+| `product/`      | Behaviour, concepts, capabilities |
+| `decisions/`    | ADR-shaped records, numbered      |
+| `roadmap/`      | Direction and planned work        |
 
 ## The routing test
 
@@ -63,7 +63,7 @@ Route a claim by what it is, not by which document it arrived in. One source oft
 
 | The claim is                                                                        | It goes to                    | With                                                                              |
 | ----------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------- |
-| A statement about current behaviour, verified at a `file:line`                      | `architecture/` or `product/` | a `sources[]` entry                                                               |
+| A statement about current behaviour, verified at a `file:line`                      | `architecture/` or `product/` | a footnote definition on the page and a row in `.kb/provenance.tsv`               |
 | A rule in effect, evidenced in code or in `CLAUDE.md`, `CONTRIBUTING.md`, or config | `decisions/`                  | `status: stable`                                                                  |
 | Anything else, including any plan whose change is not present in the code           | `roadmap/`                    | `status: draft`                                                                   |
 | A decision that a later one replaced                                                | both pages                    | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
@@ -94,36 +94,28 @@ A verified claim is never silently overwritten by a lower tier.
 
 Confidence is a property of the claim, not of the document it came from. A single research file can hold one verified claim and one guess.
 
-| Marker       | Means                                                                           |
-| ------------ | ------------------------------------------------------------------------------- |
-| _(none)_     | Verified. Requires a `sources[]` entry                                          |
-| `[reported]` | A secondary source says so. The line carries the URL and `retrieved YYYY-MM-DD` |
-| `[inferred]` | Deduced rather than stated                                                      |
-| `[unknown]`  | The question is open; the answer is a literal TODO                              |
+| Marker       | Means                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------- |
+| _(none)_     | Verified. Requires a footnote definition on the page and a row in `.kb/provenance.tsv` |
+| `[reported]` | A secondary source says so. The line carries the URL and `retrieved YYYY-MM-DD`        |
+| `[inferred]` | Deduced rather than stated                                                             |
+| `[unknown]`  | The question is open; the answer is a literal TODO                                     |
 
 The vocabulary is closed. A marker sits inline, immediately after the claim it qualifies.
 
 ## Provenance
 
-Every page records what it was built from. A `sources[]` entry names a resource, a fragment of it, and a hash of that fragment, so `check-docs.sh` can tell you later that the ground moved.
+Every page records what it was built from, but not in its own frontmatter any more. A page's citations live in `.kb/provenance.tsv`, one row per footnote label: page, label, resource, fragment, and a hash of that fragment, computed by `provenance-commit` — never typed by hand. `check-docs.sh` reads that ledger to tell you later that the ground moved.
 
-```yaml
-sources:
-  - resource: "CLAUDE.md"
-    id: "cr-tiering"
-    fragment: "## Gotchas"
-    sha256: "3f9a1c2d4e5b"
-  - resource: "plugins/df/agents/code-reviewer.md"
-    id: "cr-frontmatter"
-    fragment: "L1-L8"
-    sha256: "b71e0d94a2cf"
-```
-
-Cite a claim in the body by footnote label. OKF §5.1 makes that label the join key — a consumer resolves attribution through the matching `sources[].id`, not by reading the footnote prose:
+A page itself carries only the footnote definitions its provenance rows join to:
 
 ```markdown
 The reviewer defaults to opus.[^cr-frontmatter]
+
+[^cr-frontmatter]: `plugins/df/agents/code-reviewer.md`
 ```
+
+OKF §5.1 makes the label the join key — a consumer resolves attribution through the matching `.kb/provenance.tsv` row, not by reading the footnote prose.
 
 `fragment` takes one of three forms:
 
@@ -135,18 +127,4 @@ The reviewer defaults to opus.[^cr-frontmatter]
 
 The hash is the first 12 hex characters of the `sha256` of the fragment, after stripping trailing whitespace from every line and dropping leading and trailing blank lines. A reformat that changes nothing therefore reads as no change.
 
-When a `resource` no longer exists, delete the entry together with the prose it supported, and record the deletion in `log.md`. The page's own history is git's to keep, not the frontmatter's.
-
-## index.md and log.md
-
-Both filenames are reserved by OKF, and both are exempt from the rule that every page declares a `type`.
-
-**`index.md`** is a directory's table of contents. The one at the bundle root carries frontmatter of exactly one key, `okf_version`; every `index.md` below it carries none at all. Entries follow §8's shape, with the description taken from the linked page's own frontmatter:
-
-```markdown
-- [Routing](routing.md) - how a request reaches its handler
-```
-
-**`log.md`** is the bundle's history. No frontmatter, an H1, then `## YYYY-MM-DD` sections newest first. Each section holds bullets labelled `**Update**`, `**Creation**`, or `**Deprecation**` — the three §9 names, as a convention rather than a requirement — linking the pages they affected.
-
-`check-docs.sh` enforces two rules beyond the spec: every relative `.md` link resolves, and every page is reachable from the bundle-root `index.md` (`log.md` and this file are exempt). OKF §6 and §11 both say a consumer must tolerate broken links, so a bundle failing either rule is still conformant. They stay because the most common compiler failure is writing a page and forgetting to link it, and a producer may hold itself to more than a consumer may demand.
+When a `resource` no longer exists, its row is dropped and the prose it supported goes with it, never flagged and kept. The page's own history is git's to keep, not the ledger's.
