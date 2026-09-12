@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "Antigravity runs under accept-edits"
 description: "Delegated runs get file edits and no shell; consultations get no permission flag at all."
 status: stable
@@ -9,27 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "plugins/agy/skills/delegate/SKILL.md"
-    id: "delegate-gates"
-    fragment: "L80-L88"
-    sha256: "bf5e92e60e4d"
-  - resource: "plugins/agy/skills/delegate/SKILL.md"
-    id: "delegate-frontmatter"
-    fragment: "L1-L5"
-    sha256: "899c4cbfc564"
-  - resource: "plugins/agy/skills/delegate/SKILL.md"
-    id: "delegate-why-subagent"
-    fragment: "L10-L10"
-    sha256: "8fd3523ac7cf"
-  - resource: "plugins/agy/skills/consult/SKILL.md"
-    id: "consult-gates"
-    fragment: "L73-L77"
-    sha256: "fd3b91dbc91e"
-  - resource: "CLAUDE.md"
-    id: "claude-md-agy"
-    fragment: "### agy (plugins/agy/)"
-    sha256: "9e738e6614d4"
 ---
 
 # Antigravity runs under accept-edits

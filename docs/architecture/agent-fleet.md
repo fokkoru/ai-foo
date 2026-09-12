@@ -1,32 +1,10 @@
 ---
-type: architecture
 title: "Agent fleet and its tiers"
 description: "The nine subagents df ships, and how each one's model and effort are pinned together in frontmatter."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "plugins/df/agents/codebase-locator.md"
-    id: "locator-frontmatter"
-    fragment: "L1-L7"
-    sha256: "14f02113f2e9"
-  - resource: "plugins/df/agents/codebase-analyzer.md"
-    id: "analyzer-frontmatter"
-    fragment: "L1-L7"
-    sha256: "aec3045de004"
-  - resource: "plugins/df/agents/finding-verifier.md"
-    id: "verifier-frontmatter"
-    fragment: "L1-L7"
-    sha256: "c9ec183c79cd"
-  - resource: "plugins/df/README.md"
-    id: "agent-table"
-    fragment: "## Subagents"
-    sha256: "a776d1b2f6cf"
-  - resource: "CLAUDE.md"
-    id: "tiering-gotcha"
-    fragment: "## Gotchas"
-    sha256: "0e90536983a8"
 ---
 
 # Agent fleet and its tiers

@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "A version bump touches two manifests and no tag"
 description: "A plugin's version lives in its marketplace entry and its Codex manifest, bumped to the same value in one commit; the Codex catalog tracks main, so there is nothing to tag."
 status: stable
@@ -9,19 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:weave"
   at: "2026-09-06T00:14:51-07:00"
-sources:
-  - resource: "CLAUDE.md"
-    id: "versioning-rule"
-    fragment: "## Versioning"
-    sha256: "617a7aec2e56"
-  - resource: "CONTRIBUTING.md"
-    id: "semver-table"
-    fragment: "## Versioning (semver reference)"
-    sha256: "dfdffe434574"
-  - resource: ".agents/plugins/marketplace.json"
-    id: "catalog-ref-main"
-    fragment: "(whole)"
-    sha256: "f080b117403c"
 ---
 
 # A version bump touches two manifests and no tag

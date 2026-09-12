@@ -1,24 +1,10 @@
 ---
-type: product
 title: "The df development workflow"
 description: "The research-to-commit chain df provides, and the guarantee each step makes."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "plugins/df/README.md"
-    id: "df-overview"
-    fragment: "## Overview"
-    sha256: "7aac1aa99ad3"
-  - resource: "plugins/df/README.md"
-    id: "df-skills"
-    fragment: "## Skills"
-    sha256: "57866131d440"
-  - resource: "CLAUDE.md"
-    id: "checks-blind"
-    fragment: "## Verify Before Finishing"
-    sha256: "f6107b0487d9"
 ---
 
 # The df development workflow

@@ -1,48 +1,10 @@
 ---
-type: architecture
 title: "The two-line status line"
 description: "How the Claude Code status line is assembled from ccstatusline's git widgets and one local script, and how to recreate it on a new machine."
 status: stable
 generated:
   by: "kb:lint"
   at: "2026-09-11T14:58:40-07:00"
-sources:
-  - resource: "CLAUDE.md"
-    id: "sl-not-a-plugin"
-    fragment: "## statusline (statusline/)"
-    sha256: "27a7a2795fac"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-why"
-    fragment: "L2-L14"
-    sha256: "02472ac4fa5e"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-buffer"
-    fragment: "L49-L55"
-    sha256: "c9d681ece83c"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-rates"
-    fragment: "L18-L62"
-    sha256: "14b4b0892a21"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-cache"
-    fragment: "L162-L182"
-    sha256: "a51da5b9ddfa"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-cost"
-    fragment: "L184-L256"
-    sha256: "744b66b88c4d"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-thresholds"
-    fragment: "L79-L84"
-    sha256: "ea823662305d"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-dispatch"
-    fragment: "L272-L305"
-    sha256: "5f5ebe8de8f7"
-  - resource: "statusline/statusline.mjs"
-    id: "sl-worktree"
-    fragment: "L275-L292"
-    sha256: "d543ff5abf90"
 ---
 
 # The two-line status line

@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "Model tiering for dispatched work"
 description: "Judging never drops below the strong tier, effort is pinned in frontmatter rather than chosen per dispatch, and no df dispatch names a model."
 status: stable
@@ -9,15 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "CLAUDE.md"
-    id: "tiering-gotcha"
-    fragment: "## Gotchas"
-    sha256: "0e90536983a8"
-  - resource: "plugins/df/agents/code-reviewer.md"
-    id: "cr-frontmatter"
-    fragment: "L1-L7"
-    sha256: "05c75de3a966"
 ---
 
 # Model tiering for dispatched work

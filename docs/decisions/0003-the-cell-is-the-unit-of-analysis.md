@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "The cell is the unit of analysis"
 description: "A prompt experiment is read paired at the fixed task rather than pooled over responses, and every reading is reported per pair."
 status: stable
@@ -9,11 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "scripts/eval/paired.py"
-    id: "paired-doc"
-    fragment: "L1-L28"
-    sha256: "9ea39616fa2d"
 ---
 
 # The cell is the unit of analysis

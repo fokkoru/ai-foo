@@ -1,24 +1,10 @@
 ---
-type: architecture
 title: "Antigravity execution boundary"
 description: "What the Antigravity CLI is allowed to do under each permission mode, and which flags the two skills therefore pass."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "plugins/agy/skills/delegate/SKILL.md"
-    id: "delegate-constraints"
-    fragment: "L80-L88"
-    sha256: "bf5e92e60e4d"
-  - resource: "plugins/agy/skills/delegate/SKILL.md"
-    id: "delegate-why-subagent"
-    fragment: "L10-L10"
-    sha256: "8fd3523ac7cf"
-  - resource: "plugins/agy/skills/consult/SKILL.md"
-    id: "consult-readonly"
-    fragment: "L61-L63"
-    sha256: "fc105ef2a412"
 ---
 
 # Antigravity execution boundary

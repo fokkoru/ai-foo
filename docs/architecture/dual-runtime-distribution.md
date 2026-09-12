@@ -1,36 +1,10 @@
 ---
-type: architecture
 title: "Shipping one plugin tree to two runtimes"
 description: "How the same plugins reach Claude Code and Codex CLI: two catalogs, two manifests, a mirrored agent set, and the one install step a Codex plugin cannot carry."
 status: stable
 generated:
   by: "kb:weave"
   at: "2026-09-06T00:14:51-07:00"
-sources:
-  - resource: "CONTRIBUTING.md"
-    id: "codex-distribution"
-    fragment: "## Codex Distribution"
-    sha256: "ff7d4e957c99"
-  - resource: "CONTRIBUTING.md"
-    id: "bundled-file-reference"
-    fragment: "## Referencing a Bundled File from a Skill"
-    sha256: "9bd3fb6bff1c"
-  - resource: "scripts/install-codex-agents.sh"
-    id: "agent-install"
-    fragment: "L3-L7"
-    sha256: "d557c8a04432"
-  - resource: "scripts/check-codex-agent-drift.sh"
-    id: "drift-rules"
-    fragment: "L2-L22"
-    sha256: "a7dd447088da"
-  - resource: "scripts/check-codex-agent-drift.sh"
-    id: "drift-extraction"
-    fragment: "L24-L29"
-    sha256: "90ead0758413"
-  - resource: ".agents/plugins/marketplace.json"
-    id: "codex-catalog"
-    fragment: "(whole)"
-    sha256: "f080b117403c"
 ---
 
 # Shipping one plugin tree to two runtimes

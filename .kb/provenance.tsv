@@ -1,0 +1,79 @@
+docs/architecture/agent-fleet.md	agent-table	plugins/df/README.md	## Subagents	a776d1b2f6cf
+docs/architecture/agent-fleet.md	analyzer-frontmatter	plugins/df/agents/codebase-analyzer.md	L1-L7	aec3045de004
+docs/architecture/agent-fleet.md	locator-frontmatter	plugins/df/agents/codebase-locator.md	L1-L7	14f02113f2e9
+docs/architecture/agent-fleet.md	tiering-gotcha	CLAUDE.md	## Gotchas	0e90536983a8
+docs/architecture/agent-fleet.md	verifier-frontmatter	plugins/df/agents/finding-verifier.md	L1-L7	c9ec183c79cd
+docs/architecture/agy-execution-boundary.md	consult-readonly	plugins/agy/skills/consult/SKILL.md	L61-L63	fc105ef2a412
+docs/architecture/agy-execution-boundary.md	delegate-constraints	plugins/agy/skills/delegate/SKILL.md	L80-L88	bf5e92e60e4d
+docs/architecture/agy-execution-boundary.md	delegate-why-subagent	plugins/agy/skills/delegate/SKILL.md	L10-L10	8fd3523ac7cf
+docs/architecture/dual-runtime-distribution.md	agent-install	scripts/install-codex-agents.sh	L3-L7	d557c8a04432
+docs/architecture/dual-runtime-distribution.md	bundled-file-reference	CONTRIBUTING.md	## Referencing a Bundled File from a Skill	9bd3fb6bff1c
+docs/architecture/dual-runtime-distribution.md	codex-catalog	.agents/plugins/marketplace.json	(whole)	f080b117403c
+docs/architecture/dual-runtime-distribution.md	codex-distribution	CONTRIBUTING.md	## Codex Distribution	ff7d4e957c99
+docs/architecture/dual-runtime-distribution.md	drift-extraction	scripts/check-codex-agent-drift.sh	L24-L29	90ead0758413
+docs/architecture/dual-runtime-distribution.md	drift-rules	scripts/check-codex-agent-drift.sh	L2-L22	a7dd447088da
+docs/architecture/knowledge-compiler.md	capture-claim-step	plugins/kb/skills/capture/SKILL.md	### Step 3: Try the claim, and publish if it is free	95e8abce3472
+docs/architecture/knowledge-compiler.md	capture-staging	plugins/kb/skills/capture/SKILL.md	### Step 2: Write the record to the staging directory	fcf30c0174f1
+docs/architecture/knowledge-compiler.md	checker-claim	plugins/kb/scripts/check-docs.sh	L1570-L1583	d3a9e96c35bb
+docs/architecture/knowledge-compiler.md	checker-manifest	plugins/kb/scripts/check-docs.sh	L33-L39	5f7e294cd559
+docs/architecture/knowledge-compiler.md	checker-modes	plugins/kb/scripts/check-docs.sh	L2-L31	000234dccc17
+docs/architecture/knowledge-compiler.md	checker-receipt	plugins/kb/scripts/check-docs.sh	L1237-L1257	b2f9f7309293
+docs/architecture/knowledge-compiler.md	kb-skill-table	plugins/kb/README.md	## The skills	a0d28de65a65
+docs/architecture/knowledge-compiler.md	kb-two-layers	plugins/kb/README.md	L3-L7	3248dc37db9c
+docs/architecture/knowledge-compiler.md	lint-candidates	plugins/kb/skills/lint/SKILL.md	### Step 2: Collect candidates	6ac99378b032
+docs/architecture/knowledge-compiler.md	lint-rules	plugins/kb/scripts/check-docs.sh	L701-L765	cf60b7a1e2ea
+docs/architecture/knowledge-compiler.md	lint-unhashed	plugins/kb/scripts/check-docs.sh	L830-L834	48418de9d7eb
+docs/architecture/knowledge-compiler.md	lint-verdicts	plugins/kb/skills/lint/SKILL.md	### Step 3: Decide a verdict per finding	aef52cbad1ed
+docs/architecture/prompt-eval-harness.md	check-header	scripts/eval/check.sh	L1-L13	07ada88cf8b8
+docs/architecture/prompt-eval-harness.md	eval-cost	scripts/eval/README.md	## Cost before you start	8950df68be3f
+docs/architecture/prompt-eval-harness.md	eval-dir	scripts/eval/README.md	## An experiment directory	70e7af1a5590
+docs/architecture/prompt-eval-harness.md	eval-inject	scripts/eval/README.md	## How an arm reaches the model	c8dbbac55b2a
+docs/architecture/prompt-eval-harness.md	eval-intro	scripts/eval/README.md	L1-L13	e24febfd30a8
+docs/architecture/prompt-eval-harness.md	eval-refusals	scripts/eval/README.md	## What each script will not do	f62739504229
+docs/architecture/prompt-eval-harness.md	eval-running	scripts/eval/README.md	## Running one	42eb455b2322
+docs/architecture/prompt-eval-harness.md	judge-script	scripts/eval/judge-agy.sh	L1-L8	479345972537
+docs/architecture/prompt-eval-harness.md	paired-header	scripts/eval/paired.py	L1-L28	9ea39616fa2d
+docs/architecture/review-dispatch.md	df-guarantees	plugins/df/README.md	### It's working if	6ab5e6062ab4
+docs/architecture/review-dispatch.md	impl-gates	plugins/df/skills/implement/SKILL.md	L395-L397	54961b01f124
+docs/architecture/review-dispatch.md	impl-phase-pass	plugins/df/skills/implement/SKILL.md	L187-L197	2d6ac21ba528
+docs/architecture/review-dispatch.md	impl-run-pass	plugins/df/skills/implement/SKILL.md	L259-L261	2fe517e402fd
+docs/architecture/review-dispatch.md	removal-rule	CONTRIBUTING.md	## Commit Conventions	f86e9f3bad9d
+docs/architecture/review-dispatch.md	reviewer-frontmatter	plugins/df/agents/code-reviewer.md	L1-L7	05c75de3a966
+docs/architecture/statusline.md	sl-buffer	statusline/statusline.mjs	L49-L55	c9d681ece83c
+docs/architecture/statusline.md	sl-cache	statusline/statusline.mjs	L162-L182	a51da5b9ddfa
+docs/architecture/statusline.md	sl-cost	statusline/statusline.mjs	L184-L256	744b66b88c4d
+docs/architecture/statusline.md	sl-dispatch	statusline/statusline.mjs	L272-L305	5f5ebe8de8f7
+docs/architecture/statusline.md	sl-not-a-plugin	CLAUDE.md	## statusline (statusline/)	27a7a2795fac
+docs/architecture/statusline.md	sl-rates	statusline/statusline.mjs	L18-L62	14b4b0892a21
+docs/architecture/statusline.md	sl-thresholds	statusline/statusline.mjs	L79-L84	ea823662305d
+docs/architecture/statusline.md	sl-why	statusline/statusline.mjs	L2-L14	02472ac4fa5e
+docs/architecture/statusline.md	sl-worktree	statusline/statusline.mjs	L275-L292	d543ff5abf90
+docs/decisions/0001-one-rule-one-place.md	orop-rule	CLAUDE.md	## Gotchas	0e90536983a8
+docs/decisions/0002-model-tiering-for-dispatched-work.md	cr-frontmatter	plugins/df/agents/code-reviewer.md	L1-L7	05c75de3a966
+docs/decisions/0002-model-tiering-for-dispatched-work.md	tiering-gotcha	CLAUDE.md	## Gotchas	0e90536983a8
+docs/decisions/0003-the-cell-is-the-unit-of-analysis.md	paired-doc	scripts/eval/paired.py	L1-L28	9ea39616fa2d
+docs/decisions/0004-a-removal-names-its-replacement.md	checks-blind	CLAUDE.md	## Verify Before Finishing	f6107b0487d9
+docs/decisions/0004-a-removal-names-its-replacement.md	removal-rule	CONTRIBUTING.md	## Commit Conventions	f86e9f3bad9d
+docs/decisions/0006-agy-runs-under-accept-edits.md	claude-md-agy	CLAUDE.md	### agy (plugins/agy/)	9e738e6614d4
+docs/decisions/0006-agy-runs-under-accept-edits.md	consult-gates	plugins/agy/skills/consult/SKILL.md	L73-L77	fd3b91dbc91e
+docs/decisions/0006-agy-runs-under-accept-edits.md	delegate-frontmatter	plugins/agy/skills/delegate/SKILL.md	L1-L5	899c4cbfc564
+docs/decisions/0006-agy-runs-under-accept-edits.md	delegate-gates	plugins/agy/skills/delegate/SKILL.md	L80-L88	bf5e92e60e4d
+docs/decisions/0006-agy-runs-under-accept-edits.md	delegate-why-subagent	plugins/agy/skills/delegate/SKILL.md	L10-L10	8fd3523ac7cf
+docs/decisions/0007-the-rung-decides-what-a-prompt-edit-runs.md	rung-ladder	CONTRIBUTING.md	## Changing a Shipped Prompt	5a52035b1ccd
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	capture-not-compiled-layer	plugins/kb/skills/capture/SKILL.md	L12-L12	eab17e8746e9
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	kb-raw-untracked	plugins/kb/README.md	## Upgrading from 1.0.x	0f3f2bc5e26c
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	raw-citation-refusal	plugins/kb/scripts/check-docs.sh	L786-L806	216c40b75915
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	weave-routing	plugins/kb/skills/weave/SKILL.md	### Step 2: Route each claim	1270ab486483
+docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	catalog-ref-main	.agents/plugins/marketplace.json	(whole)	f080b117403c
+docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	semver-table	CONTRIBUTING.md	## Versioning (semver reference)	dfdffe434574
+docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	versioning-rule	CLAUDE.md	## Versioning	617a7aec2e56
+docs/decisions/0010-a-vanished-source-deletes-its-entry.md	source-missing-report	plugins/kb/scripts/check-docs.sh	L767-L784	8a8a6c9b3636
+docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	docs/WIKI.md	## Provenance	ba48d301c096
+docs/product/answer-first-style.md	root-readme	README.md	L59-L59	9fe28e6b3b2d
+docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	cc934dba94d0
+docs/product/answer-first-style.md	style-placement	plugins/style/README.md	## What the base prompt already says about prose	d398dda946b7
+docs/product/answer-first-style.md	style-sources	plugins/style/README.md	## Where the rules came from	36a1cb715a67
+docs/product/answer-first-style.md	style-version	.claude-plugin/marketplace.json	L67-L76	6551de5c78d3
+docs/product/df-workflow.md	checks-blind	CLAUDE.md	## Verify Before Finishing	f6107b0487d9
+docs/product/df-workflow.md	df-overview	plugins/df/README.md	## Overview	7aac1aa99ad3
+docs/product/df-workflow.md	df-skills	plugins/df/README.md	## Skills	57866131d440

@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "A page cites only what a clone carries"
 description: "Every sources[] entry names a tracked file; a path inside the raw root is refused, and a capture record is refused on separate grounds."
 status: stable
@@ -9,23 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:weave"
   at: "2026-09-06T00:14:51-07:00"
-sources:
-  - resource: "plugins/kb/scripts/check-docs.sh"
-    id: "raw-citation-refusal"
-    fragment: "L786-L806"
-    sha256: "0524b3f6aafb"
-  - resource: "plugins/kb/README.md"
-    id: "kb-raw-untracked"
-    fragment: "## Upgrading from 1.0.x"
-    sha256: "0f3f2bc5e26c"
-  - resource: "plugins/kb/skills/weave/SKILL.md"
-    id: "weave-routing"
-    fragment: "### Step 2: Route each claim"
-    sha256: "1270ab486483"
-  - resource: "plugins/kb/skills/capture/SKILL.md"
-    id: "capture-not-compiled-layer"
-    fragment: "L12-L12"
-    sha256: "eab17e8746e9"
 ---
 
 # A page cites only what a clone carries

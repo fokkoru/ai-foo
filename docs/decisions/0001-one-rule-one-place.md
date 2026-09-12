@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "One rule, one place"
 description: "A behavioural rule lives at its point of use plus the hard gate, and a restatement is classified before it is removed."
 status: stable
@@ -9,11 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: "CLAUDE.md"
-    id: "orop-rule"
-    fragment: "## Gotchas"
-    sha256: "0e90536983a8"
 ---
 
 # One rule, one place

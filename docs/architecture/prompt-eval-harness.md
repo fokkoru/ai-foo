@@ -1,48 +1,10 @@
 ---
-type: architecture
 title: "Prompt A/B harness"
 description: "How two variants of a shipped prompt are compared against the same fixed tasks."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T22:54:23-07:00"
-sources:
-  - resource: "scripts/eval/README.md"
-    id: "eval-intro"
-    fragment: "L1-L13"
-    sha256: "e24febfd30a8"
-  - resource: "scripts/eval/README.md"
-    id: "eval-dir"
-    fragment: "## An experiment directory"
-    sha256: "70e7af1a5590"
-  - resource: "scripts/eval/README.md"
-    id: "eval-inject"
-    fragment: "## How an arm reaches the model"
-    sha256: "c8dbbac55b2a"
-  - resource: "scripts/eval/README.md"
-    id: "eval-running"
-    fragment: "## Running one"
-    sha256: "42eb455b2322"
-  - resource: "scripts/eval/README.md"
-    id: "eval-refusals"
-    fragment: "## What each script will not do"
-    sha256: "f62739504229"
-  - resource: "scripts/eval/README.md"
-    id: "eval-cost"
-    fragment: "## Cost before you start"
-    sha256: "8950df68be3f"
-  - resource: "scripts/eval/check.sh"
-    id: "check-header"
-    fragment: "L1-L13"
-    sha256: "07ada88cf8b8"
-  - resource: "scripts/eval/paired.py"
-    id: "paired-header"
-    fragment: "L1-L28"
-    sha256: "9ea39616fa2d"
-  - resource: "scripts/eval/judge-agy.sh"
-    id: "judge-script"
-    fragment: "L1-L8"
-    sha256: "479345972537"
 ---
 
 # Prompt A/B harness

@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "The rung decides what a prompt edit runs"
 description: "A prompt edit is gated by what it is expected to do, on a three-rung ladder from no paid run to a full sweep with judging."
 status: stable
@@ -9,11 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T23:13:51-07:00"
-sources:
-  - resource: "CONTRIBUTING.md"
-    id: "rung-ladder"
-    fragment: "## Changing a Shipped Prompt"
-    sha256: "5a52035b1ccd"
 ---
 
 # The rung decides what a prompt edit runs

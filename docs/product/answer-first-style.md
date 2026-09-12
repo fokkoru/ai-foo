@@ -1,32 +1,10 @@
 ---
-type: product
 title: "Answer First output style"
 description: "A response style that leads with the outcome, holds length to the size of the change, and ends with one labelled line when something is the reader's to do."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T17:32:57-07:00"
-sources:
-  - resource: ".claude-plugin/marketplace.json"
-    id: "style-version"
-    fragment: "L67-L76"
-    sha256: "a0713bbf5be4"
-  - resource: "plugins/style/output-styles/answer-first.md"
-    id: "style-head"
-    fragment: "L1-L11"
-    sha256: "cc934dba94d0"
-  - resource: "README.md"
-    id: "root-readme"
-    fragment: "L59-L59"
-    sha256: "9fe28e6b3b2d"
-  - resource: "plugins/style/README.md"
-    id: "style-sources"
-    fragment: "## Where the rules came from"
-    sha256: "2fa083db88e3"
-  - resource: "plugins/style/README.md"
-    id: "style-placement"
-    fragment: "## What the base prompt already says about prose"
-    sha256: "38b9f36d639e"
 ---
 
 # Answer First output style

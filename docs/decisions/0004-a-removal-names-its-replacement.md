@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "A removal names its replacement"
 description: "A commit that removes a capability names what replaces it in the body, or states that nothing does."
 status: stable
@@ -9,15 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:compile"
   at: "2026-09-03T23:13:58-07:00"
-sources:
-  - resource: "CONTRIBUTING.md"
-    id: "removal-rule"
-    fragment: "## Commit Conventions"
-    sha256: "f86e9f3bad9d"
-  - resource: "CLAUDE.md"
-    id: "checks-blind"
-    fragment: "## Verify Before Finishing"
-    sha256: "f6107b0487d9"
 ---
 
 # A removal names its replacement

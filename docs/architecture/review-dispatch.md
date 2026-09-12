@@ -1,36 +1,10 @@
 ---
-type: architecture
 title: "Independent review dispatch"
 description: "How df reviews a run: one pass per phase, one over the whole run, and a refuter behind every blocking finding."
 status: stable
 generated:
   by: "kb:compile"
   at: "2026-09-03T23:13:58-07:00"
-sources:
-  - resource: "plugins/df/skills/implement/SKILL.md"
-    id: "impl-gates"
-    fragment: "L395-L397"
-    sha256: "54961b01f124"
-  - resource: "plugins/df/skills/implement/SKILL.md"
-    id: "impl-phase-pass"
-    fragment: "L187-L197"
-    sha256: "2d6ac21ba528"
-  - resource: "plugins/df/skills/implement/SKILL.md"
-    id: "impl-run-pass"
-    fragment: "L259-L261"
-    sha256: "2fe517e402fd"
-  - resource: "plugins/df/agents/code-reviewer.md"
-    id: "reviewer-frontmatter"
-    fragment: "L1-L7"
-    sha256: "05c75de3a966"
-  - resource: "plugins/df/README.md"
-    id: "df-guarantees"
-    fragment: "### It's working if"
-    sha256: "6ab5e6062ab4"
-  - resource: "CONTRIBUTING.md"
-    id: "removal-rule"
-    fragment: "## Commit Conventions"
-    sha256: "f86e9f3bad9d"
 ---
 
 # Independent review dispatch

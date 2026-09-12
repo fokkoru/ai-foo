@@ -1,5 +1,4 @@
 ---
-type: decision
 title: "A vanished source deletes its entry"
 description: "A sources[] entry whose resource no longer exists is removed together with the prose it supported, never flagged and kept."
 status: stable
@@ -9,15 +8,6 @@ superseded_by: ""
 generated:
   by: "kb:weave"
   at: "2026-09-06T14:38:34-07:00"
-sources:
-  - resource: "plugins/kb/scripts/check-docs.sh"
-    id: "source-missing-report"
-    fragment: "L767-L784"
-    sha256: "0544e2607722"
-  - resource: "docs/WIKI.md"
-    id: "vanished-source-rule"
-    fragment: "## Provenance"
-    sha256: "ba48d301c096"
 ---
 
 # A vanished source deletes its entry
