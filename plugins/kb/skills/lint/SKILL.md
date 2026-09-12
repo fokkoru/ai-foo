@@ -15,9 +15,9 @@ This is a maintenance pass somebody runs, not a mechanism that fires on its own 
 </objective>
 
 <artifact_scope>
-Writes are allowed under `docs/` only: any page, plus `index.md` and `log.md`, following the same provenance and template rules `weave` follows. `references/page-templates.md` is the one copy of the frontmatter shape; it is shared from `weave` rather than duplicated here, and `kb:lint` reads it rather than restating it.
+Writes are allowed under `docs/` and `.kb/`: any page under `docs/`; `.kb/provenance.tsv` and `.kb/pages.tsv` through `provenance-commit`, `pages-commit` and `pages-forget` only, never by hand; and the map, one line per page it links or unlinks — following the same provenance and template rules `weave` follows. `references/page-templates.md` is the one copy of the frontmatter shape; it is shared from `weave` rather than duplicated here, and `kb:lint` reads it rather than restating it.
 
-`docs/WIKI.md` is never written. It is the owner's schema. A finding against it is reported and left.
+`.kb/schema.md` is never written. It is the owner's schema. A finding against it is reported and left.
 
 `thoughts/**` is denied. Inspection is not enough to prove that denial held — a project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it. That is why Step 1 snapshots and Step 4 verifies.
 
@@ -46,7 +46,7 @@ A run whose candidate set is empty and whose invocation named no page does nothi
 
 Everywhere below, including this step, `check-docs.sh` means `../../scripts/check-docs.sh` relative to the base directory the harness announces for this skill, not a command on `PATH` — the checker lives in the plugin's own `scripts/` rather than this skill's, because it is shared, and the working directory is the project being linted. `references/page-templates.md` is shared with `weave` rather than duplicated here, and resolves as `../weave/references/page-templates.md` relative to the same announced directory. Resolve both once, here, and reuse them.
 
-Take the run's claim first, before anything else, with `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Keep the run id it prints. `weave` and `lint` both write pages, `index.md` and `log.md`, so two runs interleaving would collide on the compiled layer; and `kb:capture` publishes into `thoughts/captures/` mid-session only when the claim is free, so without one held here, a capture landing during this run adds a file to the raw layer that an unmodified `verify-sources` then reports at the end of a run that did nothing wrong.
+Take the run's claim first, before anything else, with `check-docs.sh claim-acquire "${CLAUDE_SESSION_ID}" $PPID`. Keep the run id it prints. `weave` and `lint` both write pages, the map and `.kb/`, so two runs interleaving would collide on the compiled layer; and `kb:capture` publishes into `thoughts/captures/` mid-session only when the claim is free, so without one held here, a capture landing during this run adds a file to the raw layer that an unmodified `verify-sources` then reports at the end of a run that did nothing wrong.
 
 If the claim is refused, stop and report what `claim-acquire` printed: a live owner means another run is going, an abandoned one means a run died and somebody has to look at what it left in `docs/` before the claim is released by hand.
 
@@ -60,7 +60,7 @@ Run `check-docs.sh snapshot`. It records a hash of every file under the raw root
 
 Work over the union of two sets.
 
-**M** is what `check-docs.sh check` reports and notes over `docs/`, read as candidates rather than as a pass/fail verdict — every rule it computes, whether it fails the run (`source-missing`, `fragment-missing`, `source-drift`, `unreachable`, `dead-anchor`, `unjoined-footnote`, `unhashed-source`) or only notes it (`open-marker`, `unused-source`).
+**M** is what `check-docs.sh check` reports and notes over `docs/`, read as candidates rather than as a pass/fail verdict — every rule it computes, whether it fails the run (`source-missing`, `fragment-missing`, `source-drift`, `unreachable`, `dead-anchor`, `unjoined-footnote`, `page-gone`) or only notes it (`open-marker`, `unused-source`, `page-edited`, `unregistered-citation`).
 
 **H** is each page named on the invocation, validated as an existing `.md` file under `docs/`. Naming a page authorises inspection, nothing more — every finding it produces still needs its own demonstrated failure and its own oracle, the same as one M surfaced. A fragment hash catches evidence that moved; it cannot catch a claim that misread evidence that never moved, and no mechanical rule can — H is the only intake for that class.
 
@@ -68,15 +68,19 @@ For each page in the union, collect findings. A finding carries the page, the cl
 
 ### Step 3: Decide a verdict per finding
 
-Read the file at the path Step 0 resolved for `references/page-templates.md` before the first edit below — it holds the `sources[]` entry shape the second verdict rewrites and the `log.md` section form the first and second both add to, and a page written without it is a page whose keys were invented.
+Read the file at the path Step 0 resolved for `references/page-templates.md` before the first edit below — it holds the citation form and the staging line the second verdict builds, and a page written without it is a page whose keys were invented.
 
-Take each finding on its own and settle it as one of four things.
+Take each finding on its own and settle it as one of six things.
 
 The page is wrong: name the correction, ground it in the finding's evidence, and make the edit.
 
-The claim still holds but its provenance no longer demonstrates it: re-anchor the `sources[]` entry on the fragment that now carries the evidence and rewrite its hash — write `sha256: "unset"`, run `check-docs.sh check`, and copy the value off the `source-drift` line it prints, the same way `weave` gets one — then leave the prose alone. This is the ordinary case for a drift record: the source moved, the prose it supports is still true, and only the citation is stale. Confirm the new fragment actually supports the claim before taking this branch — a fragment that does not support it is the first case, not this one.
+The claim still holds but its provenance no longer demonstrates it: stage the page's citation on the fragment that now carries the evidence — `docs/<page>\t<label>\t<resource>\t<fragment>` — and run `check-docs.sh provenance-commit <staging> [raw-root]`, then leave the prose alone. This is the ordinary case for a drift record: the source moved, the prose it supports is still true, and only the citation is stale. Confirm the new fragment actually supports the claim before taking this branch — a fragment that does not support it is the first case, not this one.
 
-The page is right: dismiss the finding. Name it in the report and write nothing — no page, no `log.md` line.
+The page was edited by hand and still holds: confirm every citation on it still supports its sentence, then `pages-commit` the page. Advance the fingerprint only after that reading; a fingerprint advanced on sight endorses whatever the edit said, whether or not it was true.
+
+The page was renamed: a `page-gone` whose fingerprint equals the fingerprint of an unregistered page on disk. Stage the old rows under the new path, `provenance-commit`, `pages-commit` the new path, then `pages-forget` the old one. No match: report it and leave it — never infer a rename from a title.
+
+The page is right: dismiss the finding. Name it in the report and write nothing.
 
 The answer is not determinable from the repository: report it, with the pages it concerns and what settling it would take, and write nothing. Restructuring, merging two pages, splitting one, and rewriting prose that is not false all land here — none of it has an oracle. Such a finding recurs in the next report until the owner acts or the page changes; that repetition is the accepted cost of not building a queue for it.
 
@@ -90,7 +94,7 @@ A failure from `verify-sources` means this run wrote into the raw layer, which `
 
 Release the claim with `check-docs.sh claim-release <run id>` once both checks pass, and also on the halt path above after reporting. Holding it through a halt buys nothing: the owner has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies.
 
-Report: the size of M and H, a verdict for every finding, the pages edited, the `log.md` lines added, and the result of both checker runs.
+Report: the size of M and H, a verdict for every finding, the pages edited, and the result of both checker runs. End with a proposed commit body, one sentence per correction, saying whether the citation moved or the prose was wrong.
 
 </workflow>
 
@@ -98,7 +102,7 @@ Report: the size of M and H, a verdict for every finding, the pages edited, the 
 
 - Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 1 and `verify-sources` in Step 4, not by inspection
 - Never run `git add`, `git commit`, or any other git write
-- Never rewrite `docs/WIKI.md`. A finding against it is reported and left, since it is the owner's schema
+- Never rewrite `.kb/schema.md`. A finding against it is reported and left, since it is the owner's schema
 - A finding with no evidence attached is not a finding, and is dropped before it reaches a verdict
 - A run whose candidate set is empty and whose invocation named no page produces no diff. A run that resolved every finding as "the page is right" produces no diff under `docs/` either, only the report
 - The run ends by running `check-docs.sh check` over `docs/` and reporting what it said
@@ -108,7 +112,7 @@ Report: the size of M and H, a verdict for every finding, the pages edited, the 
 <anti_patterns>
 
 - Filing an undeterminable finding into a proposal file, a `status` field, or any other queue — the report is the only place it lives; the owner acts on it or does not
-- Writing a `log.md` line for a dismissed finding — a knowledge base that accumulates a permanent record of every question that turned out to be nothing is the opposite of pages getting smarter
+- Naming a dismissed finding in the proposed commit body — a knowledge base that accumulates a permanent record of every question that turned out to be nothing is the opposite of pages getting smarter; the report is where a dismissal lives
 - Treating a `source-drift` record as proof the page itself is wrong — it proves the cited fragment changed, and nothing about whether the prose built on it is still true
 
 </anti_patterns>
