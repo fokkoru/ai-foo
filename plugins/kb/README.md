@@ -45,7 +45,7 @@ The skill uses these default paths:
 
 To override either, add a one-line note to your project's `CLAUDE.md` (or `AGENTS.md` for Codex), for example: `kb: read notes from notes/ and write the knowledge base to wiki/`. Claude Code and Codex CLI pick this up automatically because `CLAUDE.md` / `AGENTS.md` is always in context — no env vars or skill edits needed.
 
-## Upgrading
+## Upgrading from 1.0.x
 
 ### `kb:compile` is gone
 
@@ -56,7 +56,7 @@ To override either, add a one-line note to your project's `CLAUDE.md` (or `AGENT
 `kb` 2.0.0 moved the compiler's own state out of `docs/` and into a hidden, tracked `.kb/`. The compiler does not migrate a project automatically — an installed 1.x project reaches this schema only by hand:
 
 - `docs/WIKI.md` becomes `.kb/schema.md`, with `map:` and `decisions:` set to your existing map and decisions directory.
-- Every page's `sources[]` frontmatter block becomes rows in `.kb/provenance.tsv`: stage one line per citation — `docs/<page>\t<label>\t<resource>\t<fragment>` — per page and run `check-docs.sh provenance-commit <staging>`.
+- Every page's `sources[]` frontmatter block becomes rows in `.kb/provenance.tsv`: stage one line per citation — `docs/<page>\t<label>\t<resource>\t<fragment>` — per page and run `check-docs.sh provenance-commit <staging> <raw-root>`.
 - Every compiled page is registered by staging its path, one per line, and running `check-docs.sh pages-commit <staging>`, which records its fingerprint.
 - The receipt and intake ledgers become rows in the single `.kb/consumed.tsv`, written by staging and running `check-docs.sh consumed-commit <raw-root> <staging>`.
 - `docs/log.md` is deleted. Git history is the log from here on.
