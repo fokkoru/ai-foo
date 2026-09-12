@@ -130,8 +130,8 @@ These check structure, and none of them can see a lost capability. So when a cha
 
 ## Documentation
 
-`docs/` is the compiled knowledge base and the layer to read first — the one a new contributor reads instead of asking, and a later session reads instead of re-deriving. `docs/WIKI.md` is its schema: the four page types, the routing test that decides where a claim goes, and the confidence vocabulary.
+`docs/` is the compiled knowledge base and the layer to read first — the one a new contributor reads instead of asking, and a later session reads instead of re-deriving. `.kb/schema.md` is its schema: the four page types, the routing test that decides where a claim goes, and the confidence vocabulary.
 
-Every claim records what it was built from in the page's `sources[]` block, with a hash of the exact fragment, so `plugins/kb/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
+Every claim records what it was built from in `.kb/provenance.tsv`, one row per footnote, with a hash of the exact fragment, so `plugins/kb/scripts/check-docs.sh check` reports when a cited source moves. A page cites only files this repository tracks; a claim whose only evidence is a working note outside the repository does not get written down as a fact.
 
-`/kb:weave` and `/kb:lint` write this directory. Nothing else writes it by hand, `docs/WIKI.md` excepted — it is the schema, and neither skill writes it.
+`/kb:weave` and `/kb:lint` write `docs/` and `.kb/`. Nothing else writes either by hand, `.kb/schema.md` excepted — it is the schema, and neither skill writes it.

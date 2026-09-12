@@ -33,10 +33,10 @@ Steps in brackets `[]` are optional. Each step is a skill invoked explicitly (`c
 
 ### kb
 
-Knowledge base compiler. One skill, `kb:weave`, reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`. `kb` reads what `df` writes but requires none of it.
+Knowledge base compiler. Three skills: `kb:capture` records a session's decisions into `thoughts/captures/`; `kb:weave` reads markdown under `thoughts/` and writes a committed knowledge base under `docs/`, keeping its own compiler state in `.kb/`; `kb:lint` inspects and repairs that compiled `docs/` on its own account. `kb` reads what `df` writes but requires none of it.
 
-- **Claude Code**: `/kb:weave`.
-- **Codex CLI**: `$kb:weave`.
+- **Claude Code**: `/kb:capture`, `/kb:weave`, `/kb:lint`.
+- **Codex CLI**: `$kb:capture`, `$kb:weave`, `$kb:lint`.
 
 See [plugins/kb/README.md](plugins/kb/README.md) for the skill table and detailed usage.
 
