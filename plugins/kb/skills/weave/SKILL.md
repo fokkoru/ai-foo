@@ -15,11 +15,13 @@ The input is a directory of markdown. `thoughts/` is not any plugin's artifact, 
 </objective>
 
 <artifact_scope>
-Writes are allowed under `docs/` only.
+Writes are allowed under `docs/` and `.kb/`.
 
-On the adoption row of Step 0 the allowed writes narrow further to what `references/adopt.md` lists: three files when absent, a `type:` key through `stamp-type`, and a `decision_id:` on a decision page that has none. That run writes no page body and compiles no source.
+`.kb/schema.md` is written only by the seed and adopt rows of Step 0. The file `map:` names is the owner's; a run only ever appends one line to it, to register a new page — nothing else in that file is touched.
 
-`thoughts/**` is denied. Before any Write or Edit call, verify the target path is inside `docs/` — if it is not, stop and ask the user.
+On the adoption row of Step 0 the allowed writes narrow further to what `references/adopt.md` lists: `.kb/schema.md`, and `docs/index.md` only when the tree has no map of its own. That run writes no page body and compiles no source.
+
+`thoughts/**` is denied. Before any Write or Edit call, verify the target path is inside `docs/` or `.kb/` — if it is not, stop and ask the user.
 
 Inspection is not enough to prove that denial held. A project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it. That is why Step 0 snapshots and Step 6 verifies.
 
@@ -28,22 +30,22 @@ Inspection is not enough to prove that denial held. A project may hide `thoughts
 <quick_start>
 If sources are named, begin at Step 0.
 
-If no sources are named and `docs/` holds pages but no `docs/WIKI.md`, begin at Step 0: that is its adoption row, and an adoption compiles nothing, so it has no sources to name.
+If no sources are named and `docs/` holds pages but there is no `.kb/schema.md`, begin at Step 0: that is its adoption row, and an adoption compiles nothing, so it has no sources to name.
 
 Otherwise, if no sources are named, ask which ones to compile and wait for the answer. Never default to the whole corpus — a first run over everything produces a tree nobody reviews.
 
-`weave captures` names a class rather than filenames: the pending capture records, whichever they turn out to be. `check-docs.sh captures-eligible <records root> docs/kb-receipt.tsv` computes that class from the receipt and the records on disk. An invocation naming unrelated files absorbs no captures, and a bare invocation follows the two rules above.
+`weave captures` names a class rather than filenames: the pending capture records, whichever they turn out to be. `check-docs.sh captures-eligible <records root>` computes that class from `.kb/consumed.tsv` and the records on disk. An invocation naming unrelated files absorbs no captures, and a bare invocation follows the two rules above.
 
-`weave reconsider` is the pass that returns to what an earlier run deferred: `check-docs.sh captures-deferred <records root> docs/kb-receipt.tsv` lists those decisions, and the run re-examines each against current evidence and consumes any that now route. A deferred decision does not wake on its own — nothing schedules this pass, and reaching a deferred decision takes a run somebody starts.
+`weave reconsider` is the pass that returns to what an earlier run deferred: `check-docs.sh captures-deferred <records root>` lists those decisions, and the run re-examines each against current evidence and consumes any that now route. A deferred decision does not wake on its own — nothing schedules this pass, and reaching a deferred decision takes a run somebody starts.
 
-`weave pending` prints the queue and asks: `check-docs.sh sources-pending <raw root> docs/kb-intake.tsv` lists every raw source outside `captures/` that no run has consumed at its current bytes, as `new` or `changed`. Show that list, ask which entries this run takes, and wait for the answer — the same wait as a bare invocation. An empty list ends the run with a one-line report: nothing is pending, and there is nothing to claim or snapshot for. The list is the queue, not the batch: a scope the model picks is not reproducible from the invocation, and the whole queue at once is the tree-nobody-reviews failure the bare invocation guards against.
+`weave pending` prints the queue and asks: `check-docs.sh sources-pending <raw root>` lists every raw source outside `captures/` that no run has consumed at its current bytes, as `new` or `changed`. Show that list, ask which entries this run takes, and wait for the answer — the same wait as a bare invocation. An empty list ends the run with a one-line report: nothing is pending, and there is nothing to claim or snapshot for. The list is the queue, not the batch: a scope the model picks is not reproducible from the invocation, and the whole queue at once is the tree-nobody-reviews failure the bare invocation guards against.
 
 0. Claim, seed and snapshot
 1. Read the sources and scan for supersession
 2. Route each claim
 3. Produce updates, not siblings
 4. Write provenance
-5. Update `index.md` and `log.md`
+5. Update the map
 6. Check
 7. Report
 
@@ -65,11 +67,11 @@ Then run `check-docs.sh snapshot`. It records a hash of every file under the raw
 
 Then settle what `docs/` already is:
 
-| State of `docs/`                          | Do this                                                                                                                     |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `docs/WIKI.md` exists                     | Read it. It is authoritative and outranks this file wherever the two disagree                                               |
-| `docs/` absent or empty                   | Read `references/wiki-template.md` and write it unchanged to `docs/WIKI.md`, then report that you seeded it                 |
-| `docs/` has content but no `docs/WIKI.md` | Read `references/adopt.md` and follow it to its end. The run stops when the adoption is reported; nothing is compiled in it |
+| State                                      | Do this                                                                                                                                                                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.kb/schema.md` exists                     | Read it. It is authoritative and outranks this file wherever the two disagree                                                                                                                                    |
+| `docs/` absent or empty                    | Read `references/schema-template.md` and write it unchanged to `.kb/schema.md`. Also write `docs/index.md` holding an H1 and nothing else, and set `map: docs/index.md` in the schema. Report that you seeded it |
+| `docs/` has content but no `.kb/schema.md` | Read `references/adopt.md` and follow it to its end. The run stops when the adoption is reported; nothing is compiled in it                                                                                      |
 
 The third row is a hand-written documentation tree, not a knowledge base with a missing file. Overwriting one is the single most expensive mistake this skill can make, which is why the procedure that adopts one is written down separately and read only here: it changes nothing that is there, and it ends the run so the adoption is committed on its own.
 
@@ -77,9 +79,9 @@ The third row is a hand-written documentation tree, not a knowledge base with a 
 
 Read every named source completely. A source is the unit the user named; reading half of one produces a page that cites a fragment nobody checked.
 
-The ledger decides only for the `pending` class. A source the owner named by filename is read in full whatever `docs/kb-intake.tsv` says about it: naming it is the way back to a source recorded `no-home` whose bytes never changed but whose code did. Capture records are never in the ledger; the receipt, `weave captures` and `weave reconsider` govern those exactly as before. Within the `pending` class a source is read only if `sources-pending` listed it; one listed as `changed` is read again in full, because the ledger records what was consumed, not a diff.
+The ledger decides only for the `pending` class. A source the owner named by filename is read in full whatever `.kb/consumed.tsv` says about it: naming it is the way back to a source recorded `no-home` whose bytes never changed but whose code did. Capture records are governed by `weave captures` and `weave reconsider` exactly as before, not by this rule. Within the `pending` class a source is read only if `sources-pending` listed it; one listed as `changed` is read again in full, because the ledger records what was consumed, not a diff.
 
-Then read `docs/index.md` and, for every topic the sources touch, the pages it names. You cannot update a page you have not read, and Step 3 turns on knowing which pages already exist.
+Then read the file `map:` names and, for every topic the sources touch, the pages it links to. You cannot update a page you have not read, and Step 3 turns on knowing which pages already exist.
 
 Before anything is routed, run `check-docs.sh supersession-scan <records root> docs "<target>"` for every decision the run is about to touch — each capture decision it read, and each compiled decision page it is about to update. The scan runs after the claim is taken, so a cooperating publisher cannot change the set of records while it runs.
 
@@ -106,11 +108,11 @@ Route by what the claim is, not by which document carried it. One source routine
 | A decision that a later one replaced                              | both decision pages           | the old page `status: deprecated` plus `superseded_by`, the new page `supersedes` |
 | A rule that no longer holds, whose replacement is not implemented | the old decision page         | `status: deprecated` with no `superseded_by`; the replacement is not compiled     |
 
-The first row has a gate: a claim reaches `architecture/` or `product/` only after you have located the behaviour at a `file:line` in the current code. That location becomes the entry's `sources[]` record, with `fragment: "L<start>-L<end>"`.
+The first row has a gate: a claim reaches `architecture/` or `product/` only after you have located the behaviour at a `file:line` in the current code. That location becomes a `provenance-commit` staging line, not a `sources[]` record.
 
-A `sources[]` entry names tracked code or checked-in config, and never an internal note. The raw root is not in a fresh clone, so a citation into it names a file the reader does not have, and a claim nobody else can check is not a fact this layer records. The checker reports one. A capture record is refused separately and for a different reason: a record sits outside the source trust order entirely, never competing for a page and never cited by one. What it does is send you to look at the code, the config and the plans.
+A provenance row names tracked code or checked-in config, and never an internal note. The raw root is not in a fresh clone, so a citation into it names a file the reader does not have, and a claim nobody else can check is not a fact this layer records. `provenance-commit` refuses one. A capture record is refused separately and for a different reason: a record sits outside the source trust order entirely, never competing for a page and never cited by one. What it does is send you to look at the code, the config and the plans.
 
-An external source is cited in the page body instead, never in `sources[]`, so the two rules never overlap. Mark the claim `[reported]` and put the URL and `retrieved YYYY-MM-DD` on the same line. External sources stay informal — no snapshot file, no drift checking, no refresh mode — and the checker reports a `[reported]` line missing either half.
+An external source is cited in the page body instead, never staged for `provenance-commit`, so the two rules never overlap. Mark the claim `[reported]` and put the URL and `retrieved YYYY-MM-DD` on the same line. External sources stay informal — no snapshot file, no drift checking, no refresh mode — and the checker reports a `[reported]` line missing either half.
 
 Where a record contradicts a stale plan and current code does not settle which is right, the contradiction stays unresolved and the run stops.
 
@@ -130,46 +132,39 @@ Two records superseding one target and contradicting each other halt the run whi
 
 The third row is the one that surprises: a rule rests on something, that something is reverted, a replacement is proposed and never built. The replacement is uncompileable, but the old rule is already false, and leaving the page stable tells the reader to rely on behaviour the repository removed.
 
-Deprecating a page is three edits, not a frontmatter change. The page stays linked from its index, because the checker grants a deprecated page no reachability exemption. Its body and its index description stop asserting the rule that was withdrawn. And its `sources[]` stay as they are and go on being provenance-checked — a deleted resource goes with the prose it supported, the same as anywhere else.
+Deprecating a page is three edits, not a frontmatter change. The page stays linked from its index, because the checker grants a deprecated page no reachability exemption. Its body and its index description stop asserting the rule that was withdrawn. And its provenance rows stay as they are and go on being checked — a deleted resource goes with the prose it supported, the same as anywhere else.
 
 A source that fits no directory is not forced into one. Say so in the report and leave it uncompiled — a wrong home costs more than an absence, because the next run reads the wrong home as settled.
 
 ### Step 3: Produce updates, not siblings
 
-Read `references/page-templates.md` before writing any page. It holds the six skeletons — one per page type, plus the bundle-root `index.md` and `log.md` — and it is where the frontmatter shape is written down. A page written without it is a page whose keys were invented. The checker validates `type` and every `sources[]` entry; `title`, `description`, `status`, and `generated` it never sees, so nothing downstream would notice.
+Read `references/page-templates.md` before writing any page. It holds the four skeletons, one per page type, and it is where the frontmatter shape is written down. A page written without it is a page whose keys were invented. The checker validates provenance and reachability; `title`, `description`, `status`, and `generated` it never sees, so nothing downstream would notice.
 
 For each source, name the existing page its claims land on before writing anything.
 
-Write a new page only when the report can carry one sentence naming which existing pages you considered and why none of them is the home. That sentence goes in the report and into `log.md`.
+Write a new page only when the report can carry one sentence naming which existing pages you considered and why none of them is the home. That sentence goes in the report and into the proposed commit body from Step 7.
 
 This is the step the whole skill exists for. A knowledge base that gains a page per source is a second copy of the raw notes with worse search.
 
 ### Step 4: Write provenance
 
-Every page gains or updates its `sources[]` entries. Each entry carries:
-
-- `resource` — the path, relative to the repository root
-- `id` — a short stable slug, which the page body cites as `[^slug]`; OKF makes this label the join key a consumer resolves attribution through
-- `fragment` — the exact cited heading line, an `L<start>-L<end>` range for a resource with no headings, or `(whole)`
-- `sha256` — the first 12 hex characters of the hash over that fragment
-
-Get the hash from the checker rather than computing one yourself. Write the entry with `sha256: "unset"`, run `check-docs.sh check`, and read the value back off the line it prints:
+Every page's footnote citations are staged and committed in one call, never typed into `.kb/provenance.tsv` by hand. Stage one line per citation the run added or moved:
 
 ```
-source-drift(docs/architecture/routing.md): sources[1] records unset for L10-L20 of src/router.go, which now hashes to 3d4cea08f41a
+docs/<page>	<label>	<resource>	<fragment>
 ```
 
-Then write `3d4cea08f41a` into the entry. The checker owns the normalization — trailing whitespace, leading and trailing blank lines — so a hash produced any other way is a hash that will disagree with the tool that later checks it.
+`<fragment>` is a heading line, an `L<start>-L<end>` range for a resource with no headings, or empty for the whole file. Then run `check-docs.sh provenance-commit <staging> <raw root>`. It computes the hash itself and replaces every row for each page named in the staging file, so a run stages every citation the page still makes, not a diff against what was there before — a page with a live citation you fail to restage loses that row. It refuses a row whose page is not on disk, whose resource does not exist or lives in the raw root, whose label is empty or carries whitespace, or whose fragment does not resolve, and writes nothing at all if any row fails.
 
-An entry whose `resource` no longer exists is deleted together with the prose it supported, and the deletion gets a `log.md` line. A claim whose evidence is gone is not a claim the page can still make.
+A citation whose resource no longer exists is deleted together with the prose it supported — dropped from the staging file rather than restaged — and the deletion goes into the proposed commit body from Step 7. A claim whose evidence is gone is not a claim the page can still make.
 
 A new decision page also gets its `decision_id`, which is how a supersession reference names the decision across an editorial rename. Write the page with `decision_id: "unset"`, then run `check-docs.sh assign-id <page>` and write the value it prints into the key. Assign it once: a later edit to the page never reassigns it, and a substantively different decision is a new page with its own.
 
-### Step 5: Update index.md and log.md
+### Step 5: Update the map
 
-Every page must be reachable from `docs/index.md` by following relative links. A page written and not linked is the most common failure of this whole workflow, which is why the checker fails on it.
+Every page must be reachable from the file `map:` names, by following relative links. A page written and not linked is the most common failure of this whole workflow, which is why the checker fails on it.
 
-`log.md` carries one section per day, newest first, holding `**Creation**`, `**Update**`, and `**Deprecation**` bullets that link the pages they affected. If a section for today already exists, append this run's bullets to it rather than opening a second one — two runs in a day is the ordinary case, not a failure, and the checker reports two sections carrying one date.
+A new page gets one line added to that file and nothing else — the map itself is the owner's, not something `weave` compiles, and it is never staged into `pages-commit` below.
 
 ### Step 6: Check
 
@@ -179,13 +174,15 @@ Fix whatever the first reports and run it again.
 
 A failure from the second is different in kind. It means this run wrote into the raw layer, which `<artifact_scope>` forbids. That is a defect in the run, not a finding to hand to the user: say so plainly, name the files, and stop.
 
-Once both pass, and not before, write the receipt. Stage one tab-separated line per decision this run touched — `<record path>\t<state>\t<decision heading>`, where the state is `consumed` or `deferred` — then run `check-docs.sh receipt-commit docs/kb-receipt.tsv <records root> <staging file>`. It computes each record's identity itself, validates the whole set, and writes nothing unless all of it validates, so a run that stops here leaves no entry.
+Once both pass, and not before, run `check-docs.sh pages-commit <staging>` with one page path per line, every page this run wrote, new or updated. It writes each page's fingerprint.
+
+Then write the consumption ledger. Stage one line per decision this run touched — `capture\t<record path relative to the captures directory>\t<decision heading>\tconsumed|deferred` — and one per named non-capture source outside `captures/` this run read — `note\t<path relative to the raw root>\t\tconsumed|no-home`, `consumed` when at least one claim from it reached a page and `no-home` when none did — then run `check-docs.sh consumed-commit <raw root> <staging file>`. It computes each row's hash itself, validates the whole set, and writes nothing unless all of it validates, so a run that stops here leaves no entry.
 
 Acknowledgement is per decision, never per record: a record is routinely half compiled and half deferred, and marking the whole file done would lose the deferred half. "Offered", "confirmed" and "read for context" are not acknowledgement. A decision that routed nowhere is `deferred` and waits indefinitely — nothing expires, and only a run the owner starts returns to it.
 
-The receipt is committed alongside the pages it describes, so reverting a bad run reverts its bookkeeping too.
+Then run `check-docs.sh consumed-check <raw root>` and carry what it notes into the report. A source skipped in Step 1 is not staged: it is already recorded. Nor is a named source whose last ledger line already carries its current hash and state — a repeat run over unchanged sources leaves the ledger as it was, the same way it leaves the pages.
 
-Then write the intake. Stage one line per named source outside `captures/` this run read — `<path relative to the raw root>\t<state>`, `consumed` when at least one claim from it reached a page and `no-home` when none did — and run `check-docs.sh intake-commit docs/kb-intake.tsv <raw root> <staging file>`. It hashes each file itself and writes nothing unless every line validates. Then run `check-docs.sh intake-check docs/kb-intake.tsv <raw root>` and carry what it notes into the report. A source skipped in Step 1 is not staged: it is already recorded. Nor is a named source whose last ledger line already carries its current hash and state — a repeat run over unchanged sources leaves the ledger as it was, the same way it leaves the pages. Capture records are never staged here; the receipt is theirs.
+The consumption ledger and `.kb/pages.tsv` are committed alongside the pages they describe, so reverting a bad run reverts its bookkeeping too.
 
 Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is done, and also on the halt path above after reporting. Holding it through a halt buys nothing: the user has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies and then makes somebody inspect a compiled layer they already know the state of.
 
@@ -194,14 +191,15 @@ Release the claim with `check-docs.sh claim-release <run id>` once Step 6 is don
 Report:
 
 - the captures consumed, and separately the eligible records left alone — a model-chosen scope is not reproducible from the invocation and the repository state, only from being written down
-- any record opened for context, named as such: a contextual read is not intake and produces no receipt entry
+- any record opened for context, named as such: a contextual read is not consumption and produces no ledger entry
 - pages created, and for each, the one sentence from Step 3
 - pages updated
 - sources consumed, and any source that found no home
-- `log.md` lines added
 - the result of both checker runs
 
-On the run that seeded `docs/WIKI.md`, print — never write — a `## Documentation` block for the user to paste into their own instructions file, pointing a later session at `docs/` before `thoughts/`.
+End with a proposed commit body: one sentence per new page, the Step 3 sentence naming which existing pages were considered and why none is the home; one sentence per citation deleted because its resource is gone; one sentence per page deprecated. There is no `log.md` to carry this instead — the proposed commit body is the run's history.
+
+On the run that seeded `.kb/schema.md`, and on an adoption run, print — never write — a `## Documentation` block for the user to paste into their own instructions file, pointing a later session at `docs/` before `thoughts/`.
 
 Close by saying that `docs/` is ready to be committed on its own.
 
@@ -212,8 +210,9 @@ Close by saying that `docs/` is ready to be committed on its own.
 - Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 0 and `verify-sources` in Step 6, not by inspection
 - Never run `git add`, `git commit`, or any other git write. Committing is somebody else's job — `df:commit` when that plugin is installed, the user's own hands otherwise — and `docs/` lands in its own commit so that a bad compile is recoverable with one `git revert`
 - Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and `index.md` can end up disagreeing with each other
-- A repeat `weave pending` over unchanged sources produces no diff — no timestamp bumps, no `log.md` entry, no intake line. A non-capture source the ledger records at its current hash is not in that list, and the list is the check, not a re-read. A source named by filename, and every capture record, is outside this rule
-- Never rewrite an existing `docs/WIKI.md`
+- A repeat `weave pending` over unchanged sources produces no diff — no timestamp bumps, no ledger row. A non-capture source the ledger records at its current hash is not in that list, and the list is the check, not a re-read. A source named by filename, and every capture record, is outside this rule
+- Never rewrite an existing `.kb/schema.md`
+- Never write a page under `docs/` that the map does not reach
 - An adoption run ends at its report, and that report lists the tree's own findings as the owner's backlog rather than resolving them: the run adopted pages, it did not compile claims, so the whole-run rule above has nothing of this run's to judge
 
 </constraints>
