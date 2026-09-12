@@ -48,7 +48,7 @@ in full.[^style-head]
 The body has been compared against its predecessor on a fixed prompt set with the harness in
 [Prompt A/B harness](../architecture/prompt-eval-harness.md), but that run's numbers are not
 recorded in this repository, so no effect size is stated here. The marketplace entry ships
-0.9.0.[^style-version]
+0.10.0.[^style-version]
 
 [^style-head]: `plugins/style/output-styles/answer-first.md`, frontmatter and the first two paragraphs.
 

@@ -1,6 +1,6 @@
 ---
 title: "A vanished source deletes its entry"
-description: "A sources[] entry whose resource no longer exists is removed together with the prose it supported, never flagged and kept."
+description: "A provenance row whose resource no longer exists is removed together with the prose it supported, never flagged and kept."
 status: stable
 decision_id: "9b21a6273acb"
 supersedes: ""
@@ -23,8 +23,8 @@ deleted passed conformance the moment the entry was marked retired.
 
 `check_sources` reports `source-missing` for a missing or absent `resource` unconditionally — no
 flag suppresses it.[^source-missing-report] The corresponding rule for a compiler: when a `resource`
-no longer exists, delete the `sources[]` entry together with the prose it supported, and record the
-deletion in `log.md`.[^vanished-source-rule]
+no longer exists, its provenance row is dropped and the prose it supported goes with it, never flagged
+and kept.[^vanished-source-rule]
 
 ## Consequences
 
@@ -35,4 +35,4 @@ frontmatter was keeping.[^vanished-source-rule]
 
 [^source-missing-report]: `plugins/kb/scripts/check-docs.sh`, the source-missing report.
 
-[^vanished-source-rule]: `docs/WIKI.md`, Provenance.
+[^vanished-source-rule]: `.kb/schema.md`, Provenance.

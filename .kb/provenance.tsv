@@ -14,16 +14,14 @@ docs/architecture/dual-runtime-distribution.md	drift-extraction	scripts/check-co
 docs/architecture/dual-runtime-distribution.md	drift-rules	scripts/check-codex-agent-drift.sh	L2-L22	a7dd447088da
 docs/architecture/knowledge-compiler.md	capture-claim-step	plugins/kb/skills/capture/SKILL.md	### Step 3: Try the claim, and publish if it is free	95e8abce3472
 docs/architecture/knowledge-compiler.md	capture-staging	plugins/kb/skills/capture/SKILL.md	### Step 2: Write the record to the staging directory	fcf30c0174f1
-docs/architecture/knowledge-compiler.md	checker-claim	plugins/kb/scripts/check-docs.sh	L1570-L1583	d3a9e96c35bb
+docs/architecture/knowledge-compiler.md	checker-claim	plugins/kb/scripts/check-docs.sh	L1707-L1715	ee1226f1072e
 docs/architecture/knowledge-compiler.md	checker-manifest	plugins/kb/scripts/check-docs.sh	L33-L39	5f7e294cd559
-docs/architecture/knowledge-compiler.md	checker-modes	plugins/kb/scripts/check-docs.sh	L2-L31	000234dccc17
-docs/architecture/knowledge-compiler.md	checker-receipt	plugins/kb/scripts/check-docs.sh	L1237-L1257	b2f9f7309293
-docs/architecture/knowledge-compiler.md	kb-skill-table	plugins/kb/README.md	## The skills	a0d28de65a65
-docs/architecture/knowledge-compiler.md	kb-two-layers	plugins/kb/README.md	L3-L7	3248dc37db9c
-docs/architecture/knowledge-compiler.md	lint-candidates	plugins/kb/skills/lint/SKILL.md	### Step 2: Collect candidates	6ac99378b032
-docs/architecture/knowledge-compiler.md	lint-rules	plugins/kb/scripts/check-docs.sh	L701-L765	cf60b7a1e2ea
-docs/architecture/knowledge-compiler.md	lint-unhashed	plugins/kb/scripts/check-docs.sh	L830-L834	48418de9d7eb
-docs/architecture/knowledge-compiler.md	lint-verdicts	plugins/kb/skills/lint/SKILL.md	### Step 3: Decide a verdict per finding	aef52cbad1ed
+docs/architecture/knowledge-compiler.md	checker-modes	plugins/kb/scripts/check-docs.sh	L2-L31	b8223ff3f2e0
+docs/architecture/knowledge-compiler.md	checker-receipt	plugins/kb/scripts/check-docs.sh	L950-L979	b4eda53b9bb7
+docs/architecture/knowledge-compiler.md	kb-skill-table	plugins/kb/README.md	## The skills	67e13ac14f37
+docs/architecture/knowledge-compiler.md	kb-two-layers	plugins/kb/README.md	L3-L7	e30b0bfe9698
+docs/architecture/knowledge-compiler.md	lint-candidates	plugins/kb/skills/lint/SKILL.md	### Step 2: Collect candidates	d22009ecee34
+docs/architecture/knowledge-compiler.md	lint-verdicts	plugins/kb/skills/lint/SKILL.md	### Step 3: Decide a verdict per finding	1998eae21290
 docs/architecture/prompt-eval-harness.md	check-header	scripts/eval/check.sh	L1-L13	07ada88cf8b8
 docs/architecture/prompt-eval-harness.md	eval-cost	scripts/eval/README.md	## Cost before you start	8950df68be3f
 docs/architecture/prompt-eval-harness.md	eval-dir	scripts/eval/README.md	## An experiment directory	70e7af1a5590
@@ -61,19 +59,20 @@ docs/decisions/0006-agy-runs-under-accept-edits.md	delegate-gates	plugins/agy/sk
 docs/decisions/0006-agy-runs-under-accept-edits.md	delegate-why-subagent	plugins/agy/skills/delegate/SKILL.md	L10-L10	8fd3523ac7cf
 docs/decisions/0007-the-rung-decides-what-a-prompt-edit-runs.md	rung-ladder	CONTRIBUTING.md	## Changing a Shipped Prompt	5a52035b1ccd
 docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	capture-not-compiled-layer	plugins/kb/skills/capture/SKILL.md	L12-L12	eab17e8746e9
-docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	kb-raw-untracked	plugins/kb/README.md	## Upgrading from 1.0.x	0f3f2bc5e26c
-docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	raw-citation-refusal	plugins/kb/scripts/check-docs.sh	L786-L806	216c40b75915
-docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	weave-routing	plugins/kb/skills/weave/SKILL.md	### Step 2: Route each claim	1270ab486483
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	kb-raw-untracked	plugins/kb/README.md	## Upgrading from 1.0.x	021b9b5f1cfb
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	raw-citation-refusal	plugins/kb/scripts/check-docs.sh	L748-L765	350968e2b0e2
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	weave-routing	plugins/kb/skills/weave/SKILL.md	### Step 2: Route each claim	792cf7417ccb
+docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	zone-resolution	plugins/kb/scripts/check-docs.sh	L161-L172	876b278e0693
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	catalog-ref-main	.agents/plugins/marketplace.json	(whole)	f080b117403c
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	semver-table	CONTRIBUTING.md	## Versioning (semver reference)	dfdffe434574
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	versioning-rule	CLAUDE.md	## Versioning	617a7aec2e56
-docs/decisions/0010-a-vanished-source-deletes-its-entry.md	source-missing-report	plugins/kb/scripts/check-docs.sh	L767-L784	8a8a6c9b3636
-docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	docs/WIKI.md	## Provenance	ba48d301c096
+docs/decisions/0010-a-vanished-source-deletes-its-entry.md	source-missing-report	plugins/kb/scripts/check-docs.sh	L743-L746	a0fb5933b4eb
+docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	.kb/schema.md	## Provenance	b30a2f3c7b4d
 docs/product/answer-first-style.md	root-readme	README.md	L59-L59	9fe28e6b3b2d
 docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	cc934dba94d0
 docs/product/answer-first-style.md	style-placement	plugins/style/README.md	## What the base prompt already says about prose	d398dda946b7
 docs/product/answer-first-style.md	style-sources	plugins/style/README.md	## Where the rules came from	36a1cb715a67
-docs/product/answer-first-style.md	style-version	.claude-plugin/marketplace.json	L67-L76	6551de5c78d3
+docs/product/answer-first-style.md	style-version	.claude-plugin/marketplace.json	L65-L75	aeb076e5b064
 docs/product/df-workflow.md	checks-blind	CLAUDE.md	## Verify Before Finishing	f6107b0487d9
 docs/product/df-workflow.md	df-overview	plugins/df/README.md	## Overview	7aac1aa99ad3
 docs/product/df-workflow.md	df-skills	plugins/df/README.md	## Skills	57866131d440

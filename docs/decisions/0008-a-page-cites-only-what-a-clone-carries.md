@@ -1,6 +1,6 @@
 ---
 title: "A page cites only what a clone carries"
-description: "Every sources[] entry names a tracked file; a path inside the raw root is refused, and a capture record is refused on separate grounds."
+description: "Every provenance row names a tracked file; a path inside the raw root is refused, and a capture record is refused on separate grounds."
 status: stable
 decision_id: "bd12e77b6a2b"
 supersedes: ""
@@ -22,10 +22,12 @@ checked by nobody but its author, and the provenance check would fail for everyo
 
 ## Decision
 
-Every `sources[]` entry names a file the reader's clone holds. The checker resolves both the citation
-and the raw root to absolute paths before comparing, so a relative citation into an absolute raw root
-is still recognised as the same tree, and reports `source-in-raw-root` for any entry inside
-it.[^raw-citation-refusal]
+Every provenance row names a file the reader's clone holds — tracked code or checked-in config, never
+an internal note.[^weave-routing] The checker resolves both the citation and the raw root to absolute
+paths before comparing, so a relative citation into an absolute raw root is still recognised as the
+same tree,[^zone-resolution] and reports `source-in-raw-root` for any row inside it. The same zone
+check runs on the write path, in `provenance-commit`, so a row that reached the ledger without going
+through it is held to it here too.[^raw-citation-refusal]
 
 A citation of a capture record is refused separately, as `source-is-capture`. The grounds differ: a
 record is not merely untracked, it sits outside the source trust order entirely, never competing for a
@@ -50,7 +52,9 @@ boundary, in that even a record that reached the raw layer cannot become a page'
 Revisiting the rule would take tracking the raw corpus, which would put unreviewed session notes into
 every clone and into the provenance-drift check. [inferred]
 
-[^raw-citation-refusal]: `plugins/kb/scripts/check-docs.sh`, the citation-path checks.
+[^raw-citation-refusal]: `plugins/kb/scripts/check-docs.sh`, the citation zone check in `check_sources`.
+
+[^zone-resolution]: `plugins/kb/scripts/check-docs.sh`, `provenance_resource_zone`.
 
 [^weave-routing]: `plugins/kb/skills/weave/SKILL.md`, Step 2.
 
