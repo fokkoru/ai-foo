@@ -66,7 +66,7 @@
       "name": "style",
       "source": "./plugins/style",
       "description": "Output styles for Claude Code — front-loaded, plain-sentence responses that end with what the reader must do next, when anything is theirs to do",
-      "version": "0.11.0",
+      "version": "0.11.1",
       "author": {
         "name": "fokkoru"
       },
