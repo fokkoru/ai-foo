@@ -141,15 +141,6 @@ Then offer a weave run naming the published record, and stop. The owner confirms
 
 </constraints>
 
-<anti_patterns>
-
-- **One record per session.** The session boundary is not a decision boundary. A design session reaches several independent conclusions and a long implementation session reaches none
-- **Waiting for the claim.** One attempt, then carry on. A session that pauses to take a lock is a session the owner notices
-- **Recording the outcome and dropping the reason.** The outcome is in the code already. The reason is the whole reason this file exists
-- **Quoting the owner as if it were evidence.** Speech goes under `## What the session said`, marked as speech
-
-</anti_patterns>
-
 <success_criteria>
 
 - Every published record passes `check-docs.sh check-capture`

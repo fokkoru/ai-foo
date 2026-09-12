@@ -21,10 +21,6 @@ Writes are allowed under `docs/` and `.kb/`.
 
 On the adoption row of Step 0 the allowed writes narrow further to what `references/adopt.md` lists: `.kb/schema.md`, and `docs/index.md` only when the tree has no map of its own. That run writes no page body and compiles no source.
 
-`thoughts/**` is denied. Before any Write or Edit call, verify the target path is inside `docs/` or `.kb/` — if it is not, stop and ask the user.
-
-Inspection is not enough to prove that denial held. A project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it. That is why Step 0 snapshots and Step 6 verifies.
-
 </artifact_scope>
 
 <quick_start>
@@ -218,7 +214,7 @@ Close by saying that `docs/` is ready to be committed on its own.
 
 <constraints>
 
-- Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 0 and `verify-sources` in Step 6, not by inspection
+- Never write, move, or delete anything under `thoughts/`. Before any Write or Edit call, verify the target path is inside `docs/` or `.kb/`, and stop and ask the user if it is not. Inspection cannot prove the denial held, because a project may hide `thoughts/` from git and a write into it then never appears in `git status`, so it is verified by `snapshot` in Step 0 and `verify-sources` in Step 6
 - Never run `git add`, `git commit`, or any other git write. Committing is somebody else's job — `df:commit` when that plugin is installed, the user's own hands otherwise — and `docs/` lands in its own commit so that a bad compile is recoverable with one `git revert`
 - Do not report success while an unresolved contradiction or an unevidenced factual claim remains. This is a whole-run failure rather than a per-page one: partial updates across `architecture/`, `decisions/`, and the file `map:` names can end up disagreeing with each other
 - A repeat `weave pending` over unchanged sources produces no diff — no timestamp bumps, no ledger row. A non-capture source the ledger records at its current hash is not in that list, and the list is the check, not a re-read. A source named by filename, and every capture record, is outside this rule

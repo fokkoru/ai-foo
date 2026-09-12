@@ -6,9 +6,9 @@ allowed-tools: Read, Edit, Grep, Glob, LS, Bash(date:*), Bash(git config:*), Bas
 ---
 
 <objective>
-`weave` returns to a page only when a new source touches it, and it updates existing pages rather than adding siblings (`plugins/kb/skills/weave/SKILL.md:129`) — so a page whose topic never comes up again is never revisited, however wrong it has become. Nothing else in the plugin inspects a page on its own account.
+`weave` returns to a page only when a new source touches it, and its Step 3 updates existing pages rather than adding siblings — so a page whose topic never comes up again is never revisited, however wrong it has become. Nothing else in the plugin inspects a page on its own account.
 
-`kb:lint` is that inspection. It reads the compiled layer under `docs/` on its own account, independent of whether any new source arrived to trigger a run, and it runs in two stages: one pass attaches evidence to a candidate, a separate pass decides what that finding means. A finding with no evidence attached is dropped before the second pass ever sees it.
+`kb:lint` is that inspection. It reads the compiled layer under `docs/` on its own account, independent of whether any new source arrived to trigger a run, and it runs in two stages: one pass attaches evidence to a candidate, a separate pass decides what that finding means.
 
 This is a maintenance pass somebody runs, not a mechanism that fires on its own — a run that fired unprompted would edit the compiled layer while the owner is doing something else.
 
@@ -16,12 +16,6 @@ This is a maintenance pass somebody runs, not a mechanism that fires on its own 
 
 <artifact_scope>
 Writes are allowed under `docs/` and `.kb/`: any page under `docs/`; `.kb/provenance.tsv` and `.kb/pages.tsv` through `provenance-commit`, `pages-commit` and `pages-forget` only, never by hand; and the map, one line per page it links or unlinks — following the same provenance and template rules `weave` follows. `references/page-templates.md` is the one copy of the frontmatter shape; it is shared from `weave` rather than duplicated here, and `kb:lint` reads it rather than restating it.
-
-`.kb/schema.md` is never written. It is the owner's schema. A finding against it is reported and left.
-
-`thoughts/**` is denied. Inspection is not enough to prove that denial held — a project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it. That is why Step 1 snapshots and Step 4 verifies.
-
-`git add` and `git commit` are never run, matching `weave`. Committing is somebody else's job.
 
 </artifact_scope>
 
@@ -96,7 +90,7 @@ Once `verify-sources` passes — regardless of what the first `check` reported e
 
 Run `check-docs.sh check` a second time, as the report of where the tree stands. `page-edited` on a page this run just corrected could not have cleared before its fingerprint was advanced, so this run is the one that actually confirms the correction stuck — a page still reported `page-edited` here means `pages-commit` was skipped or staged the wrong path. Fix whatever it reports about a page this run touched, then repeat `pages-commit` and `check`. A finding Step 3 already settled as undetermined, or an unmatched `page-gone`, is expected to still be there and is not this loop's job.
 
-Release the claim with `check-docs.sh claim-release <run id>` once `verify-sources` has passed and the `pages-commit`-then-`check` cycle above is done, and also on the halt path above after reporting. A `check` finding Step 3 left open on purpose does not withhold release — the paragraph above already treats that as the ordinary case, not the exception, and this repository's own open `source-missing` on `docs/decisions/0010` is that case today: holding the claim for a green whole-tree `check` would refuse every later `lint` run's `claim-acquire` until the owner's separate pass clears it. Holding the claim through a halt buys nothing either: the owner has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies.
+Release the claim with `check-docs.sh claim-release <run id>` once `verify-sources` has passed and the `pages-commit`-then-`check` cycle above is done, and also on the halt path above after reporting. A `check` finding Step 3 left open on purpose does not withhold release — the paragraph above already treats that as the ordinary case, not the exception: holding the claim for a green whole-tree `check` would refuse every later `lint` run's `claim-acquire` until the owner's separate pass clears it. Holding the claim through a halt buys nothing either: the owner has already been told exactly what went wrong, while a claim left behind blocks the next run until this session's process dies.
 
 Report: the size of M and H, a verdict for every finding, the pages edited, and the result of every `check` and `verify-sources` run in Step 4. End with a proposed commit body, one sentence per correction, saying whether the citation moved or the prose was wrong.
 
@@ -104,12 +98,10 @@ Report: the size of M and H, a verdict for every finding, the pages edited, and 
 
 <constraints>
 
-- Never write, move, or delete anything under `thoughts/`. This is verified by `snapshot` in Step 1 and `verify-sources` in Step 4, not by inspection
-- Never run `git add`, `git commit`, or any other git write
+- Never write, move, or delete anything under `thoughts/`. A project may hide `thoughts/` from git, in which case a write into it never appears in `git status` and nothing downstream would catch it, so the denial is verified by `snapshot` in Step 1 and `verify-sources` in Step 4, not by inspection
+- Never run `git add`, `git commit`, or any other git write, matching `weave`. Committing is somebody else's job
 - Never rewrite `.kb/schema.md`. A finding against it is reported and left, since it is the owner's schema
 - A finding with no evidence attached is not a finding, and is dropped before it reaches a verdict
-- A run whose candidate set is empty and whose invocation named no page produces no diff. A run that resolved every finding as "the page is right" produces no diff under `docs/` either, only the report
-- The run ends by running `check-docs.sh check` over `docs/` and reporting what it said
 
 </constraints>
 
@@ -125,6 +117,5 @@ Report: the size of M and H, a verdict for every finding, the pages edited, and 
 
 - `docs/` or `.kb/` changed and `thoughts/` did not
 - Every page the run edited traces to a finding that named its evidence
-- A run over a clean tree with no page named produces no diff at all
 
 </success_criteria>
