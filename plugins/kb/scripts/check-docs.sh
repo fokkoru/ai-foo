@@ -15,17 +15,11 @@
 #   claim-inspect                          say who holds it and whether they are alive
 #   supersession-scan <records-root> <docs-root> <target>
 #                                          every record decision that supersedes a target
-#   receipt-commit <receipt> <records-root> <staging>
-#                                          record what a validated run consumed
-#   receipt-check <receipt> <records-root> the receipt's own format and its hashes
-#   captures-eligible <records-root> [receipt]
-#                                          decisions no run has consumed yet
-#   captures-deferred <records-root> <receipt>
-#                                          decisions a run looked at and left
-#   sources-pending <raw-root> [intake]    raw sources no run consumed at their current bytes
-#   intake-commit <intake> <raw-root> <staging>
-#                                          record what a validated run consumed of the raw layer
-#   intake-check <intake> <raw-root>       the intake ledger's format; notes sources that moved on
+#   consumed-commit <raw-root> <staging>   record what a validated run consumed, capture or note
+#   consumed-check <raw-root>              the consumed ledger's own format; notes sources that moved on
+#   captures-eligible <records-root>       decisions no run has consumed yet
+#   captures-deferred <records-root>       decisions a run looked at and left
+#   sources-pending <raw-root>             raw sources no run consumed at their current bytes
 #
 # Each mode exits 0 on success and 1 on any failure, printing one
 # RULE(subject): detail line per failure.
@@ -73,13 +67,11 @@ usage: $self snapshot [raw-root]
        $self claim-release <run-id>
        $self claim-inspect
        $self supersession-scan <records-root> <docs-root> <target>
-       $self receipt-commit <receipt> <records-root> <staging>
-       $self receipt-check <receipt> <records-root>
-       $self captures-eligible <records-root> [receipt]
-       $self captures-deferred <records-root> <receipt>
-       $self sources-pending <raw-root> [intake]
-       $self intake-commit <intake> <raw-root> <staging>
-       $self intake-check <intake> <raw-root>
+       $self consumed-commit <raw-root> <staging>
+       $self consumed-check <raw-root>
+       $self captures-eligible <records-root>
+       $self captures-deferred <records-root>
+       $self sources-pending <raw-root>
 EOF
   exit 2
 }
@@ -939,12 +931,12 @@ EOF
 }
 
 # What a run may still take in. Eligibility is mechanical — it is the decisions
-# the receipt does not record as consumed — while which of them a run actually
-# takes is the model's choice, and the run's report is the only place that
-# choice is written down. Detecting that a record is eligible therefore does not
-# guarantee it was examined.
+# the one consumption ledger does not record as consumed — while which of them
+# a run actually takes is the model's choice, and the run's report is the only
+# place that choice is written down. Detecting that a record is eligible
+# therefore does not guarantee it was examined.
 cmd_captures_eligible() {
-  local root="${1:-}" receipt="${2:-}" line path heading
+  local root="${1:-}" line path heading last state
   [ -n "$root" ] || usage
   if [ ! -d "$root" ]; then
     report NO-RECORDS-ROOT captures-eligible "$root is not a directory"
@@ -954,60 +946,153 @@ cmd_captures_eligible() {
     [ -n "$line" ] || continue
     path=$(printf '%s' "$line" | cut -f1)
     heading=$(printf '%s' "$line" | cut -f2)
-    if [ -n "$receipt" ] && [ -f "$receipt" ] &&
-      awk -F'\t' -v p="$path" -v h="$heading" \
-        '$1 == p && $3 == "consumed" && $4 == h {found = 1} END {exit found ? 0 : 1}' "$receipt"; then
-      continue
-    fi
+    last=$(consumed_last capture "$path" "$heading") || {
+      report CONSUMED-UNREADABLE captures-eligible "could not read $CONSUMED"
+      return 1
+    }
+    state=$(printf '%s' "$last" | cut -f2)
+    [ "$state" = "consumed" ] && continue
     printf '%s\t%s\n' "$path" "$heading"
   done <<EOF
 $(capture_decisions_all "$root")
 EOF
+  return 0
 }
 
 # The decisions a run looked at and left. A deferred decision waits indefinitely
 # rather than expiring, so something has to come back to it, and that something
 # is a pass the owner starts. Nothing here wakes it.
 cmd_captures_deferred() {
-  local root="${1:-}" receipt="${2:-}"
+  local root="${1:-}"
   [ -n "$root" ] || usage
-  [ -n "$receipt" ] || usage
-  if [ ! -f "$receipt" ]; then
-    report NO-RECEIPT captures-deferred "$receipt is not a file"
+  if [ ! -d "$root" ]; then
+    report NO-RECORDS-ROOT captures-deferred "$root is not a directory"
     return 1
   fi
-  awk -F'\t' '$3 == "deferred" {print $1 "\t" $4}' "$receipt" | LC_ALL=C sort -u
+  [ -f "$CONSUMED" ] || return 0
+  # A ledger that exists but cannot be read is not an empty ledger: under
+  # pipefail an unreadable file fails the first awk and the pipeline exits
+  # non-zero, which the guard below catches rather than reporting an empty,
+  # falsely clean deferred set.
+  # Last row per (kind, path, unit), then the capture rows still deferred.
+  awk -F'\t' '{k[$1 "\t" $2 "\t" $3] = $4 "\t" $5} END {for (i in k) print i "\t" k[i]}' "$CONSUMED" |
+    awk -F'\t' '$1 == "capture" && $5 == "deferred" {print $2 "\t" $3}' | LC_ALL=C sort -u || {
+    report CONSUMED-UNREADABLE captures-deferred "could not read $CONSUMED"
+    return 1
+  }
+  return 0
 }
 
-# ------------------------------------------------------------------ intake
+# ------------------------------------------------------------- consumed.tsv
 
-# What a run consumed of the raw layer outside captures, per file. Captures are
-# acknowledged per decision in the receipt, and a second answer per file would
-# disagree with the first, so they are excluded here.
+# One ledger for everything a run read out of the raw layer. A capture row is
+# per decision and hashes the normalized body, the way a record's identity is
+# computed everywhere else; a note row is per file and hashes the bytes. The
+# kind implies the scheme, so a row carries no scheme column. Append-only; the
+# last row per (kind, path, unit) wins.
 #
-#   <path relative to the raw root>\t<sha256 of the whole file>\t<state>
+#   <kind>\t<path>\t<unit>\t<hash>\t<state>
 #
-# The state is `consumed` or `no-home` — the run read the source and routed
-# nothing from it. Append-only; the last line for a path is the one that
-# counts. The hash is the whole file's bytes, the same hash snapshot records,
-# so a source that changes after it was consumed shows up as pending again.
-# That is the intended difference from the receipt: a capture record is
-# immutable and a mismatch there is a defect, while a note is the owner's to
-# edit and a mismatch here is a reason to compile it again.
+# kind is capture or note. For a capture row, path is relative to the records
+# root and unit is the decision heading; state is consumed or deferred, and
+# the hash is receipt_identity's 12 hex characters. For a note row, path is
+# relative to the raw root and unit is empty; state is consumed or no-home,
+# and the hash is sha256_file's 64 hex characters. A capture record is
+# immutable, so a hash mismatch on a capture row is a defect; a note is the
+# owner's to edit, so a hash mismatch on a note row is a reason to compile it
+# again — that is the intended difference between the two kinds, both carried
+# in one file so a run has one ledger to write rather than two.
 #
-# Tracked and committed alongside the pages it describes, for the reason the
-# receipt is: reverting a bad run has to revert its bookkeeping too.
+# Tracked and committed alongside the pages it describes, so reverting a bad
+# run reverts its bookkeeping too — an untracked ledger survives that revert
+# and goes on claiming things were consumed for pages that no longer exist.
+CONSUMED=".kb/consumed.tsv"
 
-# The last recorded hash for a path, empty when never recorded.
-intake_recorded_hash() {
-  awk -F'\t' -v p="$2" '$1 == p {h = $2} END {print h}' "$1"
+# The hash a capture row and a decision reference both use: the first 12 hex
+# characters of the normalized body's sha256. Stored rather than recomputed
+# from a slug — the one disclosed failure in this shape was a slug collision
+# that staged hundreds of records and ingested none. It is also what proves
+# the record on disk is the one that was acknowledged: a published record is
+# immutable, so a mismatch means somebody edited one.
+receipt_identity() {
+  fragment_text "$1" "(whole)" | normalize_and_hash
+}
+
+# Prints hash<TAB>state for the last row matching kind, path, unit; nothing
+# when there is none or no ledger.
+consumed_last() {
+  [ -f "$CONSUMED" ] || return 0
+  awk -F'\t' -v k="$1" -v p="$2" -v u="$3" \
+    '$1 == k && $2 == p && $3 == u {h = $4; s = $5} END {if (h != "") print h "\t" s}' "$CONSUMED"
+  return $?
+}
+
+consumed_kind_valid() {
+  case "$1" in
+  capture | note) return 0 ;;
+  esac
+  return 1
+}
+
+consumed_state_valid() {
+  case "$1:$2" in
+  capture:consumed | capture:deferred | note:consumed | note:no-home) return 0 ;;
+  esac
+  return 1
+}
+
+# A path the ledger will accept: relative, no `.` or `..` segment, no leading
+# slash. A staging line here is written by the model from a name the owner
+# typed, so the spelling is checked before it is looked up.
+consumed_path_canonical() {
+  case "$1" in
+  "" | /* | ./* | ../* | */./* | */../* | */. | */.. | *//*) return 1 ;;
+  esac
+  return 0
+}
+
+# What either hash scheme prints: 12 hex characters for a capture row, 64 for
+# a note row — the kind implies which.
+consumed_hash_wellformed() {
+  case "$1" in
+  capture) printf '%s' "$2" | grep -Eq '^[0-9a-f]{12}$'; return $? ;;
+  note) printf '%s' "$2" | grep -Eq '^[0-9a-f]{64}$'; return $? ;;
+  esac
+  return 1
+}
+
+# A capture row must carry a heading; a note row must carry none. Shared by
+# consumed-commit's validation and consumed-check's own-format pass, so the
+# same malformed row is named the same way whichever mode catches it first.
+consumed_unit_valid() {
+  case "$1" in
+  capture)
+    [ -n "$2" ]
+    return $?
+    ;;
+  note)
+    [ -z "$2" ]
+    return $?
+    ;;
+  esac
+  return 1
+}
+
+# A note row may not name a path under captures/: a capture row already
+# acknowledges everything there, per decision, and a second answer per file
+# would disagree with the first.
+consumed_note_not_capture() {
+  case "$1" in
+  captures/*) return 1 ;;
+  esac
+  return 0
 }
 
 # Raw sources no run has consumed at their current bytes. Enumeration is
 # mechanical; which of the listed sources a run then takes is the model's
 # choice, and the run's report is where that choice is written down.
 cmd_sources_pending() {
-  local root="${1:-}" intake="${2:-}" path rel hash recorded
+  local root="${1:-}" path rel hash last recorded state
   [ -n "$root" ] || usage
   if [ ! -d "$root" ]; then
     report NO-RAW-ROOT sources-pending "$root is not a directory"
@@ -1032,15 +1117,11 @@ cmd_sources_pending() {
       report HASH-FAILED sources-pending "could not hash $rel"
       return 1
     }
-    recorded=""
-    if [ -n "$intake" ] && [ -f "$intake" ]; then
-      # A ledger that exists but cannot be read is not an empty ledger: treating
-      # it as one would list every consumed source as new.
-      recorded=$(intake_recorded_hash "$intake" "$rel") || {
-        report INTAKE-UNREADABLE sources-pending "could not read $intake"
-        return 1
-      }
-    fi
+    last=$(consumed_last note "$rel" "") || {
+      report CONSUMED-UNREADABLE sources-pending "could not read $CONSUMED"
+      return 1
+    }
+    recorded=$(printf '%s' "$last" | cut -f1)
     if [ -z "$recorded" ]; then
       printf '%s\tnew\n' "$rel"
     elif [ "$recorded" != "$hash" ]; then
@@ -1052,327 +1133,193 @@ EOF
   return 0
 }
 
-# A state the ledger accepts.
-intake_state_valid() {
-  case "$1" in
-  consumed | no-home) return 0 ;;
-  esac
-  return 1
-}
-
-# A path the ledger will accept: relative, no `.` or `..` segment, no leading
-# slash. The receipt trusts its paths because capture records are published by
-# the plugin; a staging line here is written by the model from a name the
-# owner typed, so the spelling is checked before it is looked up.
-intake_path_canonical() {
-  case "$1" in
-  "" | /* | ./* | ../* | */./* | */../* | */. | */.. | *//*) return 1 ;;
-  esac
-  return 0
-}
-
-# What sha256_file prints: 64 hexadecimal characters.
-intake_hash_wellformed() {
-  printf '%s' "$1" | grep -Eq '^[0-9a-f]{64}$'
-}
-
-cmd_intake_commit() {
-  local intake="${1:-}" root="${2:-}" staging="${3:-}" pending line rel state hash
-  [ -n "$intake" ] || usage
+cmd_consumed_commit() {
+  local root="${1:-}" staging="${2:-}" pending line kind path unit state hash n
   [ -n "$root" ] || usage
   [ -n "$staging" ] || usage
   if [ ! -f "$staging" ] || [ ! -r "$staging" ]; then
-    report NO-STAGING intake-commit "$staging is not a readable file"
+    report NO-STAGING consumed-commit "$staging is not a readable file"
     return 1
   fi
   root="${root%/}"
-  pending="$WORKDIR/intake-pending"
-  # Every write below is guarded: set -e does not reach this call tree, and an
-  # append that failed halfway would otherwise record a short ledger as success.
+  pending="$WORKDIR/consumed-pending"
   : >"$pending" || {
-    report INTAKE-FAILED intake-commit "could not stage under $WORKDIR"
+    report CONSUMED-FAILED consumed-commit "could not stage under $WORKDIR"
     return 1
   }
-
-  # Every staged line is validated before anything is written, so a run that
-  # fails here leaves the ledger as it was. The `|| [ -n "$line" ]` keeps a
-  # last line with no trailing newline, as receipt-commit explains. The loop
-  # reads the staging file directly rather than a heredoc because it returns
-  # on the first failure instead of accumulating findings.
+  n=0
   while IFS= read -r line || [ -n "$line" ]; do
     [ -n "$line" ] || continue
-    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
-    2) ;;
-    *)
-      report intake-malformed intake-commit "expected two tab-separated fields, got: $line"
-      return 1
+    if [ "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" -ne 4 ]; then
+      report consumed-malformed "$staging" "expected 4 tab-separated fields: $line"
+      continue
+    fi
+    kind=$(printf '%s' "$line" | cut -f1)
+    path=$(printf '%s' "$line" | cut -f2)
+    unit=$(printf '%s' "$line" | cut -f3)
+    state=$(printf '%s' "$line" | cut -f4)
+    if ! consumed_kind_valid "$kind"; then
+      report consumed-kind "$staging" "kind must be capture or note: $line"
+      continue
+    fi
+    if ! consumed_state_valid "$kind" "$state"; then
+      report consumed-state "$staging" "state $state is not valid for kind $kind: $line"
+      continue
+    fi
+    if ! consumed_path_canonical "$path"; then
+      report consumed-path "$staging" "path must be relative and canonical: $path"
+      continue
+    fi
+    case "$kind" in
+    capture)
+      if ! consumed_unit_valid capture "$unit"; then
+        report consumed-unit "$staging" "a capture row must name a decision heading: $line"
+        continue
+      fi
+      if [ ! -f "$root/captures/$path" ]; then
+        report consumed-source-missing "$staging" "$root/captures/$path does not exist"
+        continue
+      fi
+      if ! record_has_heading "$root/captures/$path" "$unit"; then
+        report consumed-heading-missing "$staging" "$path has no decision heading '$unit'"
+        continue
+      fi
+      hash=$(receipt_identity "$root/captures/$path") || {
+        report HASH-FAILED "$path" "could not hash the record"
+        continue
+      }
+      ;;
+    note)
+      if ! consumed_note_not_capture "$path"; then
+        report consumed-in-captures "$staging" "a note row may not name a capture record: $path"
+        continue
+      fi
+      if ! consumed_unit_valid note "$unit"; then
+        report consumed-unit "$staging" "a note row carries no unit: $line"
+        continue
+      fi
+      if [ ! -f "$root/$path" ]; then
+        report consumed-source-missing "$staging" "$root/$path does not exist"
+        continue
+      fi
+      hash=$(sha256_file "$root/$path") || {
+        report HASH-FAILED "$path" "could not hash the file"
+        continue
+      }
       ;;
     esac
-    rel=$(printf '%s' "$line" | cut -f1)
-    state=$(printf '%s' "$line" | cut -f2)
-    if ! intake_state_valid "$state"; then
-      report intake-state intake-commit "$rel: state must be consumed or no-home, got $state"
-      return 1
-    fi
-    if ! intake_path_canonical "$rel"; then
-      report intake-path intake-commit "$rel is not a plain path relative to the raw root"
-      return 1
-    fi
-    case "$rel" in
-    captures/*)
-      report intake-in-captures intake-commit "$rel is a capture record; the receipt acknowledges those, per decision"
-      return 1
-      ;;
-    esac
-    if [ ! -f "$root/$rel" ]; then
-      report intake-source-missing intake-commit "$rel is not a file under $root"
-      return 1
-    fi
-    hash=$(sha256_file "$root/$rel") || {
-      report HASH-FAILED intake-commit "could not hash $rel"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$kind" "$path" "$unit" "$hash" "$state" >>"$pending" || {
+      report CONSUMED-FAILED consumed-commit "could not stage under $WORKDIR"
       return 1
     }
-    printf '%s\t%s\t%s\n' "$rel" "$hash" "$state" >>"$pending" || {
-      report INTAKE-FAILED intake-commit "could not stage $rel"
-      return 1
-    }
+    n=$((n + 1))
   done <"$staging"
-
+  [ "$fail" -eq 0 ] || return 1
+  mkdir -p "$(dirname "$CONSUMED")" || {
+    report CONSUMED-FAILED consumed-commit "could not create $(dirname "$CONSUMED")"
+    return 1
+  }
   # A ledger edited by hand may end without a newline; appending straight after
-  # it would join two records into one line.
-  if [ -s "$intake" ] && [ -n "$(tail -c 1 "$intake")" ]; then
-    printf '\n' >>"$intake" || {
-      report INTAKE-FAILED intake-commit "could not append to $intake"
+  # it would join two records into one line. Command substitution strips a
+  # trailing newline, so this is empty exactly when the last byte already is
+  # one — the same idiom cmd_intake_commit used.
+  if [ -s "$CONSUMED" ] && [ -n "$(tail -c 1 "$CONSUMED")" ]; then
+    printf '\n' >>"$CONSUMED" || {
+      report CONSUMED-FAILED consumed-commit "could not terminate $CONSUMED"
       return 1
     }
   fi
-  cat "$pending" >>"$intake" || {
-    report INTAKE-FAILED intake-commit "could not append to $intake"
+  cat "$pending" >>"$CONSUMED" || {
+    report CONSUMED-FAILED consumed-commit "could not append to $CONSUMED"
     return 1
   }
-  echo "intake-commit: $(line_count "$pending") sources recorded in $intake"
+  echo "consumed-commit: $n rows recorded in $CONSUMED"
   return 0
 }
 
-# The ledger's own format, plus what has moved on since it was written. Every
-# line is validated structurally; existence and current bytes are compared
-# against each path's last line only, because that is the one that counts
-# and an older line for the same path is history, not a pending source. A
-# source that changed or went away is noted rather than reported: the raw
-# layer is the owner's, and both are reasons to run weave again, not defects
-# in the compiled layer.
-cmd_intake_check() {
-  local intake="${1:-}" root="${2:-}" line rel hash state current
-  [ -n "$intake" ] || usage
+# The ledger's own format, then its rows against the raw layer. A capture row
+# whose record hashes differently is a report — a published record is
+# immutable, so a mismatch means somebody edited one. A note row whose file
+# hashes differently is a note — a note is allowed to move on, and
+# sources-pending re-queues it.
+cmd_consumed_check() {
+  local root="${1:-}" line kind path unit hash state n=0 current
   [ -n "$root" ] || usage
-  if [ ! -f "$intake" ] || [ ! -r "$intake" ]; then
-    report NO-INTAKE intake-check "$intake is not a readable file"
-    return 1
-  fi
   root="${root%/}"
-  while IFS= read -r line || [ -n "$line" ]; do
-    [ -n "$line" ] || continue
-    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
-    3) ;;
-    *)
-      report intake-malformed intake-check "expected three tab-separated fields, got: $line"
-      continue
-      ;;
-    esac
-    rel=$(printf '%s' "$line" | cut -f1)
-    hash=$(printf '%s' "$line" | cut -f2)
-    state=$(printf '%s' "$line" | cut -f3)
-    if ! intake_path_canonical "$rel"; then
-      report intake-path intake-check "$rel is not a plain path relative to the raw root"
-      continue
-    fi
-    if ! intake_hash_wellformed "$hash"; then
-      report intake-hash intake-check "$rel: hash is not 64 hexadecimal characters"
-      continue
-    fi
-    if ! intake_state_valid "$state"; then
-      report intake-state intake-check "$rel: state must be consumed or no-home, got $state"
-      continue
-    fi
-    case "$rel" in
-    captures/*)
-      report intake-in-captures intake-check "$rel is a capture record and does not belong in the intake ledger"
-      continue
-      ;;
-    esac
-  done <<EOF
-$(cat "$intake")
-EOF
-  if [ "$fail" -ne 0 ]; then
+  if [ ! -f "$CONSUMED" ]; then
+    echo "OK: no ledger at $CONSUMED"
     return 0
   fi
-  # Last line per path, in path order.
+  if [ ! -r "$CONSUMED" ]; then
+    report CONSUMED-UNREADABLE "$CONSUMED" "cannot read the ledger"
+    return 1
+  fi
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    n=$((n + 1))
+    if [ "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" -ne 5 ]; then
+      report consumed-malformed "$CONSUMED" "line $n: expected 5 fields"
+      continue
+    fi
+    kind=$(printf '%s' "$line" | cut -f1)
+    path=$(printf '%s' "$line" | cut -f2)
+    unit=$(printf '%s' "$line" | cut -f3)
+    hash=$(printf '%s' "$line" | cut -f4)
+    state=$(printf '%s' "$line" | cut -f5)
+    consumed_kind_valid "$kind" || report consumed-kind "$CONSUMED" "line $n: $kind"
+    consumed_state_valid "$kind" "$state" || report consumed-state "$CONSUMED" "line $n: $state for $kind"
+    consumed_path_canonical "$path" || report consumed-path "$CONSUMED" "line $n: $path"
+    consumed_hash_wellformed "$kind" "$hash" || report consumed-hash "$CONSUMED" "line $n: $hash"
+    consumed_unit_valid "$kind" "$unit" || report consumed-unit "$CONSUMED" "line $n: $unit"
+    if [ "$kind" = "note" ] && ! consumed_note_not_capture "$path"; then
+      report consumed-in-captures "$CONSUMED" "line $n: $path"
+    fi
+  done <"$CONSUMED"
+  [ "$fail" -eq 0 ] || return 1
+
+  # Last row per identity against the raw layer. Read the whole line and split
+  # with cut -f rather than `IFS=<tab> read`: tab is IFS whitespace, so
+  # consecutive tabs collapse and a note row (whose unit field is empty, so
+  # two tabs sit side by side) would parse its hash into unit and its state
+  # into hash.
   while IFS= read -r line; do
     [ -n "$line" ] || continue
-    rel=$(printf '%s' "$line" | cut -f1)
-    hash=$(printf '%s' "$line" | cut -f2)
-    state=$(printf '%s' "$line" | cut -f3)
-    if [ ! -f "$root/$rel" ]; then
-      note intake-source-gone "$rel" "recorded $state, no longer under $root"
-      continue
-    fi
-    current=$(sha256_file "$root/$rel") || {
-      report HASH-FAILED intake-check "could not hash $rel"
-      continue
-    }
-    if [ "$current" != "$hash" ]; then
-      note intake-source-changed "$rel" "recorded $state at another hash; it is pending again"
-    fi
-  done <<EOF
-$(awk -F'\t' '{h[$1] = $2; s[$1] = $3} END {for (p in h) print p "\t" h[p] "\t" s[p]}' "$intake" | LC_ALL=C sort)
-EOF
-  if [ "$fail" -eq 0 ]; then
-    echo "OK: $(line_count "$intake") intake lines in $intake"
-  fi
-  return 0
-}
-
-# ----------------------------------------------------------------- receipt
-
-# What a run consumed and what it left, per capture and per decision. A record
-# is routinely half compiled and half deferred, so acknowledgement is per
-# decision: marking a whole record done would lose the deferred half.
-#
-# The file is tab-separated rather than markdown, so the page enumeration never
-# sees it and it needs no exemption. It is tracked and committed alongside the
-# pages it describes, so reverting a bad run reverts its bookkeeping too — an
-# untracked receipt survives that revert and goes on claiming captures were
-# acknowledged for pages that no longer exist.
-#
-#   <record path>\t<capture id>\t<state>\t<decision heading>
-#
-# The capture id is the hash of the record's content, stored rather than
-# recomputed from a slug — the one disclosed failure in this shape was a slug
-# collision that staged hundreds of records and ingested none. It is also what
-# proves the record on disk is the one that was acknowledged: a published record
-# is immutable, so a mismatch means somebody edited one. Deriving a second hash
-# of the same bytes to hold separately would invent a distinction that is not
-# there.
-#
-# A deferred decision carries no expiry. It waits until a run returns to it, and
-# nothing here counts down.
-receipt_identity() {
-  fragment_text "$1" "(whole)" | normalize_and_hash
-}
-
-receipt_validate_line() {
-  local line="$1" root="$2" subject="$3" path id state heading actual
-  case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
-  4) ;;
-  *)
-    report receipt-malformed "$subject" "expected four tab-separated fields, got: $line"
-    return 1
-    ;;
-  esac
-  path=$(printf '%s' "$line" | cut -f1)
-  id=$(printf '%s' "$line" | cut -f2)
-  state=$(printf '%s' "$line" | cut -f3)
-  heading=$(printf '%s' "$line" | cut -f4)
-
-  case "$state" in
-  consumed | deferred) ;;
-  *)
-    report receipt-malformed "$subject" "state '$state' is neither consumed nor deferred"
-    return 1
-    ;;
-  esac
-  if [ -z "$heading" ]; then
-    report receipt-malformed "$subject" "no decision heading on the entry for $path"
-    return 1
-  fi
-  if [ ! -f "$root/$path" ]; then
-    report receipt-record-missing "$subject" "$path is not a record under $root"
-    return 1
-  fi
-  if ! record_has_heading "$root/$path" "$heading"; then
-    report receipt-heading-missing "$subject" \
-      "$path holds no decision headed '$heading' — the entry marks nothing consumed"
-    return 1
-  fi
-  actual=$(receipt_identity "$root/$path")
-  if [ "$id" != "$actual" ]; then
-    report receipt-record-changed "$subject" \
-      "the entry for $path stores $id and the record now hashes to $actual — a published record is immutable"
-    return 1
-  fi
-  return 0
-}
-
-# The staged lines a run produces carry no identity: the checker computes it, so
-# the format has one implementation rather than a writer in prose and a reader
-# in code.
-#
-#   <record path>\t<state>\t<decision heading>
-cmd_receipt_commit() {
-  local receipt="${1:-}" root="${2:-}" staging="${3:-}" pending line path state heading
-  [ -n "$receipt" ] || usage
-  [ -n "$root" ] || usage
-  [ -n "$staging" ] || usage
-  if [ ! -f "$staging" ]; then
-    report NO-STAGING receipt-commit "$staging is not a file"
-    return 1
-  fi
-
-  pending="$WORKDIR/receipt-pending"
-  : >"$pending"
-
-  # Every staged line is expanded and validated before anything is written. A
-  # run that fails here leaves the receipt exactly as it was, which is what
-  # makes an interrupted run leave no entry.
-  # `read` returns non-zero on a last line with no newline after it, and the
-  # line is still in the variable: without the second test the whole entry is
-  # dropped and the run reports a success that recorded nothing.
-  while IFS= read -r line || [ -n "$line" ]; do
-    [ -n "$line" ] || continue
-    case "$(printf '%s' "$line" | awk -F'\t' '{print NF}')" in
-    3) ;;
-    *)
-      report staging-malformed receipt-commit "expected three tab-separated fields, got: $line"
-      return 1
+    kind=$(printf '%s' "$line" | cut -f1)
+    path=$(printf '%s' "$line" | cut -f2)
+    unit=$(printf '%s' "$line" | cut -f3)
+    hash=$(printf '%s' "$line" | cut -f4)
+    state=$(printf '%s' "$line" | cut -f5)
+    case "$kind" in
+    capture)
+      if [ ! -f "$root/captures/$path" ]; then
+        report consumed-capture-gone "$path" "recorded but the record is gone"
+        continue
+      fi
+      current=$(receipt_identity "$root/captures/$path") || {
+        report HASH-FAILED "$path" "could not hash"
+        continue
+      }
+      [ "$current" = "$hash" ] || report consumed-capture-changed "$path" "the record was edited after it was recorded"
+      ;;
+    note)
+      if [ ! -f "$root/$path" ]; then
+        note consumed-note-gone "$path" "recorded but the file is gone"
+        continue
+      fi
+      current=$(sha256_file "$root/$path") || {
+        report HASH-FAILED "$path" "could not hash"
+        continue
+      }
+      [ "$current" = "$hash" ] || note consumed-note-changed "$path" "changed since it was consumed; sources-pending lists it"
       ;;
     esac
-    path=$(printf '%s' "$line" | cut -f1)
-    state=$(printf '%s' "$line" | cut -f2)
-    heading=$(printf '%s' "$line" | cut -f3)
-    if [ ! -f "$root/$path" ]; then
-      report receipt-record-missing receipt-commit "$path is not a record under $root"
-      return 1
-    fi
-    printf '%s\t%s\t%s\t%s\n' "$path" "$(receipt_identity "$root/$path")" "$state" "$heading" >>"$pending"
-  done <"$staging"
-
-  while IFS= read -r line || [ -n "$line" ]; do
-    [ -n "$line" ] || continue
-    receipt_validate_line "$line" "$root" receipt-commit || return 1
-  done <"$pending"
-
-  cat "$pending" >>"$receipt" || {
-    report RECEIPT-FAILED receipt-commit "could not append to $receipt"
-    return 1
-  }
-  echo "receipt-commit: $(line_count "$pending") decisions recorded in $receipt"
-}
-
-cmd_receipt_check() {
-  local receipt="${1:-}" root="${2:-}" line
-  [ -n "$receipt" ] || usage
-  [ -n "$root" ] || usage
-  if [ ! -f "$receipt" ]; then
-    report NO-RECEIPT receipt-check "$receipt is not a file"
-    return 1
-  fi
-  while IFS= read -r line || [ -n "$line" ]; do
-    [ -n "$line" ] || continue
-    receipt_validate_line "$line" "$root" "$receipt" || true
-  done <"$receipt"
+  done <<EOF
+$(awk -F'\t' '{k[$1 "\t" $2 "\t" $3] = $4 "\t" $5} END {for (i in k) print i "\t" k[i]}' "$CONSUMED" | LC_ALL=C sort)
+EOF
   if [ "$fail" -eq 0 ]; then
-    echo "receipt-check: $(line_count "$receipt") entries in $receipt conform"
+    echo "OK: $n rows in $CONSUMED"
   fi
+  return 0
 }
 
 # ------------------------------------------------------------- supersession
@@ -1995,13 +1942,11 @@ claim-acquire) cmd_claim_acquire "$@" || fail=1 ;;
 claim-release) cmd_claim_release "$@" || fail=1 ;;
 claim-inspect) cmd_claim_inspect "$@" || fail=1 ;;
 supersession-scan) cmd_supersession_scan "$@" || fail=$? ;;
-receipt-commit) cmd_receipt_commit "$@" || fail=1 ;;
-receipt-check) cmd_receipt_check "$@" || fail=1 ;;
 captures-eligible) cmd_captures_eligible "$@" || fail=1 ;;
 captures-deferred) cmd_captures_deferred "$@" || fail=1 ;;
 sources-pending) cmd_sources_pending "$@" || fail=1 ;;
-intake-commit) cmd_intake_commit "$@" || fail=1 ;;
-intake-check) cmd_intake_check "$@" || fail=1 ;;
+consumed-commit) cmd_consumed_commit "$@" || fail=1 ;;
+consumed-check) cmd_consumed_check "$@" || fail=1 ;;
 *) usage ;;
 esac
 

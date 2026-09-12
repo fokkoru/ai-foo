@@ -578,79 +578,6 @@ else
   bad "a malformed log heading was not reported: $out"
 fi
 
-# --- the receipt -----------------------------------------------------------
-
-RECORDS="$FIX/records-deferred"
-RCPT="$SCRATCH/receipts"
-mkdir -p "$RCPT"
-
-# The routing distinction cannot be shown by a format check, so both schema
-# variants get a fixture. The three-directory schema has no home for a decision
-# with nothing built behind it, so it is deferred; the four-directory template
-# routes the same claim to the roadmap as a draft, so it is consumed. A deferred
-# decision is the common case for a capture, and a fixture covering only one
-# variant would test the less common path.
-for variant in three-dir four-dir; do
-  out=$("$CHECKER" receipt-commit "$RCPT/$variant.tsv" "$RECORDS" "$FIX/docs-$variant/kb-receipt.staging" 2>&1)
-  if [ $? -eq 0 ] && [ -f "$RCPT/$variant.tsv" ]; then
-    pass "a validated run under the $variant schema writes its receipt"
-  else
-    bad "receipt-commit failed for $variant: $out"
-  fi
-done
-
-if grep -q 'deferred' "$RCPT/three-dir.tsv" && grep -q 'consumed' "$RCPT/four-dir.tsv"; then
-  pass "each schema routes the unbuilt decision as its own table says"
-else
-  bad "the two variants did not route differently: $(cat "$RCPT"/*.tsv)"
-fi
-
-if "$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$RECORDS" >/dev/null 2>&1; then
-  pass "the receipt a run wrote validates"
-else
-  bad "a written receipt did not validate: $("$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$RECORDS" 2>&1)"
-fi
-
-# The receipt is not markdown, and the page enumeration only reads markdown, so
-# it needs no exemption.
-if "$CHECKER" check "$FIX/docs-three-dir" "$RAW" >/dev/null 2>&1; then
-  pass "a receipt beside the pages is invisible to the page rules"
-else
-  bad "the receipt tripped the page rules: $("$CHECKER" check "$FIX/docs-three-dir" "$RAW" 2>&1)"
-fi
-
-out=$("$CHECKER" receipt-check "$FIX/receipt-staging-malformed" "$RECORDS" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-malformed('; then
-  pass "a malformed receipt is reported"
-else
-  bad "a malformed receipt was accepted: $out"
-fi
-
-# A published record is immutable, which is what makes the stored hash sound.
-cp -R "$RECORDS" "$SCRATCH/records-edited"
-echo "an edit to a published record" >>"$SCRATCH/records-edited/r1.md"
-out=$("$CHECKER" receipt-check "$RCPT/three-dir.tsv" "$SCRATCH/records-edited" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-record-changed('; then
-  pass "an entry whose record no longer hashes to its stored id is reported"
-else
-  bad "an edited record was not reported: $out"
-fi
-
-# Nothing is written until the whole set validates, so an interrupted run
-# leaves no entry.
-out=$("$CHECKER" receipt-commit "$RCPT/never.tsv" "$RECORDS" "$FIX/receipt-staging-malformed" 2>&1)
-if [ $? -ne 0 ] && [ ! -f "$RCPT/never.tsv" ]; then
-  pass "a run that fails validation writes no receipt at all"
-else
-  bad "a failed commit left something behind: $out"
-fi
-
-if code_of_checker | grep -nEi 'expir|deadline' >/dev/null; then
-  bad "the checker names an expiry: $(code_of_checker | grep -nEi 'expir|deadline')"
-else
-  pass "a deferred decision carries no expiry, and none exists in the checker"
-fi
-
 # --- what capture writes ---------------------------------------------------
 
 expect_capture 0 as-capture-writes.md ""
@@ -682,13 +609,16 @@ fi
 # --- which captures a run may take in --------------------------------------
 
 ELIG="$FIX/records-eligible"
-elig_receipt="$SCRATCH/eligible.tsv"
-printf 'r1.md\t%s\tconsumed\tThe first decision, already compiled\n' \
-  "$("$CHECKER" assign-id "$ELIG/r1.md" 2>/dev/null)" >"$elig_receipt"
-printf 'r1.md\t%s\tdeferred\tThe second decision, routed nowhere yet\n' \
-  "$("$CHECKER" assign-id "$ELIG/r1.md" 2>/dev/null)" >>"$elig_receipt"
+ELIG_LEDGER="$SCRATCH/eligible-root"
+NOLEDGER="$SCRATCH/no-ledger"
+rm -rf "$ELIG_LEDGER" "$NOLEDGER"; mkdir -p "$ELIG_LEDGER/.kb" "$NOLEDGER"
+elig_id=$("$CHECKER" assign-id "$ELIG/r1.md" 2>/dev/null)
+printf 'capture\tr1.md\tThe first decision, already compiled\t%s\tconsumed\n' "$elig_id" \
+  >"$ELIG_LEDGER/.kb/consumed.tsv"
+printf 'capture\tr1.md\tThe second decision, routed nowhere yet\t%s\tdeferred\n' "$elig_id" \
+  >>"$ELIG_LEDGER/.kb/consumed.tsv"
 
-out=$("$CHECKER" captures-eligible "$ELIG" "$elig_receipt" 2>&1)
+out=$(cd "$ELIG_LEDGER" && "$CHECKER" captures-eligible "$ELIG" 2>&1)
 if [ $? -eq 0 ] &&
   ! printf '%s\n' "$out" | grep -q 'The first decision' &&
   printf '%s\n' "$out" | grep -q 'The second decision' &&
@@ -698,14 +628,14 @@ else
   bad "eligibility was wrong: $out"
 fi
 
-out=$("$CHECKER" captures-eligible "$ELIG" 2>&1)
+out=$(cd "$NOLEDGER" && "$CHECKER" captures-eligible "$ELIG" 2>&1)
 if [ "$(printf '%s\n' "$out" | grep -c '###\|decision')" -ge 3 ]; then
-  pass "with no receipt every decision is eligible"
+  pass "with no ledger every decision is eligible"
 else
-  bad "an absent receipt did not make everything eligible: $out"
+  bad "an absent ledger did not make everything eligible: $out"
 fi
 
-out=$("$CHECKER" captures-deferred "$ELIG" "$elig_receipt" 2>&1)
+out=$(cd "$ELIG_LEDGER" && "$CHECKER" captures-deferred "$ELIG" 2>&1)
 if [ $? -eq 0 ] &&
   printf '%s\n' "$out" | grep -q 'The second decision' &&
   ! printf '%s\n' "$out" | grep -q 'A decision nobody has seen'; then
@@ -805,7 +735,7 @@ fi
 # A record quotes the shape it follows, and the quotation opens with a fence
 # marker of the other character. A fence closes only on the character it opened
 # with, so everything after that marker is still inside the block.
-out=$("$CHECKER" captures-eligible "$FIX/records-fenced" 2>&1)
+out=$(cd "$NOLEDGER" && "$CHECKER" captures-eligible "$FIX/records-fenced" 2>&1)
 if [ "$out" = "$(printf 'a.md\tAlpha\nb.md\tBeta\nb.md\tGamma')" ]; then
   pass "a quoted heading is not a decision, and the real one after it still is"
 else
@@ -840,36 +770,6 @@ else
   bad "a circle beyond the target was reported as a chain: $out"
 fi
 
-# --- the staged lines a run hands to the receipt -----------------------------
-
-STAGE="$SCRATCH/staging"
-mkdir -p "$STAGE"
-
-# An editor that writes no final newline is the ordinary case, not a corruption.
-printf 'a.md\tconsumed\tAlpha' >"$STAGE/no-newline"
-out=$("$CHECKER" receipt-commit "$STAGE/r1.tsv" "$FIX/records-fenced" "$STAGE/no-newline" 2>&1)
-if [ $? -eq 0 ] && [ "$(grep -c . "$STAGE/r1.tsv")" -eq 1 ]; then
-  pass "a staged line with no newline after it is still recorded"
-else
-  bad "the last staged line was dropped: $out"
-fi
-
-printf 'a.md\tconsumed\tno such heading\n' >"$STAGE/wrong-heading"
-out=$("$CHECKER" receipt-commit "$STAGE/r2.tsv" "$FIX/records-fenced" "$STAGE/wrong-heading" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^receipt-heading-missing('; then
-  pass "an entry naming a heading the record does not hold is reported"
-else
-  bad "a heading that marks nothing consumed was accepted: $out"
-fi
-
-printf 'a.md\tconsumed\tAlpha\textra\n' >"$STAGE/four-fields"
-out=$("$CHECKER" receipt-commit "$STAGE/r3.tsv" "$FIX/records-fenced" "$STAGE/four-fields" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^staging-malformed('; then
-  pass "a staged line carrying a fourth field is reported, not truncated"
-else
-  bad "a fourth staged field was discarded in silence: $out"
-fi
-
 # --- a value on stdout, everything else on stderr ----------------------------
 
 # Two consecutive spaces in a path is the case a whitespace-split manifest
@@ -900,20 +800,20 @@ fi
 # --- which raw sources a run may still take in ------------------------------
 
 INTK="$SCRATCH/intake"
-mkdir -p "$INTK/thoughts/research" "$INTK/thoughts/captures"
+mkdir -p "$INTK/thoughts/research" "$INTK/thoughts/captures" "$INTK/.kb"
 echo "a note nobody compiled" >"$INTK/thoughts/research/new.md"
 echo "a note compiled as is" >"$INTK/thoughts/research/same.md"
 echo "a note compiled, then edited" >"$INTK/thoughts/research/edited.md"
 echo "a note read and found homeless" >"$INTK/thoughts/research/homeless.md"
 echo "a capture record" >"$INTK/thoughts/captures/rec.md"
-intake_ledger="$INTK/kb-intake.tsv"
+consumed_ledger="$INTK/.kb/consumed.tsv"
 same_hash=$(shasum -a 256 "$INTK/thoughts/research/same.md" | awk '{print $1}')
 homeless_hash=$(shasum -a 256 "$INTK/thoughts/research/homeless.md" | awk '{print $1}')
-printf 'research/same.md\t%s\tconsumed\n' "$same_hash" >"$intake_ledger"
-printf 'research/edited.md\t%s\tconsumed\n' "0000000000000000000000000000000000000000000000000000000000000000" >>"$intake_ledger"
-printf 'research/homeless.md\t%s\tno-home\n' "$homeless_hash" >>"$intake_ledger"
+printf 'note\tresearch/same.md\t\t%s\tconsumed\n' "$same_hash" >"$consumed_ledger"
+printf 'note\tresearch/edited.md\t\t%s\tconsumed\n' "0000000000000000000000000000000000000000000000000000000000000000" >>"$consumed_ledger"
+printf 'note\tresearch/homeless.md\t\t%s\tno-home\n' "$homeless_hash" >>"$consumed_ledger"
 
-out=$("$CHECKER" sources-pending "$INTK/thoughts" "$intake_ledger" 2>&1)
+out=$(cd "$INTK" && "$CHECKER" sources-pending thoughts 2>&1)
 if [ $? -eq 0 ] &&
   printf '%s\n' "$out" | awk -F'\t' '$1 == "research/new.md" && $2 == "new" {f = 1} END {exit f ? 0 : 1}' &&
   printf '%s\n' "$out" | awk -F'\t' '$1 == "research/edited.md" && $2 == "changed" {f = 1} END {exit f ? 0 : 1}' &&
@@ -925,15 +825,15 @@ else
   bad "pending was wrong: $out"
 fi
 
-out=$("$CHECKER" sources-pending "$INTK/thoughts" 2>&1)
+rm -rf "$INTK/.kb"
+out=$(cd "$INTK" && "$CHECKER" sources-pending thoughts 2>&1)
 if [ "$(printf '%s\n' "$out" | awk -F'\t' '$2 == "new"' | wc -l | tr -d ' ')" -eq 4 ] &&
   ! printf '%s\n' "$out" | grep -q 'captures/'; then
   pass "with no ledger every non-capture source is new"
 else
   bad "an absent ledger did not make everything new: $out"
 fi
-
-out=$("$CHECKER" sources-pending "$INTK/nowhere" 2>&1)
+out=$(cd "$INTK" && "$CHECKER" sources-pending nowhere 2>&1)
 if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^NO-RAW-ROOT(sources-pending)'; then
   pass "a missing raw root is reported"
 else
@@ -943,7 +843,7 @@ fi
 # Skipped by a root user, whom sha256_file can still read; the harness runs unprivileged.
 echo "unreadable" >"$INTK/thoughts/research/locked.md"
 chmod 000 "$INTK/thoughts/research/locked.md"
-out=$("$CHECKER" sources-pending "$INTK/thoughts" 2>&1)
+out=$(cd "$INTK" && "$CHECKER" sources-pending thoughts 2>&1)
 if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^HASH-FAILED(sources-pending)'; then
   pass "a file that cannot be hashed fails the run rather than recording an empty hash"
 else
@@ -952,128 +852,284 @@ fi
 chmod 644 "$INTK/thoughts/research/locked.md"
 rm "$INTK/thoughts/research/locked.md"
 
-# --- recording what a run took in -------------------------------------------
+# --- consumed.tsv -----------------------------------------------------------
 
-commit_ledger="$INTK/commit.tsv"
-printf 'research/new.md\tconsumed\nresearch/homeless.md\tno-home\n' >"$INTK/staging-ok"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-ok" 2>&1)
-if [ $? -eq 0 ] && [ "$(awk 'END {print NR}' "$commit_ledger")" -eq 2 ] &&
-  awk -F'\t' '$1 == "research/new.md" && length($2) == 64 && $3 == "consumed" {f = 1} END {exit f ? 0 : 1}' "$commit_ledger" &&
-  printf '%s\n' "$out" | grep -q '^intake-commit: 2 sources recorded'; then
-  pass "a validated staging is appended with the file hash computed by the checker"
+# One ledger for both kinds. A capture row hashes the normalized body the way
+# the receipt did; a note row hashes the whole file the way the intake did.
+CONS="$SCRATCH/cons"
+rm -rf "$CONS"; mkdir -p "$CONS/thoughts/captures" "$CONS/thoughts/research" "$CONS/.kb"
+cat >"$CONS/thoughts/captures/r1.md" <<'EOF'
+---
+session: s1
+---
+## Decisions
+
+### Use one ledger
+
+Because two disagree.
+EOF
+printf 'a note\n' >"$CONS/thoughts/research/n1.md"
+printf 'capture\tr1.md\tUse one ledger\tconsumed\nnote\tresearch/n1.md\t\tconsumed\n' >"$CONS/stage"
+
+out=$(cd "$CONS" && "$CHECKER" consumed-commit thoughts "$CONS/stage" 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && [ "$(wc -l <"$CONS/.kb/consumed.tsv")" -eq 2 ] \
+  && grep -q "^capture	r1.md	Use one ledger	[0-9a-f]\{12\}	consumed$" "$CONS/.kb/consumed.tsv" \
+  && grep -q "^note	research/n1.md		[0-9a-f]\{64\}	consumed$" "$CONS/.kb/consumed.tsv"; then
+  pass "consumed-commit writes one row per staged line, hash computed per kind"
 else
-  bad "intake-commit did not record the staging: $out $(cat "$commit_ledger" 2>/dev/null)"
+  bad "consumed-commit: rc=$rc $out $(cat "$CONS/.kb/consumed.tsv" 2>&1)"
 fi
 
-out=$("$CHECKER" sources-pending "$INTK/thoughts" "$commit_ledger" 2>&1)
-if ! printf '%s\n' "$out" | grep -q 'research/new.md'; then
-  pass "a consumed source stops being pending"
+# A capture row with the wrong heading is refused before anything is written.
+printf 'capture\tr1.md\tNo such heading\tconsumed\n' >"$CONS/stage2"
+before=$(cat "$CONS/.kb/consumed.tsv")
+out=$(cd "$CONS" && "$CHECKER" consumed-commit thoughts "$CONS/stage2" 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q 'consumed-heading-missing' && [ "$(cat "$CONS/.kb/consumed.tsv")" = "$before" ]; then
+  pass "consumed-commit refuses a capture heading the record lacks and writes nothing"
 else
-  bad "a consumed source is still pending: $out"
+  bad "consumed-commit heading: rc=$rc $out"
 fi
 
-printf 'research/new.md\tconsumed\nresearch/missing.md\tconsumed\n' >"$INTK/staging-missing"
-before=$(cat "$commit_ledger")
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-missing" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-source-missing(intake-commit)' &&
-  [ "$(cat "$commit_ledger")" = "$before" ]; then
-  pass "one bad staged line writes nothing"
+# An unchanged note stays green and produces no consumed-note-changed finding.
+out=$(cd "$CONS" && "$CHECKER" consumed-check thoughts 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && ! echo "$out" | grep -q 'consumed-note-changed'; then
+  pass "consumed-check stays quiet on a note that has not changed"
 else
-  bad "a bad staging still wrote: $out"
+  bad "consumed-check unchanged note: rc=$rc $out"
 fi
 
-printf 'captures/rec.md\tconsumed\n' >"$INTK/staging-capture"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-capture" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-in-captures(intake-commit)'; then
-  pass "a capture record is refused by intake"
+# An edited note is a note; an edited capture is a report.
+printf 'a note, edited\n' >"$CONS/thoughts/research/n1.md"
+out=$(cd "$CONS" && "$CHECKER" consumed-check thoughts 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && echo "$out" | grep -q 'consumed-note-changed(research/n1.md)'; then
+  pass "consumed-check notes a changed note and stays green"
 else
-  bad "a capture record reached the intake ledger: $out"
+  bad "consumed-check note: rc=$rc $out"
+fi
+printf '\nedited\n' >>"$CONS/thoughts/captures/r1.md"
+out=$(cd "$CONS" && "$CHECKER" consumed-check thoughts 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q 'consumed-capture-changed(r1.md)'; then
+  pass "consumed-check reports an edited capture record"
+else
+  bad "consumed-check capture: rc=$rc $out"
 fi
 
-printf 'research/new.md\tmaybe\n' >"$INTK/staging-state"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-state" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-state(intake-commit)'; then
-  pass "an unknown state is refused"
+# sources-pending reads note rows only; the edited note is back in the queue.
+out=$(cd "$CONS" && "$CHECKER" sources-pending thoughts 2>/dev/null)
+if [ "$out" = "$(printf 'research/n1.md\tchanged')" ]; then
+  pass "sources-pending lists the edited note as changed from the one ledger"
 else
-  bad "an unknown state was recorded: $out"
+  bad "sources-pending: [$out]"
 fi
 
-# --- the ledger's own health --------------------------------------------------
+# captures-eligible reads capture rows only.
+cat >"$CONS/thoughts/captures/r2.md" <<'EOF'
+---
+session: s2
+---
+## Decisions
 
-out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
-if [ $? -eq 0 ] && printf '%s\n' "$out" | grep -q '^OK: 2 intake lines'; then
-  pass "a fresh ledger checks clean"
+### Second decision
+
+Text.
+EOF
+out=$(cd "$CONS" && "$CHECKER" captures-eligible thoughts/captures 2>/dev/null)
+if [ "$out" = "$(printf 'r2.md\tSecond decision')" ]; then
+  pass "captures-eligible skips the consumed decision and lists the new one"
 else
-  bad "a fresh ledger did not check clean: $out"
+  bad "captures-eligible: [$out]"
 fi
 
-echo "edited after intake" >>"$INTK/thoughts/research/new.md"
-rm "$INTK/thoughts/research/homeless.md"
-out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
-if [ $? -eq 0 ] &&
-  printf '%s\n' "$out" | grep -q '^intake-source-changed(research/new.md)' &&
-  printf '%s\n' "$out" | grep -q '^intake-source-gone(research/homeless.md)'; then
-  pass "a changed or deleted source is noted, not reported"
+# The old files are not read: a docs/kb-receipt.tsv is ignored.
+mkdir -p "$CONS/docs"
+printf 'r2.md\tdeadbeef0000\tconsumed\tSecond decision\n' >"$CONS/docs/kb-receipt.tsv"
+out=$(cd "$CONS" && "$CHECKER" captures-eligible thoughts/captures 2>/dev/null)
+if [ "$out" = "$(printf 'r2.md\tSecond decision')" ]; then
+  pass "no mode reads a receipt file"
 else
-  bad "a changed source was treated as a defect or missed: $out"
+  bad "receipt still read: [$out]"
 fi
 
-# consume, edit, consume again: only the last line for the path is compared
-printf 'research/new.md\tconsumed\n' >"$INTK/staging-again"
-"$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-again" >/dev/null 2>&1
-out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
-if [ $? -eq 0 ] && ! printf '%s\n' "$out" | grep -q 'intake-source-changed(research/new.md)'; then
+# No .kb/ directory: every read mode treats the ledger as empty, the commit mode creates it.
+rm -rf "$CONS/.kb"
+out=$(cd "$CONS" && "$CHECKER" sources-pending thoughts 2>/dev/null | wc -l | tr -d ' ')
+if [ "$out" = "1" ]; then
+  pass "sources-pending with no .kb/ lists the one note as new"
+else
+  bad "sources-pending no .kb: $out"
+fi
+out=$(cd "$CONS" && "$CHECKER" consumed-commit thoughts "$CONS/stage" 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && [ -f "$CONS/.kb/consumed.tsv" ]; then
+  pass "consumed-commit creates .kb/ when absent"
+else
+  bad "consumed-commit mkdir: rc=$rc $out"
+fi
+
+if code_of_checker | grep -nEi 'expir|deadline' >/dev/null; then
+  bad "the checker names an expiry: $(code_of_checker | grep -nEi 'expir|deadline')"
+else
+  pass "a deferred decision carries no expiry, and none exists in the checker"
+fi
+
+# --- consumed-commit shape checks --------------------------------------------
+
+CSHAPE="$SCRATCH/cshape"
+rm -rf "$CSHAPE"; mkdir -p "$CSHAPE/captures" "$CSHAPE/research"
+cat >"$CSHAPE/captures/r1.md" <<'EOF'
+---
+session: s1
+---
+## Decisions
+
+### A decision
+
+Because.
+EOF
+printf 'a note\n' >"$CSHAPE/research/n1.md"
+
+printf 'capture\tr1.md\t\tconsumed\n' >"$CSHAPE/stage-no-unit"
+out=$("$CHECKER" consumed-commit "$CSHAPE" "$CSHAPE/stage-no-unit" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-unit('; then
+  pass "consumed-commit refuses a capture row with no heading"
+else
+  bad "an empty capture unit was accepted: $out"
+fi
+
+printf 'note\tresearch/n1.md\tsomething\tconsumed\n' >"$CSHAPE/stage-note-unit"
+out=$("$CHECKER" consumed-commit "$CSHAPE" "$CSHAPE/stage-note-unit" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-unit('; then
+  pass "consumed-commit refuses a note row carrying a unit"
+else
+  bad "a note row with a unit was accepted: $out"
+fi
+
+printf 'note\tcaptures/r1.md\t\tconsumed\n' >"$CSHAPE/stage-note-captures"
+out=$("$CHECKER" consumed-commit "$CSHAPE" "$CSHAPE/stage-note-captures" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-in-captures('; then
+  pass "consumed-commit refuses a note row naming a path under captures/"
+else
+  bad "a note row under captures/ was accepted: $out"
+fi
+
+printf 'sideways\tr1.md\t\tconsumed\n' >"$CSHAPE/stage-bad-kind"
+out=$("$CHECKER" consumed-commit "$CSHAPE" "$CSHAPE/stage-bad-kind" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-kind('; then
+  pass "consumed-commit refuses an unknown kind"
+else
+  bad "an unknown kind was accepted: $out"
+fi
+
+printf 'capture\tr1.md\tA decision\tmaybe\n' >"$CSHAPE/stage-bad-state"
+out=$("$CHECKER" consumed-commit "$CSHAPE" "$CSHAPE/stage-bad-state" 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-state('; then
+  pass "consumed-commit refuses a state that is not valid for the row's kind"
+else
+  bad "an invalid state was accepted: $out"
+fi
+
+# --- consumed-check catches what consumed-commit would have refused ---------
+
+# A hand-edited ledger, or a migration script's direct write, never passes
+# through consumed-commit's validation — consumed-check must still catch a
+# malformed row, not just the raw layer having moved on.
+CCHECK="$SCRATCH/ccheck"
+rm -rf "$CCHECK"; mkdir -p "$CCHECK/captures" "$CCHECK/research" "$CCHECK/.kb"
+cp "$CSHAPE/captures/r1.md" "$CCHECK/captures/r1.md"
+printf 'a note\n' >"$CCHECK/research/n2.md"
+n2_hash=$(shasum -a 256 "$CCHECK/research/n2.md" | awk '{print $1}')
+r1_id=$("$CHECKER" assign-id "$CCHECK/captures/r1.md" 2>/dev/null)
+
+printf 'note\tresearch/n2.md\tX\t%s\tconsumed\n' "$n2_hash" >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-unit('; then
+  pass "consumed-check reports a note row that carries a unit"
+else
+  bad "a note row with a unit passed consumed-check: $out"
+fi
+
+printf 'note\tcaptures/r1.md\t\t%s\tconsumed\n' "$n2_hash" >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-in-captures('; then
+  pass "consumed-check reports a note row naming a path under captures/"
+else
+  bad "a note row under captures/ passed consumed-check: $out"
+fi
+
+printf 'capture\tr1.md\t\t%s\tconsumed\n' "$r1_id" >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-unit(' &&
+  ! printf '%s\n' "$out" | grep -q '^consumed-capture-changed('; then
+  pass "consumed-check names a capture row with no heading as a shape defect, not a changed record"
+else
+  bad "an empty capture unit was misreported: $out"
+fi
+
+printf 'not-a-line\n' >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-malformed('; then
+  pass "consumed-check reports a line with the wrong field count"
+else
+  bad "a malformed ledger line passed consumed-check: $out"
+fi
+
+printf 'note\tresearch/n2.md\t\tnothex\tconsumed\n' >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-hash('; then
+  pass "consumed-check reports a hash that is not well-formed for its kind"
+else
+  bad "a malformed hash passed consumed-check: $out"
+fi
+
+printf 'note\t../outside.md\t\t%s\tconsumed\n' "$n2_hash" >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^consumed-path('; then
+  pass "consumed-check reports a path that is not canonical"
+else
+  bad "a non-canonical path passed consumed-check: $out"
+fi
+
+printf 'note\tresearch/n2.md\t\t%s\tconsumed\n' "$n2_hash" >"$CCHECK/.kb/consumed.tsv"
+rm "$CCHECK/research/n2.md"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && printf '%s\n' "$out" | grep -q '^consumed-note-gone(research/n2.md)'; then
+  pass "consumed-check notes a consumed source that is gone, and stays green"
+else
+  bad "a gone note was not noted, or failed the run: rc=$rc $out"
+fi
+printf 'a note\n' >"$CCHECK/research/n2.md"
+
+# --- what a re-consumed and a re-appended ledger both do --------------------
+
+# consume, edit, consume again: only the last line for the identity is compared.
+printf 'a note, edited\n' >"$CCHECK/research/n2.md"
+n2_edited_hash=$(shasum -a 256 "$CCHECK/research/n2.md" | awk '{print $1}')
+{
+  printf 'note\tresearch/n2.md\t\t%s\tconsumed\n' "$n2_hash"
+  printf 'note\tresearch/n2.md\t\t%s\tconsumed\n' "$n2_edited_hash"
+} >"$CCHECK/.kb/consumed.tsv"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-check . 2>&1)
+if [ $? -eq 0 ] && ! printf '%s\n' "$out" | grep -q 'consumed-note-changed'; then
   pass "a source consumed again at its new hash is no longer noted as changed"
 else
   bad "an older ledger line for a re-consumed source was compared: $out"
 fi
 
-printf 'research/x.md\tnothex\tconsumed\n' >>"$commit_ledger"
-out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-hash(intake-check)'; then
-  pass "a malformed hash is a failure"
-else
-  bad "a malformed hash passed: $out"
-fi
-# BSD sed; the line removed is the one the case above appended.
-sed -i '' '$d' "$commit_ledger"
-
-printf '../outside.md\tconsumed\n' >"$INTK/staging-escape"
-echo "outside" >"$INTK/outside.md"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-escape" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-path(intake-commit)'; then
-  pass "a path that escapes the raw root is refused before it is looked up"
-else
-  bad "an escaping path was accepted: $out"
-fi
-
-printf 'research//new.md\tconsumed\n' >"$INTK/staging-doubled"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-doubled" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-path(intake-commit)'; then
-  pass "a path with an empty component is refused: enumeration would never spell it that way"
-else
-  bad "a doubled slash was accepted and would stay pending forever: $out"
-fi
-
-# A ledger edited by hand may lose its final newline; the next append must
-# not join two records into one line.
-lines_before=$(awk 'END {print NR}' "$commit_ledger")
-printf '%s' "$(cat "$commit_ledger")" >"$commit_ledger"
-printf 'research/same.md\tconsumed\n' >"$INTK/staging-same"
-out=$("$CHECKER" intake-commit "$commit_ledger" "$INTK/thoughts" "$INTK/staging-same" 2>&1)
-if [ $? -eq 0 ] && [ "$(awk 'END {print NR}' "$commit_ledger")" -eq $((lines_before + 1)) ] &&
-  "$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" >/dev/null 2>&1; then
+# A ledger edited by hand may lose its final newline; the next append must not
+# join two records into one line. This exercises the exact idiom
+# cmd_consumed_commit uses to detect it (command substitution strips a
+# trailing newline, so an unterminated last line reads as non-empty). `wc -l`
+# undercounts a file whose last line has no trailing newline, so — as the
+# deleted intake test did — logical rows are counted with awk's NR instead,
+# which still counts a final unterminated line.
+printf '%s' "$(cat "$CCHECK/.kb/consumed.tsv")" >"$CCHECK/.kb/consumed.tsv"
+lines_before=$(awk 'END {print NR}' "$CCHECK/.kb/consumed.tsv")
+printf 'capture\tr1.md\tA decision\tconsumed\n' >"$CCHECK/stage-append"
+out=$(cd "$CCHECK" && "$CHECKER" consumed-commit . "$CCHECK/stage-append" 2>&1)
+if [ $? -eq 0 ] && [ "$(awk 'END {print NR}' "$CCHECK/.kb/consumed.tsv")" -eq $((lines_before + 1)) ] &&
+  (cd "$CCHECK" && "$CHECKER" consumed-check . >/dev/null 2>&1); then
   pass "an append after an unterminated last line starts a new record"
 else
-  bad "an unterminated ledger was corrupted by the next append: $out $(cat "$commit_ledger")"
-fi
-
-printf 'only-two\tfields\n' >>"$commit_ledger"
-out=$("$CHECKER" intake-check "$commit_ledger" "$INTK/thoughts" 2>&1)
-if [ $? -ne 0 ] && printf '%s\n' "$out" | grep -q '^intake-malformed(intake-check)'; then
-  pass "a malformed ledger line is a failure"
-else
-  bad "a malformed ledger line passed: $out"
+  bad "an unterminated ledger was corrupted by the next append: rc=$? $out $(cat "$CCHECK/.kb/consumed.tsv")"
 fi
 
 # --- stamping a type onto a page written by hand ------------------------------
