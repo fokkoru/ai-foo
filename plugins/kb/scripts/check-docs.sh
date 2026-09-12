@@ -9,7 +9,7 @@
 #                                          read from .kb/schema.md, .kb/pages.tsv and
 #                                          .kb/provenance.tsv
 #   check-capture <record>                 the format rules for one capture record
-#   assign-id <page>                       an identifier for a new decision page
+#   assign-id <page>                       a decision page's identifier, or any page's current fingerprint
 #   resolve-decision <docs-root> <id> [path-hint]
 #                                          the page an identifier names
 #   claim-acquire <session-id> <pid>       take the whole-run claim, print its run id
@@ -1885,6 +1885,11 @@ cmd_claim_inspect() {
 # The identifier is assigned once and stored. It is never recomputed and
 # compared: a page whose prose was tightened is the same decision, and a
 # substantively new decision gets a new page and a new assignment.
+#
+# assign-id has a second caller beyond a new decision page: kb:lint's rename
+# verdict runs it over an unregistered candidate to get a fingerprint it can
+# compare against a page-gone row's recorded one in .kb/pages.tsv, because both
+# numbers come from the same normalize-and-hash pipeline this command exposes.
 cmd_assign_id() {
   local page="${1:-}"
   [ -n "$page" ] || usage

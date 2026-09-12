@@ -1,7 +1,7 @@
 ---
 title: "Knowledge Base Schema"
 description: "What this knowledge base contains, how a page earns its place in it, and which rules a compiler must follow."
-template_version: "1"
+template_version: "2"
 map: docs/index.md
 decisions: docs/decisions
 ---
