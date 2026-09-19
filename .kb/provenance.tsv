@@ -37,15 +37,15 @@ docs/architecture/review-dispatch.md	impl-phase-pass	plugins/df/skills/implement
 docs/architecture/review-dispatch.md	impl-run-pass	plugins/df/skills/implement/SKILL.md	L259-L261	2fe517e402fd
 docs/architecture/review-dispatch.md	removal-rule	CONTRIBUTING.md	## Commit Conventions	f86e9f3bad9d
 docs/architecture/review-dispatch.md	reviewer-frontmatter	plugins/df/agents/code-reviewer.md	L1-L7	05c75de3a966
-docs/architecture/statusline.md	sl-buffer	statusline/statusline.mjs	L49-L55	c9d681ece83c
-docs/architecture/statusline.md	sl-cache	statusline/statusline.mjs	L162-L182	a51da5b9ddfa
-docs/architecture/statusline.md	sl-cost	statusline/statusline.mjs	L184-L256	744b66b88c4d
-docs/architecture/statusline.md	sl-dispatch	statusline/statusline.mjs	L272-L305	5f5ebe8de8f7
+docs/architecture/statusline.md	sl-buffer	statusline/statusline.mjs	L79-L86	dcfb2ab48161
+docs/architecture/statusline.md	sl-cache	statusline/statusline.mjs	L168-L187	817b5ee418d9
+docs/architecture/statusline.md	sl-cost	statusline/statusline.mjs	L190-L253	876af70eebed
+docs/architecture/statusline.md	sl-dispatch	statusline/statusline.mjs	L270-L307	b8cf4dee2c78
 docs/architecture/statusline.md	sl-not-a-plugin	CLAUDE.md	## statusline (statusline/)	27a7a2795fac
-docs/architecture/statusline.md	sl-rates	statusline/statusline.mjs	L18-L62	14b4b0892a21
-docs/architecture/statusline.md	sl-thresholds	statusline/statusline.mjs	L79-L84	ea823662305d
+docs/architecture/statusline.md	sl-rates	statusline/statusline.mjs	L18-L62	b16de0e7a0cb
+docs/architecture/statusline.md	sl-thresholds	statusline/statusline.mjs	L103-L108	ea823662305d
 docs/architecture/statusline.md	sl-why	statusline/statusline.mjs	L2-L14	02472ac4fa5e
-docs/architecture/statusline.md	sl-worktree	statusline/statusline.mjs	L275-L292	d543ff5abf90
+docs/architecture/statusline.md	sl-worktree	statusline/statusline.mjs	L278-L294	8c47fb7b52f0
 docs/decisions/0001-one-rule-one-place.md	orop-rule	CLAUDE.md	## Gotchas	0e90536983a8
 docs/decisions/0002-model-tiering-for-dispatched-work.md	cr-frontmatter	plugins/df/agents/code-reviewer.md	L1-L7	05c75de3a966
 docs/decisions/0002-model-tiering-for-dispatched-work.md	tiering-gotcha	CLAUDE.md	## Gotchas	0e90536983a8

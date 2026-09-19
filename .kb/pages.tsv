@@ -4,7 +4,7 @@ docs/architecture/dual-runtime-distribution.md	6cade46a811f
 docs/architecture/knowledge-compiler.md	6894bcf5600f
 docs/architecture/prompt-eval-harness.md	b649679d4781
 docs/architecture/review-dispatch.md	d5f43c874e83
-docs/architecture/statusline.md	7cdae6b0a9c4
+docs/architecture/statusline.md	592751cea0d1
 docs/decisions/0001-one-rule-one-place.md	ab6dc6406208
 docs/decisions/0002-model-tiering-for-dispatched-work.md	f72132740326
 docs/decisions/0003-the-cell-is-the-unit-of-analysis.md	8601094aa67a

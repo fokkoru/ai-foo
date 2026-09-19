@@ -63,13 +63,14 @@ function lacks(name, out, needle) {
   );
 }
 
-// A payload with all four token classes non-zero. 2000 + 5000 + 180000 =
-// 187,000 tokens of context.
+// A payload with all four token classes non-zero. 2100 + 5000 + 180000 =
+// 187,100 tokens of context. No expected figure below lands on a half cent:
+// 0.345 has no exact binary float, so toFixed(2) would print it a cent low.
 const usage = {
-  input_tokens: 2000,
+  input_tokens: 2100,
   cache_creation_input_tokens: 5000,
   cache_read_input_tokens: 180000,
-  output_tokens: 900,
+  output_tokens: 1200,
 };
 
 const base = (over = {}) => ({
@@ -86,33 +87,62 @@ const base = (over = {}) => ({
 });
 
 // ---- the cache-read multiplier -------------------------------------------
-// next, warm, = context/1e6 * input rate * READ_MULT.
-// Fable 5 at 0.1x:    187000/1e6 * 10 * 0.1   = 0.187   -> $0.19
-// Fable 5.1 at .025x: 187000/1e6 * 10 * 0.025 = 0.04675 -> $0.05
+// next, warm, = (cached * READ_MULT + fresh * WRITE_MULT) * rate / 1e6, where
+// cached = cache_read + cache_creation = 185,000 and fresh = uncached input +
+// output = 3,300.
+// Fable 5 at 0.1x:    (185000*0.1   + 3300*2) * 10 / 1e6 = 0.251   -> $0.25
+// Fable 5.1 at .025x: (185000*0.025 + 3300*2) * 10 / 1e6 = 0.11225 -> $0.11
 for (const [id, expected] of [
-  ["claude-fable-5", "$0.19"],
-  ["claude-mythos-5", "$0.19"],
-  ["claude-fable-5-1", "$0.05"],
-  ["claude-mythos-5-1", "$0.05"],
-  ["claude-fable-5[1m]", "$0.19"],
-  ["claude-fable-5-1[1m]", "$0.05"],
+  ["claude-fable-5", "$0.25"],
+  ["claude-mythos-5", "$0.25"],
+  ["claude-fable-5-1", "$0.11"],
+  ["claude-mythos-5-1", "$0.11"],
+  ["claude-fable-5[1m]", "$0.25"],
+  ["claude-fable-5-1[1m]", "$0.11"],
 ]) {
   const out = plain(render(base({ model: { id } })));
   has(`${id} prices a cache read at ${expected}`, out, "next " + expected);
 }
 
-// Opus 5 reads at the standard 0.1x: 187000/1e6 * 5 * 0.1 = 0.0935 -> $0.09
-has("opus 5 reads at 0.1x", plain(render(base())), "next $0.09");
+// Opus 5 reads at the standard 0.1x:
+// (185000*0.1 + 3300*2) * 5 / 1e6 = 0.1255 -> $0.13
+has("opus 5 reads at 0.1x", plain(render(base())), "next $0.13");
+
+// ---- fast mode -----------------------------------------------------------
+// Opus 5 in fast mode bills $10/$50 with the cache multipliers on that base.
+// last, 1h: (2100*10 + 5000*10*2 + 180000*10*0.1 + 1200*50)/1e6
+//   = (21000 + 100000 + 180000 + 60000)/1e6 = 0.361 -> $0.36
+// next, warm: (185000*0.1 + 3300*2) * 10 / 1e6 = 0.251 -> $0.25
+{
+  const out = plain(render(base({ fast_mode: true })));
+  has("opus 5 fast mode prices last at $0.36", out, "last $0.36");
+  has("opus 5 fast mode prices next at $0.25", out, "next $0.25");
+}
+// Sonnet 5 has no fast mode, so the toggle changes nothing there.
+// last, 1h: (2100*2 + 5000*2*2 + 180000*2*0.1 + 1200*10)/1e6 = 0.0722 -> $0.07
+// next, warm: (185000*0.1 + 3300*2) * 2 / 1e6 = 0.0502 -> $0.05
+for (const fast_mode of [true, false]) {
+  const out = plain(
+    render(base({ model: { id: "claude-sonnet-5" }, fast_mode })),
+  );
+  has(`sonnet 5, fast_mode ${fast_mode}: last is $0.07`, out, "last $0.07");
+  has(`sonnet 5, fast_mode ${fast_mode}: next is $0.05`, out, "next $0.05");
+}
+has(
+  "opus 5 with fast_mode false bills the standard rate",
+  plain(render(base({ fast_mode: false }))),
+  "last $0.18",
+);
 
 // ---- the measured last request -------------------------------------------
-// 1h: (2000*5 + 5000*5*2 + 180000*5*0.1 + 900*25)/1e6
-//   = (10000 + 50000 + 90000 + 22500)/1e6 = 0.1725 -> $0.17
-has("last, 1h TTL, is $0.17", plain(render(base())), "last $0.17");
+// 1h: (2100*5 + 5000*5*2 + 180000*5*0.1 + 1200*25)/1e6
+//   = (10500 + 50000 + 90000 + 30000)/1e6 = 0.1805 -> $0.18
+has("last, 1h TTL, is $0.18", plain(render(base())), "last $0.18");
 
-// 5m: (10000 + 5000*5*1.25 + 90000 + 22500)/1e6
-//   = (10000 + 31250 + 90000 + 22500)/1e6 = 0.15375 -> $0.15
+// 5m: (10500 + 5000*5*1.25 + 90000 + 30000)/1e6
+//   = (10500 + 31250 + 90000 + 30000)/1e6 = 0.16175 -> $0.16
 has(
-  "last, 5m TTL, is $0.15",
+  "last, 5m TTL, is $0.16",
   plain(
     render(
       base({
@@ -125,7 +155,7 @@ has(
       }),
     ),
   ),
-  "last $0.15",
+  "last $0.16",
 );
 
 lacks(
@@ -141,7 +171,8 @@ lacks(
 );
 
 // ---- caching unobserved, in three spellings ------------------------------
-// next at the plain input rate: 187000/1e6 * 5 * 1 = 0.935 -> $0.94, in grey.
+// next at the plain input rate, last output included:
+// (187100 + 1200)/1e6 * 5 = 0.9415 -> $0.94, in grey.
 for (const [name, pc] of [
   [
     "caching_observed false, warm true",
@@ -178,6 +209,32 @@ for (const [name, pc] of [
   has("cold cache prices the recache at $2.00", plain(raw), "next $2.00");
   has("cold cache prints red", raw, RED + "$2.00" + OFF);
   has("cold cache still says cold", plain(raw), "cache cold");
+}
+
+// Right after a compaction current_usage is null too, and the cold figures come
+// from prompt_cache alone, so they must survive it.
+for (const [name, recache, expected] of [
+  ["a known recache", 200000, "next $2.00"],
+  ["an unknown recache", null, "next ?"],
+]) {
+  const raw = render(
+    base({
+      context_window: { context_window_size: 1000000, current_usage: null },
+      prompt_cache: {
+        caching_observed: true,
+        warm: false,
+        ttl: "1h",
+        recache_tokens_if_cold: recache,
+      },
+    }),
+  );
+  has(`${name} with no current_usage still prints`, plain(raw), expected);
+  has(
+    `${name} with no current_usage is red`,
+    raw,
+    RED + expected.slice(5) + OFF,
+  );
+  lacks(`${name} with no current_usage prices no last`, plain(raw), "last ");
 }
 
 // recache_tokens_if_cold is null right after a compaction: unknown, not a guess.

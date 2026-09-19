@@ -4,7 +4,7 @@ description: "How the Claude Code status line is assembled from ccstatusline's g
 status: stable
 generated:
   by: "kb:lint"
-  at: "2026-09-11T14:58:40-07:00"
+  at: "2026-09-19T12:56:29-07:00"
 ---
 
 # The two-line status line
@@ -29,25 +29,34 @@ Claude Code hands the status line a JSON payload on stdin. `ccstatusline` passes
 to each `custom-command` widget, so the script parses stdin and writes ANSI-coloured text.[^sl-why]
 
 **Context.** The percentage measures against the point where auto-compact fires, which is not a
-fraction of the window: Claude Code 2.1.268 compacts once the context reaches the window size less
-two reserves, 20,000 tokens held for the summary response and a fixed 13,000-token buffer. `/context`
+fraction of the window: Claude Code 2.1.278 compacts once the context reaches the window size less
+two reserves, 20,000 tokens held for the summary response, or the model's output cap where that is
+smaller, which no current model's is, and a fixed 13,000-token buffer. `/context`
 reports their sum as `Autocompact buffer: 33k tokens`, and the percentage is used tokens over the
 window less that sum. The payload carries neither reserve, so the script pins the
 figure.[^sl-buffer]
 
 **Cost.** Three figures, priced from a table of published rates. Every rate below is
-[reported] (https://platform.claude.com/docs/en/about-claude/pricing, retrieved 2026-09-05).
+[reported](https://platform.claude.com/docs/en/about-claude/pricing), retrieved 2026-09-19.
 
 Session spend comes straight from the payload. The last-request figure prices the token split
 `context_window.current_usage` reports, charging each of its four classes once at its own rate:
 plain input, cache writes at the TTL multiplier, cache reads at the read multiplier, and output at
 the output rate. It is an estimate at published prices, not the billed figure, and a request that
-wrote at mixed TTLs is priced at the single TTL the payload reports.
+wrote at mixed TTLs is priced at the single TTL the payload reports. When the payload's `fast_mode`
+is true and the model is Claude Opus 5 or Claude Opus 4.8, the last and next figures use the
+fast-mode rates, $10 and $50 per million tokens in place of $5 and $25, with the cache multipliers
+on that base: the pricing page sells fast mode on those two models alone, and Claude Code 2.1.278's
+own cost ledger swaps to the same table. Opus 4.7 rejects fast mode and Opus 4.6 bills it at
+standard rates, so the toggle changes nothing on any other model.[^sl-rates]
 
 The next-request figure is the whole context re-sent, and it has three states. While the cache is
-warm it is priced at 0.1× the input rate, or 0.025× on Claude Fable 5.1 and Claude Mythos 5.1
-alone. Once the prefix has to be rebuilt it is priced at 1.25× on the five-minute TTL or 2× on the
-one-hour TTL, in red. Where no response has reported cache tokens at all it is priced at the plain
+warm, the tokens the last response read or wrote are priced at the read multiplier, 0.1× the input
+rate or 0.025× on Claude Fable 5.1 and Claude Mythos 5.1 alone, and the rest at the write
+multiplier for the reported TTL: the last request's uncached input sat after the final cache
+breakpoint and its output joins the context now, so both are written on the next request. What the
+user types next is unknown and left out. Once the prefix has to be rebuilt, the recache size the
+payload reports is priced at 1.25× on the five-minute TTL or 2× on the one-hour TTL, in red. Where no response has reported cache tokens at all it is priced at the plain
 input rate, in grey, because nothing has measured the cache and a red figure would assert a cold
 cache the payload does not claim. Printing nothing there was the alternative, and it is what the
 cache group itself does in the same state: `renderCache` returns early unless a response has

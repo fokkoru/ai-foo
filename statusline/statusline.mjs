@@ -16,50 +16,74 @@
 import { readFileSync } from "node:fs";
 
 // Published prices, $/1M tokens, from
-// https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-09-05.
+// https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-09-19.
 // A model absent here prints no cost rather than a guessed one.
-const INPUT_RATE = {
-  "claude-opus-5": 5,
-  "claude-opus-4-8": 5,
-  "claude-opus-4-7": 5,
-  "claude-opus-4-6": 5,
-  "claude-sonnet-5": 2,
-  "claude-sonnet-4-6": 3,
-  "claude-haiku-4-5": 1,
-  "claude-fable-5": 10,
-  "claude-fable-5-1": 10,
-  "claude-mythos-5": 10,
-  "claude-mythos-5-1": 10,
+//
+// `read` is the cache-read multiplier where it departs from the standard 0.1x:
+// the pricing page names Fable 5.1 and Mythos 5.1 alone as the 0.025x exception.
+//
+// `fast` is the fast-mode pair. It is sold on two models, at $10/$50 in place
+// of $5/$25, and the cache multipliers stack on that base — the pricing page
+// says so, and Claude Code 2.1.278's own cost ledger swaps to a 10/50 table
+// with 12.5/20/1 cache rates when `speed` is "fast". Opus 4.7 rejects fast
+// mode and Opus 4.6 bills it at standard rates, so neither carries the pair.
+// The payload's `fast_mode` is the session toggle rather than the speed the
+// last response ran at; the current_usage it reports is normalised to the four
+// token counts alone.
+const MODELS = {
+  "claude-opus-5": { input: 5, output: 25, fast: { input: 10, output: 50 } },
+  "claude-opus-4-8": { input: 5, output: 25, fast: { input: 10, output: 50 } },
+  "claude-opus-4-7": { input: 5, output: 25 },
+  "claude-opus-4-6": { input: 5, output: 25 },
+  "claude-sonnet-5": { input: 2, output: 10 },
+  "claude-sonnet-4-6": { input: 3, output: 15 },
+  "claude-haiku-4-5": { input: 1, output: 5 },
+  "claude-fable-5": { input: 10, output: 50 },
+  "claude-fable-5-1": { input: 10, output: 50, read: 0.025 },
+  "claude-mythos-5": { input: 10, output: 50 },
+  "claude-mythos-5-1": { input: 10, output: 50, read: 0.025 },
 };
 
-const OUTPUT_RATE = {
-  "claude-opus-5": 25,
-  "claude-opus-4-8": 25,
-  "claude-opus-4-7": 25,
-  "claude-opus-4-6": 25,
-  "claude-sonnet-5": 10,
-  "claude-sonnet-4-6": 15,
-  "claude-haiku-4-5": 5,
-  "claude-fable-5": 50,
-  "claude-fable-5-1": 50,
-  "claude-mythos-5": 50,
-  "claude-mythos-5-1": 50,
-};
+// The four multipliers this payload is priced at: the input and output rates
+// for the model and fast-mode toggle, the cache-read multiplier for the model,
+// and the cache-write multiplier for the reported TTL — 1.25x on the 5-minute
+// TTL, 2x on the 1-hour TTL. Null for a model the table does not list.
+function pricing(d) {
+  // Claude Code appends a context-window suffix, e.g. "claude-opus-5[1m]".
+  const m = MODELS[String(d.model?.id ?? "").replace(/\[.*\]$/, "")];
+  if (!m) return null;
+  const { input, output } = d.fast_mode === true && m.fast ? m.fast : m;
+  return {
+    input,
+    output,
+    read: m.read ?? 0.1,
+    write: d.prompt_cache?.ttl === "1h" ? 2 : 1.25,
+  };
+}
 
-// Auto-compact does not fire at a fraction of the window. Claude Code 2.1.268
+// The four token counts current_usage carries, zero where a class is absent.
+// The three input classes are disjoint: their sum is the context, and each is
+// charged once at its own multiplier. Null before the first response, and
+// documented null right after a compaction too.
+function usage(d) {
+  const u = d.context_window?.current_usage;
+  if (!u) return null;
+  return {
+    fresh: u.input_tokens ?? 0,
+    written: u.cache_creation_input_tokens ?? 0,
+    read: u.cache_read_input_tokens ?? 0,
+    output: u.output_tokens ?? 0,
+  };
+}
+
+// Auto-compact does not fire at a fraction of the window. Claude Code 2.1.278
 // compacts once the context reaches the window less two reserves: 20,000
-// tokens held back for the summary response, then a fixed 13,000-token
+// tokens held back for the summary response (the model's output cap where
+// that is smaller, which no current model's is), then a fixed 13,000-token
 // buffer. `/context` reports their sum as "Autocompact buffer: 33k tokens",
 // and that sum is what the percentage measures against. The payload carries
 // neither reserve, so the figure is pinned here.
 const AUTOCOMPACT_BUFFER = 20000 + 13000;
-
-// Cache reads bill at 0.1x the input rate; the pricing page names Fable 5.1 and
-// Mythos 5.1 alone as the 0.025x exception, and every other model as standard.
-const READ_MULT = (id) =>
-  /^claude-(fable|mythos)-5-1$/.test(id) ? 0.025 : 0.1;
-// Cache writes bill at 1.25x on the 5-minute TTL, 2x on the 1-hour TTL.
-const WRITE_MULT = (ttl) => (ttl === "1h" ? 2 : 1.25);
 
 // Catppuccin Mocha, mapped to the nearest xterm-256 entries. colorLevel is 2,
 // so 256 colours are what the terminal is told to expect. The names are roles
@@ -84,30 +108,9 @@ const tone = (pct) => (pct >= 85 ? C.red : pct >= 60 ? C.orange : C.green);
 const toneHit = (pct) => (pct >= 85 ? C.green : pct >= 60 ? C.orange : C.red);
 const paint = (s, c) => c + s + C.off;
 const emphasise = (s, c) => "\x1b[1m" + c + s + C.off;
+const label = (word, colour, value) => paint(word, colour) + " " + value;
 
 const RULE = paint("│", C.comment);
-
-function readStdin() {
-  try {
-    return JSON.parse(readFileSync(0, "utf8"));
-  } catch {
-    return null;
-  }
-}
-
-function modelId(d) {
-  // Claude Code appends a context-window suffix, e.g. "claude-opus-5[1m]".
-  return String(d?.model?.id ?? "").replace(/\[.*\]$/, "");
-}
-
-function contextTokens(u) {
-  if (!u) return null;
-  return (
-    (u.input_tokens ?? 0) +
-    (u.cache_creation_input_tokens ?? 0) +
-    (u.cache_read_input_tokens ?? 0)
-  );
-}
 
 function money(n) {
   return n < 0.01 && n > 0 ? "<$0.01" : "$" + n.toFixed(2);
@@ -138,24 +141,26 @@ function renderModel(d) {
   const name = String(d.model?.display_name ?? "")
     .replace(/\s*\(.*\)\s*$/, "")
     .trim();
-  const parts = [];
-  if (name) parts.push(emphasise(name, C.purple));
   const effort = d.effort?.level;
-  if (effort) parts.push(paint(String(effort), C.orange));
-  return parts.join(" ");
+  return [
+    name && emphasise(name, C.purple),
+    effort && paint(String(effort), C.orange),
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // ---- context -------------------------------------------------------------
 function renderContext(d) {
-  const used = contextTokens(d.context_window?.current_usage);
+  const u = usage(d);
   const size = d.context_window?.context_window_size;
-  if (used == null || !size) return "";
+  if (!u || !size) return "";
+  const used = u.fresh + u.written + u.read;
   const pct = Math.round((used / (size - AUTOCOMPACT_BUFFER)) * 100);
-  return (
-    paint("ctx", C.cyan) +
-    " " +
-    emphasise(pct + "%", tone(pct)) +
-    paint(" " + compact(used), C.comment)
+  return label(
+    "ctx",
+    C.cyan,
+    emphasise(pct + "%", tone(pct)) + paint(" " + compact(used), C.comment),
   );
 }
 
@@ -164,20 +169,20 @@ function renderCache(d) {
   const pc = d.prompt_cache;
   if (!pc || !pc.caching_observed) return "";
   if (pc.warm === false)
-    return paint("cache", C.cyan) + " " + emphasise("cold", C.red);
+    return label("cache", C.cyan, emphasise("cold", C.red));
   if (pc.hit_ratio == null) return "";
   const hit = Math.round(pc.hit_ratio * 100);
   const left = pc.expires_at ? minutesLeft(pc.expires_at) : null;
   // The short TTL Anthropic offers is five minutes, so once less than that is
   // left the prefix is as good as gone and the countdown stops being green.
   const ttlTone = left != null && left < 5 ? C.orange : C.green;
-  return (
-    paint("cache", C.cyan) +
-    " " +
+  return label(
+    "cache",
+    C.cyan,
     emphasise(hit + "%", toneHit(hit)) +
-    (left != null
-      ? paint(" warm ", C.comment) + paint(duration(left), ttlTone)
-      : "")
+      (left != null
+        ? paint(" warm ", C.comment) + paint(duration(left), ttlTone)
+        : ""),
   );
 }
 
@@ -186,72 +191,64 @@ function renderCost(d) {
   const parts = [];
   const spent = d.cost?.total_cost_usd;
   if (typeof spent === "number")
-    parts.push(
-      paint("cost", C.comment) + " " + emphasise(money(spent), C.yellow),
-    );
+    parts.push(label("cost", C.comment, emphasise(money(spent), C.yellow)));
 
-  const id = modelId(d);
-  const rate = INPUT_RATE[id];
-  if (!rate) return parts.join(" ");
+  const p = pricing(d);
+  if (!p) return parts.join(" ");
+  const u = usage(d);
   const pc = d.prompt_cache;
-  const usage = d.context_window?.current_usage;
+  // Input tokens weighted by their multipliers, priced at the input rate.
+  const priced = (tokens, colour) =>
+    paint(money((tokens * p.input) / 1e6), colour);
 
   // The request that just finished, priced from the token split the payload
-  // reports. The three input classes are disjoint, so each is charged once at
-  // its own multiplier, and contextTokens() — which sums them deliberately — is
-  // the wrong tool here. This is an estimate at published prices rather than
-  // the billed figure: the payload reports one ttl, so a request that wrote at
-  // mixed TTLs is priced at the last one.
-  const outRate = OUTPUT_RATE[id];
-  if (usage && outRate)
+  // reports. This is an estimate at published prices rather than the billed
+  // figure: the payload reports one ttl, so a request that wrote at mixed TTLs
+  // is priced at the last one.
+  if (u)
     parts.push(
-      paint("last", C.comment) +
-        " " +
+      label(
+        "last",
+        C.comment,
         paint(
           money(
-            ((usage.input_tokens ?? 0) * rate +
-              (usage.cache_creation_input_tokens ?? 0) *
-                rate *
-                WRITE_MULT(pc?.ttl) +
-              (usage.cache_read_input_tokens ?? 0) * rate * READ_MULT(id) +
-              (usage.output_tokens ?? 0) * outRate) /
+            (u.fresh * p.input +
+              u.written * p.input * p.write +
+              u.read * p.input * p.read +
+              u.output * p.output) /
               1e6,
           ),
           C.yellow,
         ),
+      ),
     );
 
   // The next request re-sends the whole context: at read rates while the cache
   // is warm, at write rates once the prefix has to be rebuilt, and at the plain
   // input rate where no response has reported cache tokens at all. That last
   // state prints grey, because nothing measured the cache — printing the cold
-  // figure in red there asserts a fact the payload does not carry.
-  const context = contextTokens(usage);
-  let tokens = context;
-  let mult = 1;
-  let colour = C.comment;
+  // figure in red there asserts a fact the payload does not carry. While warm,
+  // only what the last response read or wrote is behind a breakpoint: its
+  // uncached input sat after the last one, and its output joins the context
+  // now, so both are written next time. What the user types next is unknown
+  // and left out.
+  let next;
   if (pc?.caching_observed === true) {
-    if (pc.warm === false) {
+    if (pc.warm === false)
       // Documented null right after a compaction: the quantity is unknown, and
       // substituting the last context would print a guess as a measurement.
-      if (pc.recache_tokens_if_cold == null) {
-        parts.push(paint("next", C.comment) + " " + paint("?", C.red));
-        return parts.join(" ");
-      }
-      tokens = pc.recache_tokens_if_cold;
-      mult = WRITE_MULT(pc.ttl);
-      colour = C.red;
-    } else {
-      mult = READ_MULT(id);
-      colour = C.yellow;
-    }
-  }
-  if (tokens)
-    parts.push(
-      paint("next", C.comment) +
-        " " +
-        paint(money((tokens / 1e6) * rate * mult), colour),
-    );
+      next =
+        pc.recache_tokens_if_cold == null
+          ? paint("?", C.red)
+          : priced(pc.recache_tokens_if_cold * p.write, C.red);
+    else if (u)
+      next = priced(
+        (u.read + u.written) * p.read + (u.fresh + u.output) * p.write,
+        C.yellow,
+      );
+  } else if (u)
+    next = priced(u.fresh + u.written + u.read + u.output, C.comment);
+  if (next) parts.push(label("next", C.comment, next));
   return parts.join(" ");
 }
 
@@ -259,47 +256,52 @@ function renderCost(d) {
 function renderLimits(d) {
   const rl = d.rate_limits;
   if (!rl) return "";
-  const one = (label, pct) =>
-    paint(label, C.pink) + " " + paint(Math.round(pct) + "%", tone(pct));
-  const parts = [];
-  if (rl.five_hour?.used_percentage != null)
-    parts.push(one("5h", rl.five_hour.used_percentage));
-  if (rl.seven_day?.used_percentage != null)
-    parts.push(one("7d", rl.seven_day.used_percentage));
-  return parts.join(" ");
+  return [
+    ["5h", rl.five_hour?.used_percentage],
+    ["7d", rl.seven_day?.used_percentage],
+  ]
+    .filter(([, pct]) => pct != null)
+    .map(([w, pct]) =>
+      label(w, C.pink, paint(Math.round(pct) + "%", tone(pct))),
+    )
+    .join(" ");
 }
 
-const data = readStdin();
+let data;
+try {
+  data = JSON.parse(readFileSync(0, "utf8"));
+} catch {
+  process.exit(0);
+}
 if (!data) process.exit(0);
 
-// The first line is ccstatusline's, but its worktree widget prints the word
-// "main" in an ordinary checkout, which read as a second branch name. This
-// prints a mark and only when the directory really is a linked worktree.
-// Claude Code carries that in two fields, and every payload captured on 2.1.269
-// carried one or the other. `workspace.git_worktree` is the git answer: the
-// worktree's name, present when the session's own cwd resolves to a linked
-// worktree's git directory. A session the harness moved into a worktree itself
-// gets the top-level `worktree` object instead — name, path, branch,
-// original_cwd, original_branch — and then `workspace.git_worktree` is absent.
-// Both observed on Claude Code 2.1.269; reading only the first left every
-// harness-made worktree unmarked.
 if (process.argv[2] === "worktree") {
+  // The first line is ccstatusline's, but its worktree widget prints the word
+  // "main" in an ordinary checkout, which read as a second branch name. This
+  // prints a mark and only when the directory really is a linked worktree.
+  // Claude Code carries that in two fields, and every payload captured on
+  // 2.1.269 carried one or the other. `workspace.git_worktree` is the git
+  // answer: the worktree's name, present when the session's own cwd resolves
+  // to a linked worktree's git directory. A session the harness moved into a
+  // worktree itself gets the top-level `worktree` object instead — name, path,
+  // branch, original_cwd, original_branch — and then `workspace.git_worktree`
+  // is absent. Both observed on Claude Code 2.1.269; reading only the first
+  // left every harness-made worktree unmarked.
+  //
   // ccstatusline trims a widget's output, so the space that sets the mark off
   // from the path is a custom-text widget in the config, not a space here.
   if (data.worktree?.name || data.workspace?.git_worktree)
     process.stdout.write("🌿");
-  process.exit(0);
+} else if (process.argv[2] === "run") {
+  process.stdout.write(
+    [
+      renderModel(data),
+      renderContext(data),
+      renderCache(data),
+      renderCost(data),
+      renderLimits(data),
+    ]
+      .filter(Boolean)
+      .join(" " + RULE + " "),
+  );
 }
-
-if (process.argv[2] !== "run") process.exit(0);
-
-const out = [
-  renderModel(data),
-  renderContext(data),
-  renderCache(data),
-  renderCost(data),
-  renderLimits(data),
-]
-  .filter(Boolean)
-  .join(" " + RULE + " ");
-if (out) process.stdout.write(out);
