@@ -31,6 +31,8 @@ docs/architecture/prompt-eval-harness.md	eval-refusals	scripts/eval/README.md	##
 docs/architecture/prompt-eval-harness.md	eval-running	scripts/eval/README.md	## Running one	42eb455b2322
 docs/architecture/prompt-eval-harness.md	judge-script	scripts/eval/judge-agy.sh	L1-L8	479345972537
 docs/architecture/prompt-eval-harness.md	paired-header	scripts/eval/paired.py	L1-L28	9ea39616fa2d
+docs/architecture/prompt-eval-harness.md	pairs-doc	scripts/eval/pairs.py	L1-L20	80716679af0e
+docs/architecture/prompt-eval-harness.md	readme-pref	scripts/eval/README.md	## Judging a preference instead of a count	660cb2ad1732
 docs/architecture/review-dispatch.md	df-guarantees	plugins/df/README.md	### It's working if	6ab5e6062ab4
 docs/architecture/review-dispatch.md	impl-gates	plugins/df/skills/implement/SKILL.md	L395-L397	54961b01f124
 docs/architecture/review-dispatch.md	impl-phase-pass	plugins/df/skills/implement/SKILL.md	L187-L197	2d6ac21ba528
@@ -68,6 +70,9 @@ docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	semver-ta
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	versioning-rule	CLAUDE.md	## Versioning	617a7aec2e56
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	source-missing-report	plugins/kb/scripts/check-docs.sh	L743-L746	a0fb5933b4eb
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	.kb/schema.md	## Provenance	b30a2f3c7b4d
+docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	judge-pair-header	scripts/eval/judge-pair.sh	L1-L18	c5879f9d22fe
+docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	pairs-doc	scripts/eval/pairs.py	L1-L20	80716679af0e
+docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	readme-pref	scripts/eval/README.md	## Judging a preference instead of a count	660cb2ad1732
 docs/product/answer-first-style.md	root-readme	README.md	L59-L59	9fe28e6b3b2d
 docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	12c0f272ff86
 docs/product/answer-first-style.md	style-placement	plugins/style/README.md	## What the base prompt already says about prose	d398dda946b7

@@ -1,2 +1,5 @@
 capture	841c4f56-155f-4264-be0a-cb7685f3bf52-1.md	Unobserved caching prints the base-rate figure in grey rather than printing nothing	0cf0d2fb2f02	consumed
 capture	841c4f56-155f-4264-be0a-cb7685f3bf52-1.md	The worktree mark reads the payload field outright, with no fallback for an older Claude Code	0cf0d2fb2f02	consumed
+capture	95ea3801-acca-4d64-ab51-f9765565964d-1.md	No persona sentence is appended to the shipped Answer First style	d0aa56686f0c	deferred
+capture	95ea3801-acca-4d64-ab51-f9765565964d-1.md	A preference between two responses is judged pairwise in both orders, with a win only when both orders agree	d0aa56686f0c	consumed
+capture	95ea3801-acca-4d64-ab51-f9765565964d-1.md	The Orwell line is tried in daily use as a local style before any confirmation sweep is paid for	d0aa56686f0c	deferred

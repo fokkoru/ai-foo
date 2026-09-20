@@ -3,8 +3,8 @@ title: "Prompt A/B harness"
 description: "How two variants of a shipped prompt are compared against the same fixed tasks."
 status: stable
 generated:
-  by: "kb:compile"
-  at: "2026-09-03T22:54:23-07:00"
+  by: "kb:weave"
+  at: "2026-09-20T15:11:41-07:00"
 ---
 
 # Prompt A/B harness
@@ -83,6 +83,20 @@ of the text decided by a regex — free to recompute and impossible to bias.[^ev
 harness holds a judge to a schema and records a failure as `ERROR`, but it contains no calibration
 step, so nothing here establishes how far a judged number is from a human one.
 
+## Judging a preference instead of a count
+
+When the question is which of two responses reads better and no count captures it, `judge-pair.sh`
+shows one judge the variant and the base response for the same model, cell and repetition, in both
+orders, and `pairs.py` counts a repetition as a win only when both orders name the variant and a
+loss only when both name the base. A disagreement between the orders is a split, reported and
+dropped. The rubric and schema are two optional files in the experiment directory, the schema's only
+field is the winning letter, and a row the CSV already holds is skipped, so an interrupted pass
+resumes by re-running it. The Claude family has been smoke-tested; the Codex branch has never had a
+reply come back.[^readme-pref] `pairs.py` runs the sign test over cells, each cell its wins minus its
+losses across repetitions, and prints the repetition totals beside it as the number that is not
+independent.[^pairs-doc] The decision behind the both-orders rule is
+[A preference is judged pairwise in both orders](../decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md).
+
 [^eval-intro]: `scripts/eval/README.md`, opening.
 
 [^eval-dir]: `scripts/eval/README.md`, "An experiment directory".
@@ -100,3 +114,7 @@ step, so nothing here establishes how far a judged number is from a human one.
 [^paired-header]: `scripts/eval/paired.py`, module docstring.
 
 [^judge-script]: `scripts/eval/judge-agy.sh`, header comment.
+
+[^readme-pref]: `scripts/eval/README.md`, "Judging a preference instead of a count".
+
+[^pairs-doc]: `scripts/eval/pairs.py`, module docstring.
