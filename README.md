@@ -64,6 +64,12 @@ It appears under `/config` → **Output style** as `style:Answer First` — plug
 
 See [plugins/style/README.md](plugins/style/README.md) for the style table and the frontmatter keys.
 
+## GPT prompts
+
+Versioned ChatGPT GPT instructions live under `gpts/`:
+
+- [Text editor](gpts/text-editor/README.md): English and Russian editing and translation, with saved prompt versions and revision notes.
+
 ## Install
 
 ### df
