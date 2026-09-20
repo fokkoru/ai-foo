@@ -114,6 +114,30 @@ disagrees with the phrase list it counts. A zero would pull that arm's mean down
 `paired.py` drops tied pairs from the sign test rather than splitting them, which shrinks n instead
 of padding either side.
 
+## Judging a preference instead of a count
+
+`judge.sh` and `judge-agy.sh` score one response at a time against a rubric that counts something,
+and `paired.py` reads the number. When the question is which of two responses reads better and no
+count captures it, `judge-pair.sh` shows a judge the variant and the base response for the same
+model, cell and repetition, in both orders, and `pairs.py` counts a repetition as a win only when
+both orders name the variant and a loss only when both name the base. A disagreement between the
+orders is a split, reported and dropped, because position bias in a preference judge is large enough
+that one order alone is not a reading.
+
+```bash
+"$R/judge-pair.sh" claude "$E/results-a" "AF Base" "AF Orwell" "$E/results-a/pairs-opus.csv"
+python3 "$R/pairs.py" "$E/results-a/pairs-opus.csv" "AF Orwell"
+```
+
+It takes the family, the results directory, the base arm, the variant arm and the CSV to append to.
+The rubric and schema are the experiment's `judge-pair-rubric.txt` and `judge-pair-schema.json`,
+two optional files beside the ones the table above lists, and the schema's only field is the winning
+letter. A row the CSV already holds is skipped, so an interrupted pass resumes by re-running it. A
+reply that is not `A` or `B` is recorded as `ERROR`, never as a loss. `pairs.py` runs the sign test
+over cells, each cell being its wins minus its losses across repetitions, and prints the repetition
+totals beside it as the number that is not independent. Smoke-tested on one pair against `opus` on
+2.1.278; the `codex` branch has never had a reply come back, so its first real use is a smoke test.
+
 ## Cost before you start
 
 `cost.py` on a previous run gives the median cost and wall clock per cell, which multiplies out to
