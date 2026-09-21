@@ -73,6 +73,8 @@ docs/decisions/0010-a-vanished-source-deletes-its-entry.md	vanished-source-rule	
 docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	judge-pair-header	scripts/eval/judge-pair.sh	L1-L18	c5879f9d22fe
 docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	pairs-doc	scripts/eval/pairs.py	L1-L20	80716679af0e
 docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	readme-pref	scripts/eval/README.md	## Judging a preference instead of a count	660cb2ad1732
+docs/decisions/0012-a-bilingual-prompt-answers-in-plain-markdown.md	prompt-output	gpts/text-editor/versions/002.md	# Language and output	0326b89f2efe
+docs/decisions/0012-a-bilingual-prompt-answers-in-plain-markdown.md	review-container	gpts/text-editor/reviews/002.md	## Output container	c0da55be7e6b
 docs/product/answer-first-style.md	root-readme	README.md	L59-L59	9fe28e6b3b2d
 docs/product/answer-first-style.md	style-head	plugins/style/output-styles/answer-first.md	L1-L11	12c0f272ff86
 docs/product/answer-first-style.md	style-placement	plugins/style/README.md	## What the base prompt already says about prose	d398dda946b7

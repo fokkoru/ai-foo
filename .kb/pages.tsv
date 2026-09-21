@@ -15,5 +15,6 @@ docs/decisions/0008-a-page-cites-only-what-a-clone-carries.md	eb0f4286f853
 docs/decisions/0009-a-version-bump-touches-two-manifests-and-no-tag.md	f2f20bfeaef8
 docs/decisions/0010-a-vanished-source-deletes-its-entry.md	75db359f80db
 docs/decisions/0011-a-preference-is-judged-pairwise-in-both-orders.md	db33a49da4c6
+docs/decisions/0012-a-bilingual-prompt-answers-in-plain-markdown.md	ea1b4ee44c7c
 docs/product/answer-first-style.md	ef3a65e1da1f
 docs/product/df-workflow.md	273bb559ae18
