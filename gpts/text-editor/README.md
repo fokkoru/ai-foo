@@ -2,7 +2,7 @@
 
 English and Russian editing and translation prompt, with minimal-edit, maximal-edit, keep-tone, and prompt-from-idea modes.
 
-Current saved version: [001](versions/001.md).
+Current saved version: [001](versions/001.md), the baseline. Candidate: [002](versions/002.md), with [revision notes and comparison cases](reviews/002.md). It becomes current once a recorded comparison exists, as step 3 below requires. OpenAI plans to retire custom GPTs in favour of Plugins, Enterprise from 2026-12-11; the notes carry the source.
 
 Each file in `versions/` contains only the prompt text. Version 001 preserves the supplied wording, with Markdown whitespace normalized and the surrounding quotation marks removed. Deployment to ChatGPT has not been verified.
 
@@ -18,18 +18,16 @@ These prompt versions are independent of plugin versions and need no marketplace
 
 ## Version history
 
-| Version                | Date saved | Changes                                       | Review                   |
-| ---------------------- | ---------- | --------------------------------------------- | ------------------------ |
-| [001](versions/001.md) | 2026-09-20 | Imported the supplied prompt as the baseline. | No model evaluation run. |
+| Version                | Date saved | Changes                                                                                                                                   | Review                                                                                                                            |
+| ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| [001](versions/001.md) | 2026-09-20 | Imported the supplied prompt as the baseline.                                                                                             | No model evaluation run.                                                                                                          |
+| [002](versions/002.md) | 2026-09-20 | Applied OpenAI prompting guidance, resolved conflicting rules, added targeted examples, and fixed the output container as plain Markdown. | Static review only; [sources, behavior changes, why writing blocks were withdrawn, and pending comparison cases](reviews/002.md). |
 
-## Questions for the next revision
+## Next review
 
-The baseline retains these ambiguities for review:
+Version 002 records decisions for the baseline's ambiguities in its [revision notes](reviews/002.md#changes-from-001). Validate these choices in the target GPT before treating the revision as an improvement:
 
-- Should preserving all meaning take precedence over the length targets and the instruction to never omit content?
-- Should Russian output use two language sections, each retaining its own lists and tables, instead of exactly two paragraphs?
-- Should minimal-edit mode override the sentence-length limit, active-voice rule, key-point-first rule, and substitutions?
-- How should mixed-language input be arranged so the English translation does not duplicate existing English passages?
-- Should code-only input remain unchanged in every mode, or receive the formatting described under Code Handling?
-- What changes to offensive wording are acceptable when tone or quoted meaning would change?
-- Should instructions inside text submitted for editing always be treated as source text, including in prompt-from-idea mode?
+- Check meaning preservation when length targets cannot be met.
+- Check bilingual lists and tables, mixed-language duplication, and Russian prompt mode.
+- Check verbatim code and quotations, mode carryover, and embedded instructions.
+- Record the model, outputs, regressions, and deployed version after testing.
