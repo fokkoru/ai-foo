@@ -4,7 +4,7 @@ description: "How the Claude Code status line is assembled from ccstatusline's g
 status: stable
 generated:
   by: "kb:lint"
-  at: "2026-09-19T12:56:29-07:00"
+  at: "2026-09-30T16:19:41-07:00"
 ---
 
 # The two-line status line
@@ -37,22 +37,24 @@ window less that sum. The payload carries neither reserve, so the script pins th
 figure.[^sl-buffer]
 
 **Cost.** Three figures, priced from a table of published rates. Every rate below is
-[reported](https://platform.claude.com/docs/en/about-claude/pricing), retrieved 2026-09-19.
+[reported](https://platform.claude.com/docs/en/about-claude/pricing), retrieved 2026-09-30.
 
 Session spend comes straight from the payload. The last-request figure prices the token split
 `context_window.current_usage` reports, charging each of its four classes once at its own rate:
 plain input, cache writes at the TTL multiplier, cache reads at the read multiplier, and output at
 the output rate. It is an estimate at published prices, not the billed figure, and a request that
-wrote at mixed TTLs is priced at the single TTL the payload reports. When the payload's `fast_mode`
-is true and the model is Claude Opus 5 or Claude Opus 4.8, the last and next figures use the
-fast-mode rates, $10 and $50 per million tokens in place of $5 and $25, with the cache multipliers
-on that base: the pricing page sells fast mode on those two models alone, and Claude Code 2.1.278's
-own cost ledger swaps to the same table. Opus 4.7 rejects fast mode and Opus 4.6 bills it at
-standard rates, so the toggle changes nothing on any other model.[^sl-rates]
+wrote at mixed TTLs is priced at the single TTL the payload reports. The pricing page sells fast
+mode on three models. When the payload's `fast_mode` is true on one of them, the last and next
+figures use its fast-mode rates with the cache multipliers on that base: $8 and $40 per million
+tokens in place of $4 and $20 on Claude Opus 5.5, and $10 and $50 in place of $5 and $25 on Claude
+Opus 5 and Claude Opus 4.8. Claude Code 2.1.286's own cost ledger swaps to the same tables. Opus 4.7
+rejects fast mode and Opus 4.6 bills it at standard rates, so the toggle changes nothing on any
+other model.[^sl-rates]
 
 The next-request figure is the whole context re-sent, and it has three states. While the cache is
-warm, the tokens the last response read or wrote are priced at the read multiplier, 0.1× the input
-rate or 0.025× on Claude Fable 5.1 and Claude Mythos 5.1 alone, and the rest at the write
+warm, the tokens the last response read or wrote are priced at the read multiplier, which is 0.1×
+the input rate except for 0.025× on Claude Fable 5.1 and Claude Mythos 5.1 and 0.05× on Claude Opus
+5.5, and the rest at the write
 multiplier for the reported TTL: the last request's uncached input sat after the final cache
 breakpoint and its output joins the context now, so both are written on the next request. What the
 user types next is unknown and left out. Once the prefix has to be rebuilt, the recache size the
