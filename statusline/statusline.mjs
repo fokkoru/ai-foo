@@ -16,25 +16,34 @@
 import { readFileSync } from "node:fs";
 
 // Published prices, $/1M tokens, from
-// https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-09-19.
+// https://platform.claude.com/docs/en/about-claude/pricing retrieved 2026-09-30.
 // A model absent here prints no cost rather than a guessed one.
 //
 // `read` is the cache-read multiplier where it departs from the standard 0.1x:
-// the pricing page names Fable 5.1 and Mythos 5.1 alone as the 0.025x exception.
+// the pricing page names 0.025x for Fable 5.1 and Mythos 5.1, and 0.05x for
+// Opus 5.5.
 //
-// `fast` is the fast-mode pair. It is sold on two models, at $10/$50 in place
-// of $5/$25, and the cache multipliers stack on that base — the pricing page
-// says so, and Claude Code 2.1.278's own cost ledger swaps to a 10/50 table
-// with 12.5/20/1 cache rates when `speed` is "fast". Opus 4.7 rejects fast
-// mode and Opus 4.6 bills it at standard rates, so neither carries the pair.
-// The payload's `fast_mode` is the session toggle rather than the speed the
-// last response ran at; the current_usage it reports is normalised to the four
-// token counts alone.
+// `fast` is the fast-mode pair. It is sold on three models, at $8/$40 on Opus
+// 5.5 and $10/$50 on Opus 5 and Opus 4.8, and the cache multipliers stack on
+// that base — the pricing page says so, and Claude Code 2.1.286's own cost
+// ledger swaps to an 8/40 table with 10/16/0.4 cache rates on Opus 5.5 and a
+// 10/50 table with 12.5/20/1 on the other two when `speed` is "fast". Opus 4.7
+// rejects fast mode and Opus 4.6 bills it at standard rates, so neither
+// carries the pair. The payload's `fast_mode` is the session toggle rather
+// than the speed the last response ran at; the current_usage it reports is
+// normalised to the four token counts alone.
 const MODELS = {
+  "claude-opus-5-5": {
+    input: 4,
+    output: 20,
+    read: 0.05,
+    fast: { input: 8, output: 40 },
+  },
   "claude-opus-5": { input: 5, output: 25, fast: { input: 10, output: 50 } },
   "claude-opus-4-8": { input: 5, output: 25, fast: { input: 10, output: 50 } },
   "claude-opus-4-7": { input: 5, output: 25 },
   "claude-opus-4-6": { input: 5, output: 25 },
+  "claude-sonnet-5-5": { input: 2, output: 10 },
   "claude-sonnet-5": { input: 2, output: 10 },
   "claude-sonnet-4-6": { input: 3, output: 15 },
   "claude-haiku-4-5": { input: 1, output: 5 },

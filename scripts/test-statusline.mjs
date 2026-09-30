@@ -92,6 +92,7 @@ const base = (over = {}) => ({
 // output = 3,300.
 // Fable 5 at 0.1x:    (185000*0.1   + 3300*2) * 10 / 1e6 = 0.251   -> $0.25
 // Fable 5.1 at .025x: (185000*0.025 + 3300*2) * 10 / 1e6 = 0.11225 -> $0.11
+// Opus 5.5 at 0.05x:  (185000*0.05  + 3300*2) *  4 / 1e6 = 0.0634  -> $0.06
 for (const [id, expected] of [
   ["claude-fable-5", "$0.25"],
   ["claude-mythos-5", "$0.25"],
@@ -99,6 +100,8 @@ for (const [id, expected] of [
   ["claude-mythos-5-1", "$0.11"],
   ["claude-fable-5[1m]", "$0.25"],
   ["claude-fable-5-1[1m]", "$0.11"],
+  ["claude-opus-5-5", "$0.06"],
+  ["claude-opus-5-5[1m]", "$0.06"],
 ]) {
   const out = plain(render(base({ model: { id } })));
   has(`${id} prices a cache read at ${expected}`, out, "next " + expected);
@@ -118,16 +121,32 @@ has("opus 5 reads at 0.1x", plain(render(base())), "next $0.13");
   has("opus 5 fast mode prices last at $0.36", out, "last $0.36");
   has("opus 5 fast mode prices next at $0.25", out, "next $0.25");
 }
-// Sonnet 5 has no fast mode, so the toggle changes nothing there.
+// Opus 5.5 bills fast mode at $8/$40, and its 0.05x read stacks on that base.
+// standard last, 1h: (2100*4 + 5000*4*2 + 180000*4*0.05 + 1200*20)/1e6
+//   = (8400 + 40000 + 36000 + 24000)/1e6 = 0.1084 -> $0.11
+// fast last, 1h: (2100*8 + 5000*8*2 + 180000*8*0.05 + 1200*40)/1e6
+//   = (16800 + 80000 + 72000 + 48000)/1e6 = 0.2168 -> $0.22
+// fast next, warm: (185000*0.05 + 3300*2) * 8 / 1e6 = 0.1268 -> $0.13
+{
+  const model = { id: "claude-opus-5-5" };
+  has(
+    "opus 5.5 standard prices last at $0.11",
+    plain(render(base({ model, fast_mode: false }))),
+    "last $0.11",
+  );
+  const out = plain(render(base({ model, fast_mode: true })));
+  has("opus 5.5 fast mode prices last at $0.22", out, "last $0.22");
+  has("opus 5.5 fast mode prices next at $0.13", out, "next $0.13");
+}
+// Sonnet 5 and Sonnet 5.5 have no fast mode, so the toggle changes nothing.
 // last, 1h: (2100*2 + 5000*2*2 + 180000*2*0.1 + 1200*10)/1e6 = 0.0722 -> $0.07
 // next, warm: (185000*0.1 + 3300*2) * 2 / 1e6 = 0.0502 -> $0.05
-for (const fast_mode of [true, false]) {
-  const out = plain(
-    render(base({ model: { id: "claude-sonnet-5" }, fast_mode })),
-  );
-  has(`sonnet 5, fast_mode ${fast_mode}: last is $0.07`, out, "last $0.07");
-  has(`sonnet 5, fast_mode ${fast_mode}: next is $0.05`, out, "next $0.05");
-}
+for (const id of ["claude-sonnet-5", "claude-sonnet-5-5"])
+  for (const fast_mode of [true, false]) {
+    const out = plain(render(base({ model: { id }, fast_mode })));
+    has(`${id}, fast_mode ${fast_mode}: last is $0.07`, out, "last $0.07");
+    has(`${id}, fast_mode ${fast_mode}: next is $0.05`, out, "next $0.05");
+  }
 has(
   "opus 5 with fast_mode false bills the standard rate",
   plain(render(base({ fast_mode: false }))),
